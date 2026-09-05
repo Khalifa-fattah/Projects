@@ -1,614 +1,254 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاسبة الطوب للمباني</title>
-
-    <style>
-        :root {
-            --primary-color: #1a73e8;
-            --primary-hover: #1557b0;
-            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-            --card-bg: #ffffff;
-            --text-main: #2d3748;
-            --text-muted: #718096;
-            --border-color: #e2e8f0;
-            --success-color: #38a169;
-            --danger-color: #e53e3e;
-            --warning-color: #dd6b20;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-gradient);
-            min-height: 100vh;
-            padding: 30px 15px;
-            color: var(--text-main);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .header h1 {
-            font-size: 2.3em;
-            color: #1a202c;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .header p {
-            font-size: 1.05em;
-            color: var(--text-muted);
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1.8fr 1.2fr;
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        @media (max-width: 992px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .card h2 {
-            font-size: 1.25em;
-            color: #2b6cb0;
-            margin-bottom: 18px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #ebf8ff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.9em;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 6px;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 11px 14px;
-            border: 1.5px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 0.95em;
-            font-family: inherit;
-            background-color: #f7fafc;
-            transition: all 0.25s ease;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
-        }
-
-        input.error {
-            border-color: var(--danger-color);
-        }
-
-        .error-message {
-            color: var(--danger-color);
-            font-size: 0.8em;
-            margin-top: 4px;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        /* =========================
-           بطاقة أبعاد الطوبة
-        ========================= */
-
-        .brick-dimensions-card {
-            margin-top: 15px;
-            background: linear-gradient(135deg, #f7fbff, #eef6ff);
-            border: 1px solid #d8eaff;
-            border-radius: 14px;
-            padding: 18px;
-            text-align: center;
-        }
-
-        .brick-dimensions-title {
-            color: var(--text-muted);
-            font-size: 0.85em;
-            margin-bottom: 8px;
-        }
-
-        .brick-dimensions-value {
-            font-size: 1.45em;
-            font-weight: 800;
-            color: var(--primary-color);
-            letter-spacing: 0.5px;
-            direction: ltr;
-        }
-
-        .edit-dimensions-btn {
-            margin-top: 12px;
-            background: white;
-            color: var(--primary-color);
-            border: 1px solid #c8def8;
-            padding: 8px 15px;
-            font-size: 0.85em;
-        }
-
-        .edit-dimensions-btn:hover {
-            background: #eaf4ff;
-        }
-
-        .hidden-dimensions {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            border-top: 1px dashed var(--border-color);
-        }
-
-        /* =========================
-           الفتحات
-        ========================= */
-
-        .opening-row {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-            background: #f7fafc;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .opening-selector {
-            position: relative;
-        }
-
-        .opening-name-btn {
-            width: 100%;
-            background: white;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            justify-content: space-between;
-        }
-
-        .opening-name-btn:hover {
-            border-color: var(--primary-color);
-            background: #f8fbff;
-        }
-
-        .opening-details {
-            display: none;
-            margin-top: 8px;
-            padding: 8px 10px;
-            background: #edf6ff;
-            color: #2b6cb0;
-            border-radius: 8px;
-            font-size: 0.82em;
-            text-align: center;
-        }
-
-        .opening-details.show {
-            display: block;
-        }
-
-        .opening-presets {
-            display: none;
-            position: absolute;
-            z-index: 20;
-            top: calc(100% + 5px);
-            right: 0;
-            left: 0;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-            overflow: hidden;
-        }
-
-        .opening-presets.show {
-            display: block;
-        }
-
-        .opening-option {
-            width: 100%;
-            background: white;
-            color: var(--text-main);
-            border-radius: 0;
-            border-bottom: 1px solid #edf2f7;
-            padding: 10px;
-            font-size: 0.85em;
-        }
-
-        .opening-option:hover {
-            background: #f0f7ff;
-            color: var(--primary-color);
-        }
-
-        .counter {
-            display: flex;
-            align-items: center;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            overflow: hidden;
-            direction: ltr;
-        }
-
-        .counter button {
-            width: 38px;
-            height: 40px;
-            padding: 0;
-            border-radius: 0;
-            background: #edf2f7;
-            color: var(--text-main);
-            font-size: 1.2em;
-        }
-
-        .counter button:hover {
-            background: #e2e8f0;
-        }
-
-        .counter-value {
-            width: 42px;
-            text-align: center;
-            font-weight: 700;
-            color: var(--primary-color);
-            direction: ltr;
-        }
-
-        .remove-opening {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            background: #fff5f5;
-            color: var(--danger-color);
-            border: 1px solid #fed7d7;
-        }
-
-        .remove-opening:hover {
-            background: #fed7d7;
-        }
-
-        @media (max-width: 650px) {
-            .opening-row {
-                grid-template-columns: 1fr auto;
-            }
-
-            .opening-selector {
-                grid-column: 1 / -1;
-            }
-        }
-
-        /* =========================
-           الأزرار
-        ========================= */
-
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 12px 18px;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.95em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #edf2f7;
-            color: #4a5568;
-        }
-
-        .btn-secondary:hover {
-            background: #e2e8f0;
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #2f855a;
-            transform: translateY(-1px);
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-info {
-            background: #3182ce;
-            color: white;
-        }
-
-        .btn-info:hover {
-            background: #2b6cb0;
-        }
-
-        /* =========================
-           النتائج
-        ========================= */
-
-        .results-container {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 25px;
-            border-right: 5px solid var(--success-color);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            position: sticky;
-            top: 20px;
-        }
-
-        .results-container.hidden {
-            display: none;
-        }
-
-        .result-item {
-            background: #f7fafc;
-            padding: 14px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            border-right: 4px solid var(--primary-color);
-        }
-
-        .result-label {
-            font-size: 0.85em;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .result-value {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .result-item.cost {
-            border-right-color: var(--warning-color);
-        }
-
-        .result-item.cost .result-value {
-            color: var(--warning-color);
-        }
-
-        .result-item.total {
-            border-right-color: var(--success-color);
-            background: #f0fff4;
-        }
-
-        .result-item.total .result-value {
-            color: #276749;
-            font-size: 1.9em;
-        }
-
-        .result-item.info {
-            border-right-color: #805ad5;
-        }
-
-        .result-item.info .result-value {
-            color: #6b46c1;
-        }
-
-        .calculation-note {
-            background: #ebf8ff;
-            border-right: 4px solid var(--primary-color);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-size: 0.85em;
-            line-height: 1.7;
-            color: #2c5282;
-        }
-
-        .warning-note {
-            background: #fffaf0;
-            border-right: 4px solid var(--warning-color);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-size: 0.85em;
-            line-height: 1.7;
-            color: #744210;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: white;
-            padding: 14px 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            border-right: 4px solid var(--success-color);
-            display: none;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-        }
-
-        .notification.show {
-            display: flex;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 999;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(3px);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #edf2f7;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.4em;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        .project-item {
-            background: #f7fafc;
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .footer {
-            text-align: center;
-            color: var(--text-muted);
-            margin-top: 30px;
-            font-size: 0.85em;
-        }
-
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-
-            .header,
-            .button-group,
-            .notification,
-            .modal,
-            #emptyState,
-            .btn-danger,
-            .card {
-                display: none !important;
-            }
-
-            .main-grid {
-                display: block;
-            }
-
-            .results-container {
-                border: 1px solid #ccc;
-                box-shadow: none;
-                position: static;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حاسبة الطوب للمباني</title>
+
+<style>
+:root{
+    --primary-color:#1a73e8;
+    --primary-hover:#1557b0;
+    --bg-gradient:linear-gradient(135deg,#f0f4f8 0%,#d9e2ec 100%);
+    --card-bg:#fff;
+    --text-main:#2d3748;
+    --text-muted:#718096;
+    --border-color:#e2e8f0;
+    --success-color:#38a169;
+    --danger-color:#e53e3e;
+    --warning-color:#dd6b20;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
+    background:var(--bg-gradient);
+    min-height:100vh;
+    padding:30px 15px;
+    color:var(--text-main);
+}
+.container{max-width:1200px;margin:auto}
+.header{text-align:center;margin-bottom:35px}
+.header h1{font-size:2.3em;color:#1a202c;margin-bottom:10px;font-weight:700}
+.header p{font-size:1.05em;color:var(--text-muted);max-width:700px;margin:auto;line-height:1.6}
+.main-grid{display:grid;grid-template-columns:1.8fr 1.2fr;gap:25px;margin-bottom:30px}
+@media(max-width:992px){.main-grid{grid-template-columns:1fr}}
+.card{
+    background:var(--card-bg);border-radius:16px;padding:25px;
+    box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:20px;
+    border:1px solid var(--border-color)
+}
+.card h2{
+    font-size:1.25em;color:#2b6cb0;margin-bottom:18px;padding-bottom:10px;
+    border-bottom:2px solid #ebf8ff;display:flex;align-items:center;gap:8px
+}
+.form-group{margin-bottom:15px}
+.calculation-mode-card{background:linear-gradient(135deg,#f7fbff,#eef6ff);border:1px solid #d8eaff;border-radius:12px;padding:14px;margin-bottom:18px}
+.calculation-mode-badge{display:inline-flex;align-items:center;gap:6px;background:#eaf4ff;color:var(--primary-color);padding:6px 10px;border-radius:999px;font-size:.8em;font-weight:700;margin-top:8px}
+.hidden-field{display:none!important}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px}
+label{display:block;font-size:.9em;font-weight:600;color:var(--text-main);margin-bottom:6px}
+input[type=text],input[type=number],select{
+    width:100%;padding:11px 14px;border:1.5px solid var(--border-color);
+    border-radius:10px;font-size:.95em;font-family:inherit;background:#f7fafc;
+    transition:.25s
+}
+input:focus,select:focus{outline:none;border-color:var(--primary-color);background:#fff;box-shadow:0 0 0 3px rgba(26,115,232,.15)}
+input.error{border-color:var(--danger-color)}
+.error-message{color:var(--danger-color);font-size:.8em;margin-top:4px;display:none}
+.error-message.show{display:block}
+.brick-dimensions-card{
+    margin-top:15px;background:linear-gradient(135deg,#f7fbff,#eef6ff);
+    border:1px solid #d8eaff;border-radius:14px;padding:18px;text-align:center
+}
+.brick-dimensions-title{color:var(--text-muted);font-size:.85em;margin-bottom:8px}
+.brick-dimensions-value{font-size:1.45em;font-weight:800;color:var(--primary-color);letter-spacing:.5px;direction:ltr}
+.edit-dimensions-btn{margin-top:12px;background:#fff;color:var(--primary-color);border:1px solid #c8def8;padding:8px 15px;font-size:.85em}
+.edit-dimensions-btn:hover{background:#eaf4ff}
+.hidden-dimensions{display:none;margin-top:15px;padding:15px;border-top:1px dashed var(--border-color)}
+.opening-row{
+    display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+    margin-bottom:10px;background:#f7fafc;padding:12px;border-radius:12px;border:1px solid var(--border-color)
+}
+.opening-selector{position:relative}
+.opening-name-btn{
+    width:100%;background:#fff;color:var(--text-main);border:1px solid var(--border-color);
+    justify-content:space-between
+}
+.opening-name-btn:hover{border-color:var(--primary-color);background:#f8fbff}
+.opening-details{display:none;margin-top:8px;padding:8px 10px;background:#edf6ff;color:#2b6cb0;border-radius:8px;font-size:.82em;text-align:center}
+.opening-details.show{display:block}
+.opening-presets{
+    display:none;position:absolute;z-index:20;top:calc(100% + 5px);right:0;left:0;
+    background:#fff;border:1px solid var(--border-color);border-radius:10px;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);overflow:hidden
+}
+.opening-presets.show{display:block}
+.opening-option{
+    width:100%;background:#fff;color:var(--text-main);border-radius:0;
+    border-bottom:1px solid #edf2f7;padding:10px;font-size:.85em
+}
+.opening-option:hover{background:#f0f7ff;color:var(--primary-color)}
+.counter{
+    display:flex;align-items:center;background:#fff;border:1px solid var(--border-color);
+    border-radius:10px;overflow:hidden;direction:ltr
+}
+.counter button{width:38px;height:40px;padding:0;border-radius:0;background:#edf2f7;color:var(--text-main);font-size:1.2em}
+.counter button:hover{background:#e2e8f0}
+.counter-value{width:42px;text-align:center;font-weight:700;color:var(--primary-color);direction:ltr}
+.remove-opening{width:40px;height:40px;padding:0;background:#fff5f5;color:var(--danger-color);border:1px solid #fed7d7}
+.remove-opening:hover{background:#fed7d7}
+@media(max-width:650px){
+    .opening-row{grid-template-columns:1fr auto}
+    .opening-selector{grid-column:1/-1}
+}
+.button-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:20px}
+button{
+    padding:12px 18px;border:none;border-radius:10px;font-size:.95em;font-weight:600;
+    cursor:pointer;transition:.2s;font-family:inherit;display:inline-flex;
+    align-items:center;justify-content:center;gap:7px;line-height:1.2;
+    white-space:normal;text-align:center
+}
+.btn-primary{background:var(--primary-color);color:#fff}
+.btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn-secondary{background:#edf2f7;color:#4a5568}
+.btn-secondary:hover{background:#e2e8f0}
+.btn-success{background:var(--success-color);color:#fff}
+.btn-success:hover{background:#2f855a;transform:translateY(-1px)}
+.btn-danger{background:var(--danger-color);color:#fff}
+.btn-info{background:#3182ce;color:#fff}
+.btn-info:hover{background:#2b6cb0}
+.results-container{
+    background:#fff;border-radius:16px;padding:25px;border-right:5px solid var(--success-color);
+    box-shadow:0 4px 20px rgba(0,0,0,.06);position:sticky;top:20px
+}
+.results-container.hidden{display:none}
+.result-item{background:#f7fafc;padding:14px;border-radius:10px;margin-bottom:12px;border-right:4px solid var(--primary-color)}
+.result-label{font-size:.85em;color:var(--text-muted);margin-bottom:4px}
+.result-value{font-size:1.5em;font-weight:700;color:var(--primary-color)}
+.result-item.cost{border-right-color:var(--warning-color)}
+.result-item.cost .result-value{color:var(--warning-color)}
+.result-item.total{border-right-color:var(--success-color);background:#f0fff4}
+.result-item.total .result-value{color:#276749;font-size:1.9em}
+.calculation-note,.warning-note{
+    padding:12px;border-radius:8px;margin-top:12px;font-size:.85em;line-height:1.7
+}
+.calculation-note{background:#ebf8ff;border-right:4px solid var(--primary-color);color:#2c5282}
+.warning-note{background:#fffaf0;border-right:4px solid var(--warning-color);color:#744210}
+.notification{
+    position:fixed;top:20px;left:20px;right:20px;max-width:430px;margin:auto;
+    background:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);
+    border-right:5px solid var(--success-color);display:none;align-items:center;gap:10px;
+    z-index:3000;animation:slideIn .25s ease
+}
+.notification.show{display:flex}
+.notification-icon{font-size:1.25em;font-weight:bold}
+.notification.success{border-right-color:var(--success-color)}
+.notification.error{border-right-color:var(--danger-color)}
+.notification.warning{border-right-color:var(--warning-color)}
+.notification.info{border-right-color:var(--primary-color)}
+@keyframes slideIn{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+.modal{
+    display:none;position:fixed;z-index:2500;inset:0;background:rgba(15,23,42,.52);
+    backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:15px
+}
+.modal.show{display:flex}
+.modal-content{
+    background:#fff;padding:25px;border-radius:18px;max-width:550px;width:100%;
+    max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)
+}
+.modal-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;
+    padding-bottom:10px;border-bottom:2px solid #edf2f7
+}
+.close-btn{background:none;border:none;font-size:1.5em;cursor:pointer;color:var(--text-muted);padding:5px}
+.project-item{
+    background:#f7fafc;padding:12px 15px;border-radius:10px;margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px
+}
+.project-actions{display:flex;gap:7px;flex-wrap:wrap}
+.project-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;margin:0 2px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font-size:.85em;line-height:1;font-weight:800;vertical-align:middle}
+.message-modal-content{max-width:430px;text-align:center;padding:28px 24px}
+.message-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:30px;font-weight:800;background:#ebf8ff;color:var(--primary-color)}
+.message-icon.success{background:#f0fff4;color:var(--success-color)}
+.message-icon.error{background:#fff5f5;color:var(--danger-color)}
+.message-icon.warning{background:#fffaf0;color:var(--warning-color)}
+.message-title{font-size:1.2em;font-weight:800;margin-bottom:8px;color:#1a202c}
+.message-text{line-height:1.8;color:var(--text-muted);white-space:pre-line;margin-bottom:20px}
+.message-ok{width:100%}
+.project-actions button{padding:9px 12px;font-size:.85em}
+.confirm-icon{font-size:2.5em;text-align:center;margin-bottom:10px}
+.confirm-message{text-align:center;line-height:1.7;color:var(--text-main);margin-bottom:18px}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.footer{text-align:center;color:var(--text-muted);margin-top:30px;font-size:.85em}
+#pdfReport{
+    position:fixed;left:-100000px;top:0;width:794px;background:#fff;
+    color:#1f2937;padding:40px;font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+    direction:rtl;z-index:-1
+}
+.pdf-title{text-align:center;border-bottom:3px solid #1a73e8;padding-bottom:16px;margin-bottom:22px}
+.pdf-title h1{font-size:28px;margin-bottom:7px;color:#1a202c}
+.pdf-title p{color:#718096;font-size:14px}
+.pdf-section{border:1px solid #dfe6ee;border-radius:10px;margin-bottom:14px;overflow:hidden}
+.pdf-section h2{font-size:17px;background:#f1f7ff;color:#245b91;padding:10px 13px;margin:0}
+.pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.pdf-field{padding:10px 13px;border-top:1px solid #edf2f7}
+.pdf-field:nth-child(odd){border-left:1px solid #edf2f7}
+.pdf-label{font-size:11px;color:#718096;margin-bottom:4px}
+.pdf-value{font-size:15px;font-weight:700;color:#1f2937}
+.pdf-total{background:#f0fff4;border:2px solid #38a169;border-radius:12px;padding:18px;text-align:center;margin-top:15px}
+.pdf-total .label{font-size:14px;color:#276749}
+.pdf-total .value{font-size:32px;font-weight:800;color:#276749;margin-top:5px}
+.pdf-footer{text-align:center;color:#718096;font-size:10px;margin-top:20px}
+@media print{
+    body{background:#fff;padding:0}
+    .header,.button-group,.notification,.modal,#emptyState,.btn-danger,.card,.footer,#pdfReport{display:none!important}
+    .main-grid{display:block}
+    .results-container{border:1px solid #ccc;box-shadow:none;position:static}
+}
+@media(max-width:500px){
+    body{padding:18px 10px}
+    .card,.results-container{padding:18px}
+    .header h1{font-size:1.8em}
+    .project-item{align-items:flex-start;flex-direction:column}
+    .project-actions{width:100%}
+}
+</style>
 </head>
 
 <body>
 
 <div class="notification" id="notification">
-    <span style="color:var(--success-color);font-weight:bold;">✓</span>
-    <span id="notificationText">تم الحساب بنجاح!</span>
+    <span class="notification-icon" id="notificationIcon">✓</span>
+    <span id="notificationText">تم بنجاح</span>
 </div>
 
 <div class="modal" id="projectsModal">
     <div class="modal-content">
-
         <div class="modal-header">
-            <h2>المشاريع المحفوظة</h2>
-
-            <button class="close-btn" onclick="closeProjectsModal()">×</button>
+            <h2>📁 المشاريع المحفوظة</h2>
+            <button type="button" class="close-btn" onclick="closeProjectsModal()" aria-label="إغلاق">×</button>
         </div>
-
         <div id="projectsList"></div>
+    </div>
+</div>
 
+<div class="modal" id="messageModal">
+    <div class="modal-content message-modal-content">
+        <div class="message-icon info" id="messageIcon">ℹ️</div>
+        <div class="message-title" id="messageTitle">تنبيه</div>
+        <div class="message-text" id="messageText"></div>
+        <button type="button" class="btn-primary message-ok" id="messageOk" onclick="closeMessage()">حسنًا</button>
+    </div>
+</div>
+
+<div class="modal" id="confirmModal">
+    <div class="modal-content" style="max-width:420px">
+        <div class="confirm-icon" id="confirmIcon">⚠️</div>
+        <div class="confirm-message" id="confirmMessage"></div>
+        <div class="confirm-actions">
+            <button type="button" class="btn-danger" id="confirmYes">تأكيد</button>
+            <button type="button" class="btn-secondary" id="confirmNo">إلغاء</button>
+        </div>
     </div>
 </div>
 
@@ -616,2481 +256,1117 @@
 
     <div class="header">
         <h1>🧱 حاسبة الطوب للمباني</h1>
-
-        <p>
-            حساب كمية الطوب اعتمادًا على أبعاد المبنى،
-            سمك الجدار، طريقة الرص، المونة والفتحات.
-        </p>
+        <p>حساب كمية الطوب اعتمادًا على أبعاد المبنى، سمك الجدار، طريقة الرص، المونة والفتحات.</p>
     </div>
 
     <div class="main-grid">
-
         <div>
 
-            <!-- نوع الطوب -->
             <div class="card">
-
                 <h2>🧱 نوع الطوب</h2>
-
                 <div class="form-group">
-
-                    <label for="brickPreset">
-                        اختر نوع الطوب:
-                    </label>
-
+                    <label for="brickPreset">اختر نوع الطوب:</label>
                     <select id="brickPreset" onchange="applyBrickPreset()">
-
                         <option value="cement">بلوك أسمنتي</option>
                         <option value="red">طوب أحمر</option>
                         <option value="green1">طوب أخضر 1</option>
                         <option value="green2">طوب أخضر 2</option>
                         <option value="custom">مخصص...</option>
-
                     </select>
-
                 </div>
 
-                <!-- بطاقة الأبعاد -->
                 <div class="brick-dimensions-card">
-
-                    <div class="brick-dimensions-title">
-                        أبعاد الطوبة المحددة
-                    </div>
-
-                    <div class="brick-dimensions-value" id="brickDimensionsDisplay">
-                        40 × 20 × 20 سم
-                    </div>
-
-                    <button
-                        type="button"
-                        class="edit-dimensions-btn"
-                        onclick="toggleDimensions()">
-
-                        ⚙️ تعديل الأبعاد
-
-                    </button>
-
+                    <div class="brick-dimensions-title">أبعاد الطوبة المحددة</div>
+                    <div class="brick-dimensions-value" id="brickDimensionsDisplay">40 × 20 × 20 سم</div>
+                    <button type="button" class="edit-dimensions-btn" onclick="toggleDimensions()">⚙️ تعديل الأبعاد</button>
                 </div>
 
                 <div class="hidden-dimensions" id="dimensionsBlock">
-
                     <div class="form-row">
-
                         <div class="form-group">
                             <label for="brickLength">طول الطوبة (سم)</label>
-
-                            <input
-                                type="number"
-                                id="brickLength"
-                                value="40"
-                                min="1"
-                                step="0.1"
-                                oninput="updateBrickDimensionsDisplay();updateCalculatedThickness()">
+                            <input type="number" id="brickLength" value="40" min="1" step="0.1" oninput="updateBrickDimensionsDisplay();updateCalculatedThickness()">
                         </div>
-
                         <div class="form-group">
                             <label for="brickWidth">عرض الطوبة (سم)</label>
-
-                            <input
-                                type="number"
-                                id="brickWidth"
-                                value="20"
-                                min="1"
-                                step="0.1"
-                                oninput="updateBrickDimensionsDisplay();updateCalculatedThickness()">
+                            <input type="number" id="brickWidth" value="20" min="1" step="0.1" oninput="updateBrickDimensionsDisplay();updateCalculatedThickness()">
                         </div>
-
                         <div class="form-group">
                             <label for="brickHeight">ارتفاع الطوبة (سم)</label>
-
-                            <input
-                                type="number"
-                                id="brickHeight"
-                                value="20"
-                                min="1"
-                                step="0.1"
-                                oninput="updateBrickDimensionsDisplay()">
+                            <input type="number" id="brickHeight" value="20" min="1" step="0.1" oninput="updateBrickDimensionsDisplay()">
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
 
-
-            <!-- أبعاد المبنى -->
             <div class="card">
+                <h2>📐 نطاق الحساب والأبعاد</h2>
 
-                <h2>📐 أبعاد المبنى</h2>
+                <div class="calculation-mode-card">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="calculationMode">ماذا تريد أن تحسب؟</label>
+                        <select id="calculationMode" onchange="updateCalculationMode()">
+                            <option value="building">🏠 المبنى بالكامل</option>
+                            <option value="wall">🧱 جدار واحد</option>
+                        </select>
+                        <span class="calculation-mode-badge" id="calculationModeBadge">🏠 حساب كامل جدران المبنى</span>
+                    </div>
+                </div>
 
                 <div class="form-row">
-
                     <div class="form-group">
-                        <label for="buildingLength">الطول (م)</label>
-
-                        <input
-                            type="number"
-                            id="buildingLength"
-                            min="0.01"
-                            step="0.01">
-
+                        <label for="buildingLength" id="buildingLengthLabel">الطول (م)</label>
+                        <input type="number" id="buildingLength" min="0.01" step="0.01">
                         <div class="error-message" id="error-buildingLength"></div>
                     </div>
-
-                    <div class="form-group">
+                    <div class="form-group" id="buildingWidthGroup">
                         <label for="buildingWidth">العرض (م)</label>
-
-                        <input
-                            type="number"
-                            id="buildingWidth"
-                            min="0.01"
-                            step="0.01">
-
+                        <input type="number" id="buildingWidth" min="0.01" step="0.01">
                         <div class="error-message" id="error-buildingWidth"></div>
                     </div>
-
                     <div class="form-group">
-                        <label for="buildingHeight">الارتفاع (م)</label>
-
-                        <input
-                            type="number"
-                            id="buildingHeight"
-                            min="0.01"
-                            step="0.01">
-
+                        <label for="buildingHeight" id="buildingHeightLabel">الارتفاع (م)</label>
+                        <input type="number" id="buildingHeight" min="0.01" step="0.01">
                         <div class="error-message" id="error-buildingHeight"></div>
                     </div>
-
                 </div>
 
-                <div class="form-group">
-
-                    <label for="dimensionType">
-                        نوع أبعاد المبنى:
-                    </label>
-
+                <div class="form-group" id="dimensionTypeGroup">
+                    <label for="dimensionType">نوع أبعاد المبنى:</label>
                     <select id="dimensionType">
-
-                        <option value="external">
-                            أبعاد خارجية للمبنى
-                        </option>
-
-                        <option value="internal">
-                            أبعاد داخلية للمبنى
-                        </option>
-
+                        <option value="external">أبعاد خارجية للمبنى</option>
+                        <option value="internal">أبعاد داخلية للمبنى</option>
                     </select>
-
                 </div>
 
-                <div class="calculation-note">
-
-                    <strong>مهم:</strong>
-                    إذا كانت القياسات مأخوذة من خارج المبنى اختر
-                    «أبعاد خارجية». وإذا كانت القياسات مأخوذة من داخل
-                    الغرف اختر «أبعاد داخلية».
-
-                </div>
-
+                <div class="calculation-note" id="buildingDimensionNote"><strong>مهم:</strong> إذا كانت القياسات مأخوذة من خارج المبنى اختر «أبعاد خارجية». وإذا كانت القياسات مأخوذة من داخل الغرف اختر «أبعاد داخلية».</div>
+                <div class="calculation-note" id="wallDimensionNote" style="display:none"><strong>جدار واحد:</strong> أدخل طول الجدار وارتفاعه فقط. العرض لا يدخل في حساب الجدار الواحد، وسماكة الجدار تُحدد تلقائيًا حسب طريقة الرص.</div>
             </div>
 
-
-            <!-- طريقة البناء -->
             <div class="card">
-
                 <h2>⚙️ طريقة البناء والمونة</h2>
-
                 <div class="form-row">
-
                     <div class="form-group">
-
-                        <label for="wallLayout">
-                            طريقة رص الجدار:
-                        </label>
-
-                        <select
-                            id="wallLayout"
-                            onchange="updateCalculatedThickness()">
-
-                            <option value="stretcher">
-                                طولي (نصف طوبة)
-                            </option>
-
-                            <option value="header">
-                                عرضي (طوبة كاملة)
-                            </option>
-
-                            <option value="combined">
-                                عرضي وطولي معاً (طوبة ونصف)
-                            </option>
-
+                        <label for="wallLayout">طريقة رص الجدار:</label>
+                        <select id="wallLayout" onchange="updateCalculatedThickness()">
+                            <option value="stretcher">طولي (نصف طوبة)</option>
+                            <option value="header">عرضي (طوبة كاملة)</option>
+                            <option value="combined">عرضي وطولي معاً (طوبة ونصف)</option>
                         </select>
-
                     </div>
-
                     <div class="form-group">
-
-                        <label for="jointThickness">
-                            سمك المونة (سم)
-                        </label>
-
-                        <input
-                            type="number"
-                            id="jointThickness"
-                            value="1"
-                            min="0"
-                            step="0.1"
-                            oninput="updateCalculatedThickness()">
-
+                        <label for="jointThickness">سمك المونة (سم)</label>
+                        <input type="number" id="jointThickness" value="1" min="0" step="0.1" oninput="updateCalculatedThickness()">
                     </div>
-
                 </div>
-
-                <div style="
-                    font-size:0.9em;
-                    color:var(--primary-color);
-                    margin-top:5px;
-                    font-weight:600;">
-
-                    سمك الجدار المحسوب:
-                    <span id="calculatedWallThickness">20</span>
-                    سم
-
+                <div style="font-size:.9em;color:var(--primary-color);margin-top:5px;font-weight:600;">
+                    سمك الجدار المحسوب: <span id="calculatedWallThickness">20</span> سم
                 </div>
-
-                <div class="calculation-note">
-
-                    يتم حساب عدد الطوب حجميًا باستخدام حجم وحدة
-                    البناء الاعتبارية مع فواصل المونة. تغيير طريقة
-                    الرص يغيّر سماكة الجدار، وبالتالي يغيّر كمية الطوب.
-
-                </div>
-
+                <div class="calculation-note">يتم حساب عدد الطوب حجميًا باستخدام حجم وحدة البناء الاعتبارية مع فواصل المونة. تغيير طريقة الرص يغيّر سماكة الجدار، وبالتالي يغيّر كمية الطوب.</div>
             </div>
 
-
-            <!-- الفتحات -->
             <div class="card">
-
                 <h2>🚪 الأبواب والشبابيك</h2>
-
                 <div id="openingsContainer"></div>
-
-                <button
-                    type="button"
-                    class="btn-secondary"
-                    onclick="addOpeningRow('custom',0)"
-                    style="width:100%;margin-top:10px;">
-
-                    ➕ إضافة باب / شباك
-
-                </button>
-
-                <div class="calculation-note">
-
-                    اضغط على اسم الباب أو الشباك لاختيار أبعاده،
-                    ثم استخدم + و − لتحديد العدد.
-
-                </div>
-
+                <button type="button" class="btn-secondary" onclick="addOpeningRow('custom',0)" style="width:100%;margin-top:10px;">➕ إضافة باب / شباك</button>
+                <div class="calculation-note">اضغط على اسم الباب أو الشباك لاختيار أبعاده، ثم استخدم + و − لتحديد العدد.</div>
             </div>
 
-
-            <!-- الهدر والتكلفة -->
             <div class="card">
-
                 <h2>💰 الهدر والتكلفة</h2>
-
                 <div class="form-row">
-
                     <div class="form-group">
-
-                        <label for="wastePercentage">
-                            نسبة الهدر (%)
-                        </label>
-
-                        <input
-                            type="number"
-                            id="wastePercentage"
-                            value="10"
-                            min="0"
-                            step="0.1">
-
+                        <label for="wastePercentage">نسبة الهدر (%)</label>
+                        <input type="number" id="wastePercentage" value="10" min="0" step="0.1">
                     </div>
-
                     <div class="form-group">
-
-                        <label for="brickPrice">
-                            سعر الطوبة الواحدة
-                        </label>
-
-                        <input
-                            type="number"
-                            id="brickPrice"
-                            value="0"
-                            min="0"
-                            step="0.01">
-
+                        <label for="brickPrice">سعر الطوبة الواحدة</label>
+                        <input type="number" id="brickPrice" value="0" min="0" step="0.01">
                     </div>
-
                 </div>
-
             </div>
 
-
-            <!-- إدارة المشاريع -->
             <div class="card">
-
                 <h2>📁 إدارة المشاريع</h2>
-
                 <div class="form-group">
-
-                    <label for="projectName">
-                        اسم المشروع
-                    </label>
-
-                    <input
-                        type="text"
-                        id="projectName"
-                        placeholder="اسم المشروع">
-
+                    <label for="projectName">اسم المشروع</label>
+                    <input type="text" id="projectName" placeholder="اسم المشروع">
                 </div>
-
                 <div class="button-group">
-
-                    <button class="btn-success" onclick="saveProject()">
-                        💾 حفظ المشروع
-                    </button>
-
-                    <button class="btn-info" onclick="openProjectsModal()">
-                        📂 المشاريع المحفوظة
-                        (<span id="projectCount">0</span>)
-                    </button>
-
+                    <button type="button" class="btn-success" onclick="saveProject()">💾 <span>حفظ المشروع</span></button>
+                    <button type="button" class="btn-info" onclick="openProjectsModal()">📂 <span>المشاريع المحفوظة</span> <span class="project-count" id="projectCount">0</span></button>
                 </div>
-
             </div>
 
-
-            <!-- زر الحساب -->
             <div class="button-group">
-
-                <button
-                    class="btn-primary"
-                    onclick="calculateBricks()">
-
-                    📊 الحساب الهندسي
-
-                </button>
-
-                <button
-                    class="btn-secondary"
-                    onclick="resetForm()">
-
-                    ↻ إعادة تعيين
-
-                </button>
-
+                <button type="button" class="btn-primary" onclick="calculateBricks()">📊 الحساب الهندسي</button>
+                <button type="button" class="btn-secondary" onclick="resetForm()">↻ إعادة تعيين</button>
             </div>
-
         </div>
 
-
-        <!-- النتائج -->
         <div>
-
-            <div
-                class="results-container hidden"
-                id="resultsContainer">
-
+            <div class="results-container hidden" id="resultsContainer">
                 <div class="result-item">
-
-                    <div class="result-label">
-                        مساحة الجدران الصافية
-                    </div>
-
-                    <div class="result-value">
-
-                        <span id="netWallArea">0</span>
-                        م²
-
-                    </div>
-
+                    <div class="result-label">مساحة الجدران الصافية</div>
+                    <div class="result-value"><span id="netWallArea">0</span> م²</div>
                 </div>
-
 
                 <div class="result-item total">
-
-                    <div class="result-label">
-                        إجمالي الطوب المطلوب مع الهدر
-                    </div>
-
-                    <div class="result-value">
-
-                        <span id="bricksWithWaste">0</span>
-
-                    </div>
-
+                    <div class="result-label">إجمالي الطوب المطلوب مع الهدر</div>
+                    <div class="result-value"><span id="bricksWithWaste">0</span></div>
                 </div>
-
 
                 <div class="result-item">
-
-                    <div class="result-label">
-                        استهلاك الطوب التقريبي لكل متر مربع
-                    </div>
-
-                    <div
-                        class="result-value"
-                        style="font-size:1.2em;">
-
-                        <span id="bricksPerM2">0</span>
-                        طوبة/م²
-
-                    </div>
-
+                    <div class="result-label">استهلاك الطوب التقريبي لكل متر مربع</div>
+                    <div class="result-value" style="font-size:1.2em"><span id="bricksPerM2">0</span> طوبة/م²</div>
                 </div>
 
-
-                <div
-                    class="result-item cost"
-                    id="costResult"
-                    style="display:none;">
-
-                    <div class="result-label">
-                        التكلفة الإجمالية التقديرية
-                    </div>
-
-                    <div class="result-value">
-
-                        <span id="totalCost">0</span>
-
-                    </div>
-
+                <div class="result-item cost" id="costResult" style="display:none">
+                    <div class="result-label">التكلفة الإجمالية التقديرية</div>
+                    <div class="result-value"><span id="totalCost">0</span></div>
                 </div>
 
+                <div class="warning-note"><strong>تنبيه هندسي:</strong> كمية الطوب الناتجة تقديرية وتعتمد على الحجم الاعتباري لوحدة البناء مع المونة. العدد الفعلي في الموقع قد يتغير بسبب طريقة الربط، القص، الزوايا، تفاصيل الفتحات ونسبة الهالك الفعلية.</div>
 
-                <div class="warning-note">
-
-                    <strong>تنبيه هندسي:</strong>
-                    كمية الطوب الناتجة تقديرية وتعتمد على الحجم
-                    الاعتباري لوحدة البناء مع المونة. العدد الفعلي
-                    في الموقع قد يتغير بسبب طريقة الربط، القص،
-                    الزوايا، تفاصيل الفتحات ونسبة الهالك الفعلية.
-
-                </div>
-
-
-                <button
-                    class="btn-danger"
-                    style="width:100%;margin-top:15px;"
-                    onclick="exportPDF()">
-
-                    🖨️ طباعة / حفظ التقرير PDF
-
-                </button>
-
+                <button type="button" class="btn-danger" style="width:100%;margin-top:15px" onclick="exportPDF()">🖨️ طباعة / حفظ التقرير PDF</button>
             </div>
 
-
-            <div
-                id="emptyState"
-                class="card"
-                style="text-align:center;padding:50px 20px;">
-
-                <div style="font-size:3em;margin-bottom:10px;">
-                    🏗️
-                </div>
-
-                <p style="color:var(--text-muted);">
-
-                    أدخل أبعاد المبنى والتفاصيل ثم اضغط الحساب الهندسي.
-
-                </p>
-
+            <div id="emptyState" class="card" style="text-align:center;padding:50px 20px">
+                <div style="font-size:3em;margin-bottom:10px">🏗️</div>
+                <p style="color:var(--text-muted)">أدخل أبعاد المبنى والتفاصيل ثم اضغط الحساب الهندسي.</p>
             </div>
-
         </div>
-
     </div>
-
 
     <div class="footer">
-
-        <p>
-            حاسبة الطوب الهندسية المتقدمة
-            - تعتمد على حجم الجدار، سمك الجدار،
-            أبعاد الطوبة، المونة والفتحات.
-        </p>
-
+        <p>حاسبة الطوب الهندسية المتقدمة - تعتمد على حجم الجدار، سمك الجدار، أبعاد الطوبة، المونة والفتحات.</p>
     </div>
-
 </div>
 
+<!-- قالب التقرير: لا يحتوي على الحقول التي طلب المستخدم حذفها -->
+<div id="pdfReport">
+    <div class="pdf-title">
+        <h1>🧱 تقرير حصر الطوب</h1>
+        <p id="pdfProjectTitle">حاسبة الطوب للمباني</p>
+    </div>
+
+    <div class="pdf-section">
+        <h2>📁 بيانات المشروع</h2>
+        <div class="pdf-grid">
+            <div class="pdf-field"><div class="pdf-label">اسم المشروع</div><div class="pdf-value" id="pdfProjectName">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">التاريخ</div><div class="pdf-value" id="pdfDate">—</div></div>
+        </div>
+    </div>
+
+    <div class="pdf-section">
+        <h2>📐 نطاق وأبعاد الحساب</h2>
+        <div class="pdf-grid">
+            <div class="pdf-field"><div class="pdf-label">نوع الحساب</div><div class="pdf-value" id="pdfCalculationMode">—</div></div>
+            <div class="pdf-field"><div class="pdf-label" id="pdfLengthLabel">الطول</div><div class="pdf-value" id="pdfLength">—</div></div>
+            <div class="pdf-field" id="pdfWidthField"><div class="pdf-label">العرض</div><div class="pdf-value" id="pdfWidth">—</div></div>
+            <div class="pdf-field"><div class="pdf-label" id="pdfHeightLabel">الارتفاع</div><div class="pdf-value" id="pdfHeight">—</div></div>
+            <div class="pdf-field" id="pdfDimensionTypeField"><div class="pdf-label">نوع الأبعاد</div><div class="pdf-value" id="pdfDimensionType">—</div></div>
+        </div>
+    </div>
+
+    <div class="pdf-section">
+        <h2>🧱 بيانات البناء</h2>
+        <div class="pdf-grid">
+            <div class="pdf-field"><div class="pdf-label">نوع الطوب</div><div class="pdf-value" id="pdfBrickType">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">طريقة الرص</div><div class="pdf-value" id="pdfLayout">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">سماكة الجدار</div><div class="pdf-value" id="pdfWallThickness">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">سمك المونة</div><div class="pdf-value" id="pdfJoint">—</div></div>
+        </div>
+    </div>
+
+    <div class="pdf-section">
+        <h2>📊 النتيجة النهائية</h2>
+        <div class="pdf-grid">
+            <div class="pdf-field"><div class="pdf-label">مساحة الجدران الصافية</div><div class="pdf-value" id="pdfNetArea">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">التكلفة الإجمالية</div><div class="pdf-value" id="pdfTotalCost">—</div></div>
+        </div>
+    </div>
+
+    <div class="pdf-total">
+        <div class="label">إجمالي الطوب المطلوب مع الهدر</div>
+        <div class="value" id="pdfBricks">—</div>
+    </div>
+
+    <div class="pdf-footer">هذا التقرير تقديري لأغراض الحصر، وقد يختلف العدد الفعلي حسب التنفيذ بالموقع.</div>
+</div>
 
 <script>
+"use strict";
 
-const state = {
-    results: null,
-    projects: []
-};
-
-
-/* =========================
-   أنواع الطوب
-========================= */
+const state = { results:null, projects:[] };
 
 const presets = {
-
-    cement: {
-        l: 40,
-        w: 20,
-        h: 20
-    },
-
-    red: {
-        l: 20,
-        w: 10,
-        h: 5
-    },
-
-    green1: {
-        l: 30,
-        w: 15,
-        h: 10
-    },
-
-    green2: {
-        l: 30,
-        w: 20,
-        h: 10
-    }
-
+    cement:{l:40,w:20,h:20},
+    red:{l:20,w:10,h:5},
+    green1:{l:30,w:15,h:10},
+    green2:{l:30,w:20,h:10}
 };
 
+const presetNames = {
+    cement:"بلوك أسمنتي",
+    red:"طوب أحمر",
+    green1:"طوب أخضر 1",
+    green2:"طوب أخضر 2",
+    custom:"طوب مخصص"
+};
 
-/* =========================
-   أنواع الفتحات
-========================= */
+const layoutNames = {
+    stretcher:"طولي (نصف طوبة)",
+    header:"عرضي (طوبة كاملة)",
+    combined:"عرضي وطولي معاً (طوبة ونصف)"
+};
+
+const dimensionNames = {
+    external:"أبعاد خارجية للمبنى",
+    internal:"أبعاد داخلية للمبنى"
+};
 
 const openingPresets = {
-
-    door_100: {
-        name: 'باب',
-        icon: '🚪',
-        w: 1.0,
-        h: 2.2
-    },
-
-    door_120: {
-        name: 'باب',
-        icon: '🚪',
-        w: 1.2,
-        h: 2.2
-    },
-
-    win_100: {
-        name: 'شباك',
-        icon: '🪟',
-        w: 1.0,
-        h: 1.2
-    },
-
-    win_120: {
-        name: 'شباك',
-        icon: '🪟',
-        w: 1.2,
-        h: 1.2
-    },
-
-    win_150: {
-        name: 'شباك',
-        icon: '🪟',
-        w: 1.5,
-        h: 1.2
-    },
-
-    custom: {
-        name: 'مخصص',
-        icon: '⚙️',
-        w: 0,
-        h: 0
-    }
-
+    door_100:{name:"باب",icon:"🚪",w:1.0,h:2.2},
+    door_120:{name:"باب",icon:"🚪",w:1.2,h:2.2},
+    win_100:{name:"شباك",icon:"🪟",w:1.0,h:1.2},
+    win_120:{name:"شباك",icon:"🪟",w:1.2,h:1.2},
+    win_150:{name:"شباك",icon:"🪟",w:1.5,h:1.2},
+    custom:{name:"مخصص",icon:"⚙️",w:0,h:0}
 };
 
-
-/* =========================
-   بدء التطبيق
-========================= */
-
-document.addEventListener('DOMContentLoaded', () => {
-
+document.addEventListener("DOMContentLoaded",()=>{
     loadProjects();
-
     updateProjectCount();
-
     applyBrickPreset();
 
-    document.getElementById('buildingLength').value = '';
-    document.getElementById('buildingWidth').value = '';
-    document.getElementById('buildingHeight').value = '';
+    document.getElementById("buildingLength").value="";
+    document.getElementById("buildingWidth").value="";
+    document.getElementById("buildingHeight").value="";
+    document.getElementById("wastePercentage").value="10";
 
-    document.getElementById('wastePercentage').value = '10';
-
-    /*
-        افتراضيًا:
-        باب = 0
-        شباك = 0
-    */
-
-    addOpeningRow('door_100', 0);
-    addOpeningRow('win_100', 0);
-
+    addOpeningRow("door_100",0);
+    addOpeningRow("win_100",0);
     updateCalculatedThickness();
+    updateCalculationMode();
 
+    document.getElementById("confirmNo").addEventListener("click",closeConfirm);
 });
 
+function updateCalculationMode(){
+    const mode=document.getElementById("calculationMode")?.value||"building";
+    const widthGroup=document.getElementById("buildingWidthGroup");
+    const dimensionTypeGroup=document.getElementById("dimensionTypeGroup");
+    const buildingNote=document.getElementById("buildingDimensionNote");
+    const wallNote=document.getElementById("wallDimensionNote");
+    const lengthLabel=document.getElementById("buildingLengthLabel");
+    const heightLabel=document.getElementById("buildingHeightLabel");
+    const badge=document.getElementById("calculationModeBadge");
 
-/* =========================
-   بطاقة أبعاد الطوبة
-========================= */
-
-function updateBrickDimensionsDisplay() {
-
-    const l =
-        parseFloat(
-            document.getElementById('brickLength').value
-        ) || 0;
-
-    const w =
-        parseFloat(
-            document.getElementById('brickWidth').value
-        ) || 0;
-
-    const h =
-        parseFloat(
-            document.getElementById('brickHeight').value
-        ) || 0;
-
-    document.getElementById(
-        'brickDimensionsDisplay'
-    ).textContent =
-        `${l} × ${w} × ${h} سم`;
-
-}
-
-
-/* =========================
-   إظهار / إخفاء تعديل الطوبة
-========================= */
-
-function toggleDimensions() {
-
-    const block =
-        document.getElementById('dimensionsBlock');
-
-    const visible =
-        block.style.display === 'block';
-
-    block.style.display =
-        visible ? 'none' : 'block';
-
-}
-
-
-/* =========================
-   اختيار نوع الطوب
-========================= */
-
-function applyBrickPreset() {
-
-    const val =
-        document.getElementById('brickPreset').value;
-
-    if (
-        val !== 'custom' &&
-        presets[val]
-    ) {
-
-        document.getElementById('brickLength').value =
-            presets[val].l;
-
-        document.getElementById('brickWidth').value =
-            presets[val].w;
-
-        document.getElementById('brickHeight').value =
-            presets[val].h;
-
+    if(mode==="wall") {
+        widthGroup.classList.add("hidden-field");
+        dimensionTypeGroup.classList.add("hidden-field");
+        buildingNote.style.display="none";
+        wallNote.style.display="block";
+        lengthLabel.textContent="طول الجدار (م)";
+        heightLabel.textContent="ارتفاع الجدار (م)";
+        badge.textContent="🧱 حساب جدار واحد";
+    } else {
+        widthGroup.classList.remove("hidden-field");
+        dimensionTypeGroup.classList.remove("hidden-field");
+        buildingNote.style.display="block";
+        wallNote.style.display="none";
+        lengthLabel.textContent="الطول (م)";
+        heightLabel.textContent="الارتفاع (م)";
+        badge.textContent="🏠 حساب كامل جدران المبنى";
     }
+}
 
+function updateBrickDimensionsDisplay(){
+    const l=parseFloat(document.getElementById("brickLength").value)||0;
+    const w=parseFloat(document.getElementById("brickWidth").value)||0;
+    const h=parseFloat(document.getElementById("brickHeight").value)||0;
+    document.getElementById("brickDimensionsDisplay").textContent=`${l} × ${w} × ${h} سم`;
+}
+
+function toggleDimensions(){
+    const block=document.getElementById("dimensionsBlock");
+    block.style.display=block.style.display==="block"?"none":"block";
+}
+
+function applyBrickPreset(){
+    const val=document.getElementById("brickPreset").value;
+    if(val!=="custom" && presets[val]){
+        document.getElementById("brickLength").value=presets[val].l;
+        document.getElementById("brickWidth").value=presets[val].w;
+        document.getElementById("brickHeight").value=presets[val].h;
+    }
     updateBrickDimensionsDisplay();
-
     updateCalculatedThickness();
-
 }
 
-
-/* =========================
-   حساب سمك الجدار للعرض
-========================= */
-
-function updateCalculatedThickness() {
-
-    const bL =
-        parseFloat(
-            document.getElementById('brickLength').value
-        ) || 0;
-
-    const bW =
-        parseFloat(
-            document.getElementById('brickWidth').value
-        ) || 0;
-
-    const joint =
-        parseFloat(
-            document.getElementById('jointThickness').value
-        ) || 0;
-
-    const layout =
-        document.getElementById('wallLayout').value;
-
-    let thick = bW;
-
-    if (layout === 'header') {
-        thick = bL;
-    }
-    else if (layout === 'combined') {
-        thick = bL + bW + joint;
-    }
-
-    document.getElementById(
-        'calculatedWallThickness'
-    ).textContent =
-        thick > 0
-            ? thick.toFixed(1)
-            : '0';
-
+function updateCalculatedThickness(){
+    const bL=parseFloat(document.getElementById("brickLength").value)||0;
+    const bW=parseFloat(document.getElementById("brickWidth").value)||0;
+    const joint=parseFloat(document.getElementById("jointThickness").value)||0;
+    const layout=document.getElementById("wallLayout").value;
+    let thick=bW;
+    if(layout==="header") thick=bL;
+    else if(layout==="combined") thick=bL+bW+joint;
+    document.getElementById("calculatedWallThickness").textContent=thick>0?thick.toFixed(1):"0";
     return thick;
-
 }
 
+function addOpeningRow(presetType="door_100",count=0,customWidth="",customHeight=""){
+    const container=document.getElementById("openingsContainer");
+    const rowId=Date.now()+"_"+Math.random().toString(36).slice(2,7);
+    const div=document.createElement("div");
+    div.className="opening-row";
+    div.id=`opening-${rowId}`;
 
-/* =========================
-   إضافة فتحة
-========================= */
+    const preset=openingPresets[presetType]||openingPresets.custom;
+    const width=customWidth!==""?customWidth:preset.w;
+    const height=customHeight!==""?customHeight:preset.h;
 
-function addOpeningRow(
-    presetType = 'door_100',
-    count = 0,
-    customWidth = '',
-    customHeight = ''
-) {
+    div.dataset.preset=presetType;
 
-    const container =
-        document.getElementById('openingsContainer');
-
-    const rowId =
-        Date.now() +
-        Math.random()
-            .toString(36)
-            .substring(2, 7);
-
-    const div =
-        document.createElement('div');
-
-    div.className = 'opening-row';
-    div.id = `opening-${rowId}`;
-
-    const preset =
-        openingPresets[presetType] ||
-        openingPresets.door_100;
-
-    const width =
-        customWidth !== ''
-            ? customWidth
-            : preset.w;
-
-    const height =
-        customHeight !== ''
-            ? customHeight
-            : preset.h;
-
-    div.innerHTML = `
-
+    div.innerHTML=`
         <div class="opening-selector">
-
-            <button
-                type="button"
-                class="opening-name-btn"
-                onclick="toggleOpeningMenu('${rowId}')">
-
-                <span>
-                    ${preset.icon} ${preset.name}
-                </span>
-
-                <span>⌄</span>
-
+            <button type="button" class="opening-name-btn" onclick="toggleOpeningMenu('${rowId}')">
+                <span>${preset.icon} ${preset.name}</span><span>⌄</span>
             </button>
-
-            <div
-                class="opening-presets"
-                id="opening-menu-${rowId}">
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','door_100')">
-
-                    🚪 باب — 100 × 220 سم
-
-                </button>
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','door_120')">
-
-                    🚪 باب — 120 × 220 سم
-
-                </button>
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','win_100')">
-
-                    🪟 شباك — 100 × 120 سم
-
-                </button>
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','win_120')">
-
-                    🪟 شباك — 120 × 120 سم
-
-                </button>
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','win_150')">
-
-                    🪟 شباك — 150 × 120 سم
-
-                </button>
-
-                <button
-                    type="button"
-                    class="opening-option"
-                    onclick="selectOpening('${rowId}','custom')">
-
-                    ⚙️ أبعاد مخصصة
-
-                </button>
-
+            <div class="opening-presets" id="opening-menu-${rowId}">
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','door_100')">🚪 باب — 100 × 220 سم</button>
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','door_120')">🚪 باب — 120 × 220 سم</button>
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','win_100')">🪟 شباك — 100 × 120 سم</button>
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','win_120')">🪟 شباك — 120 × 120 سم</button>
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','win_150')">🪟 شباك — 150 × 120 سم</button>
+                <button type="button" class="opening-option" onclick="selectOpening('${rowId}','custom')">⚙️ أبعاد مخصصة</button>
             </div>
-
-            <div
-                class="opening-details show"
-                id="opening-details-${rowId}">
-
-                ${width > 0 && height > 0
-                    ? `${width} × ${height} م`
-                    : 'حدد الأبعاد'}
-
+            <div class="opening-details show" id="opening-details-${rowId}">
+                ${width>0&&height>0?`${width} × ${height} م`:"حدد الأبعاد"}
             </div>
-
-            <div
-                class="custom-opening-fields"
-                id="custom-fields-${rowId}"
-                style="display:${presetType === 'custom' ? 'grid' : 'none'};
-                       grid-template-columns:1fr 1fr;
-                       gap:8px;
-                       margin-top:8px;">
-
-                <input
-                    type="number"
-                    class="op-width"
-                    placeholder="العرض (م)"
-                    step="0.01"
-                    min="0.01"
-                    value="${width}">
-
-                <input
-                    type="number"
-                    class="op-height"
-                    placeholder="الارتفاع (م)"
-                    step="0.01"
-                    min="0.01"
-                    value="${height}">
-
+            <div class="custom-opening-fields" id="custom-fields-${rowId}"
+                 style="display:${presetType==="custom"?"grid":"none"};grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+                <input type="number" class="op-width" placeholder="العرض (م)" step="0.01" min="0.01" value="${escapeAttr(width)}">
+                <input type="number" class="op-height" placeholder="الارتفاع (م)" step="0.01" min="0.01" value="${escapeAttr(height)}">
             </div>
-
         </div>
-
         <div class="counter">
-
-            <button
-                type="button"
-                onclick="changeOpeningCount('${rowId}',-1)">
-
-                −
-
-            </button>
-
-            <span
-                class="counter-value"
-                id="count-${rowId}">
-
-                ${count}
-
-            </span>
-
-            <button
-                type="button"
-                onclick="changeOpeningCount('${rowId}',1)">
-
-                +
-
-            </button>
-
+            <button type="button" onclick="changeOpeningCount('${rowId}',-1)">−</button>
+            <span class="counter-value" id="count-${rowId}">${Math.max(0,Number(count)||0)}</span>
+            <button type="button" onclick="changeOpeningCount('${rowId}',1)">+</button>
         </div>
-
-        <button
-            type="button"
-            class="remove-opening"
-            onclick="removeOpeningRow('${rowId}')">
-
-            ✕
-
-        </button>
-
+        <button type="button" class="remove-opening" onclick="removeOpeningRow('${rowId}')" aria-label="حذف">✕</button>
     `;
 
     container.appendChild(div);
 
-    const widthInput =
-        div.querySelector('.op-width');
-
-    const heightInput =
-        div.querySelector('.op-height');
-
-    widthInput.addEventListener(
-        'input',
-        () => updateOpeningDetails(rowId)
-    );
-
-    heightInput.addEventListener(
-        'input',
-        () => updateOpeningDetails(rowId)
-    );
-
+    div.querySelector(".op-width").addEventListener("input",()=>updateOpeningDetails(rowId));
+    div.querySelector(".op-height").addEventListener("input",()=>updateOpeningDetails(rowId));
 }
 
-
-/* =========================
-   قائمة الفتحات
-========================= */
-
-function toggleOpeningMenu(rowId) {
-
-    const menu =
-        document.getElementById(
-            `opening-menu-${rowId}`
-        );
-
-    document
-        .querySelectorAll('.opening-presets')
-        .forEach(el => {
-
-            if (el !== menu) {
-                el.classList.remove('show');
-            }
-
-        });
-
-    menu.classList.toggle('show');
-
-}
-
-
-/* =========================
-   اختيار الفتحة
-========================= */
-
-function selectOpening(
-    rowId,
-    presetType
-) {
-
-    const row =
-        document.getElementById(
-            `opening-${rowId}`
-        );
-
-    if (!row) return;
-
-    const preset =
-        openingPresets[presetType];
-
-    if (!preset) return;
-
-    const menu =
-        document.getElementById(
-            `opening-menu-${rowId}`
-        );
-
-    menu.classList.remove('show');
-
-    const nameBtn =
-        row.querySelector('.opening-name-btn');
-
-    nameBtn.innerHTML = `
-        <span>
-            ${preset.icon} ${preset.name}
-        </span>
-        <span>⌄</span>
-    `;
-
-    const widthInput =
-        row.querySelector('.op-width');
-
-    const heightInput =
-        row.querySelector('.op-height');
-
-    const customFields =
-        row.querySelector('.custom-opening-fields');
-
-    if (presetType === 'custom') {
-
-        customFields.style.display = 'grid';
-
-        widthInput.value = '';
-        heightInput.value = '';
-
-    }
-    else {
-
-        customFields.style.display = 'none';
-
-        widthInput.value = preset.w;
-        heightInput.value = preset.h;
-
-    }
-
-    row.dataset.preset = presetType;
-
-    updateOpeningDetails(rowId);
-
-}
-
-
-/* =========================
-   تحديث تفاصيل الفتحة
-========================= */
-
-function updateOpeningDetails(rowId) {
-
-    const row =
-        document.getElementById(
-            `opening-${rowId}`
-        );
-
-    if (!row) return;
-
-    const width =
-        parseFloat(
-            row.querySelector('.op-width').value
-        ) || 0;
-
-    const height =
-        parseFloat(
-            row.querySelector('.op-height').value
-        ) || 0;
-
-    const details =
-        document.getElementById(
-            `opening-details-${rowId}`
-        );
-
-    if (width > 0 && height > 0) {
-
-        details.textContent =
-            `${width} × ${height} م`;
-
-    }
-    else {
-
-        details.textContent =
-            'حدد الأبعاد';
-
-    }
-
-}
-
-
-/* =========================
-   تغيير عدد الفتحات
-========================= */
-
-function changeOpeningCount(
-    rowId,
-    amount
-) {
-
-    const countEl =
-        document.getElementById(
-            `count-${rowId}`
-        );
-
-    if (!countEl) return;
-
-    let count =
-        parseInt(
-            countEl.textContent
-        ) || 0;
-
-    count += amount;
-
-    if (count < 0) {
-        count = 0;
-    }
-
-    countEl.textContent = count;
-
-}
-
-
-/* =========================
-   حذف فتحة
-========================= */
-
-function removeOpeningRow(rowId) {
-
-    const row =
-        document.getElementById(
-            `opening-${rowId}`
-        );
-
-    if (row) {
-        row.remove();
-    }
-
-}
-
-
-/* =========================
-   مساحة الفتحات
-========================= */
-
-function calculateOpeningsArea() {
-
-    const rows =
-        document.querySelectorAll('.opening-row');
-
-    let totalArea = 0;
-
-    rows.forEach(row => {
-
-        const width =
-            parseFloat(
-                row.querySelector('.op-width').value
-            ) || 0;
-
-        const height =
-            parseFloat(
-                row.querySelector('.op-height').value
-            ) || 0;
-
-        const count =
-            parseInt(
-                row.querySelector('.counter-value').textContent
-            ) || 0;
-
-        if (
-            width > 0 &&
-            height > 0 &&
-            count > 0
-        ) {
-
-            totalArea +=
-                width *
-                height *
-                count;
-
-        }
-
+function toggleOpeningMenu(rowId){
+    const menu=document.getElementById(`opening-menu-${rowId}`);
+    if(!menu)return;
+    document.querySelectorAll(".opening-presets").forEach(el=>{
+        if(el!==menu)el.classList.remove("show");
     });
-
-    return totalArea;
-
+    menu.classList.toggle("show");
 }
 
+function selectOpening(rowId,presetType){
+    const row=document.getElementById(`opening-${rowId}`);
+    const preset=openingPresets[presetType];
+    if(!row||!preset)return;
 
-/* =========================
-   التحقق من المدخلات
-========================= */
+    row.dataset.preset=presetType;
+    const menu=document.getElementById(`opening-menu-${rowId}`);
+    if(menu)menu.classList.remove("show");
 
-function validateInputs() {
+    row.querySelector(".opening-name-btn").innerHTML=`
+        <span>${preset.icon} ${preset.name}</span><span>⌄</span>`;
 
-    let isValid = true;
+    const widthInput=row.querySelector(".op-width");
+    const heightInput=row.querySelector(".op-height");
+    const customFields=row.querySelector(".custom-opening-fields");
 
-    const fields = [
-        'brickLength',
-        'brickWidth',
-        'brickHeight',
-        'buildingLength',
-        'buildingWidth',
-        'buildingHeight',
-        'wastePercentage'
+    if(presetType==="custom"){
+        customFields.style.display="grid";
+        widthInput.value="";
+        heightInput.value="";
+    }else{
+        customFields.style.display="none";
+        widthInput.value=preset.w;
+        heightInput.value=preset.h;
+    }
+    updateOpeningDetails(rowId);
+}
+
+function updateOpeningDetails(rowId){
+    const row=document.getElementById(`opening-${rowId}`);
+    if(!row)return;
+    const width=parseFloat(row.querySelector(".op-width").value)||0;
+    const height=parseFloat(row.querySelector(".op-height").value)||0;
+    const details=document.getElementById(`opening-details-${rowId}`);
+    details.textContent=width>0&&height>0?`${width} × ${height} م`:"حدد الأبعاد";
+}
+
+function changeOpeningCount(rowId,amount){
+    const countEl=document.getElementById(`count-${rowId}`);
+    if(!countEl)return;
+    let count=parseInt(countEl.textContent,10)||0;
+    count=Math.max(0,count+amount);
+    countEl.textContent=count;
+}
+
+function removeOpeningRow(rowId){
+    const row=document.getElementById(`opening-${rowId}`);
+    if(row)row.remove();
+}
+
+function calculateOpeningsArea(){
+    let totalArea=0;
+    document.querySelectorAll(".opening-row").forEach(row=>{
+        const width=parseFloat(row.querySelector(".op-width").value)||0;
+        const height=parseFloat(row.querySelector(".op-height").value)||0;
+        const count=parseInt(row.querySelector(".counter-value").textContent,10)||0;
+        if(width>0&&height>0&&count>0)totalArea+=width*height*count;
+    });
+    return totalArea;
+}
+
+function clearFieldError(id){
+    const input=document.getElementById(id);
+    const error=document.getElementById(`error-${id}`);
+    if(input)input.classList.remove("error");
+    if(error)error.classList.remove("show");
+}
+
+function setFieldError(id,message){
+    const input=document.getElementById(id);
+    const error=document.getElementById(`error-${id}`);
+    if(input)input.classList.add("error");
+    if(error){error.textContent=message;error.classList.add("show");}
+}
+
+function validateInputs(){
+    let isValid=true;
+    const mode=document.getElementById("calculationMode").value;
+    const fields=[
+        ["brickLength","أدخل طول الطوبة بشكل صحيح."],
+        ["brickWidth","أدخل عرض الطوبة بشكل صحيح."],
+        ["brickHeight","أدخل ارتفاع الطوبة بشكل صحيح."],
+        ["buildingLength",mode==="wall"?"أدخل طول الجدار بشكل صحيح.":"أدخل طول المبنى بشكل صحيح."],
+        ...(mode==="building" ? [["buildingWidth","أدخل عرض المبنى بشكل صحيح."]] : []),
+        ["buildingHeight",mode==="wall"?"أدخل ارتفاع الجدار بشكل صحيح.":"أدخل ارتفاع المبنى بشكل صحيح."]
     ];
 
-    fields.forEach(field => {
-
-        const input =
-            document.getElementById(field);
-
-        const errorEl =
-            document.getElementById(
-                `error-${field}`
-            );
-
-        const val =
-            parseFloat(input.value);
-
-        if (
-            input.value.trim() === '' ||
-            isNaN(val) ||
-            val <= 0
-        ) {
-
-            if (errorEl) {
-
-                errorEl.textContent =
-                    'أدخل قيمة أكبر من 0';
-
-                errorEl.classList.add('show');
-
-            }
-
-            input.classList.add('error');
-
-            isValid = false;
-
+    fields.forEach(([id,msg])=>{
+        const input=document.getElementById(id);
+        const value=input.value.trim();
+        const num=parseFloat(value);
+        clearFieldError(id);
+        if(value===""||!Number.isFinite(num)||num<=0){
+            setFieldError(id,msg);
+            isValid=false;
         }
-        else {
-
-            if (errorEl) {
-                errorEl.classList.remove('show');
-            }
-
-            input.classList.remove('error');
-
-        }
-
     });
 
-    const joint =
-        parseFloat(
-            document.getElementById('jointThickness').value
-        );
-
-    if (
-        isNaN(joint) ||
-        joint < 0
-    ) {
-
-        alert(
-            'سمك المونة يجب أن يكون صفرًا أو أكبر.'
-        );
-
-        isValid = false;
-
+    const waste=parseFloat(document.getElementById("wastePercentage").value);
+    if(!Number.isFinite(waste)||waste<0){
+        showMessage("نسبة الهدر يجب أن تكون صفرًا أو أكبر.","error","قيمة غير صحيحة");
+        isValid=false;
     }
 
-    const price =
-        parseFloat(
-            document.getElementById('brickPrice').value
-        );
-
-    if (
-        isNaN(price) ||
-        price < 0
-    ) {
-
-        alert(
-            'سعر الطوبة يجب أن يكون صفرًا أو أكبر.'
-        );
-
-        return false;
-
+    const joint=parseFloat(document.getElementById("jointThickness").value);
+    if(!Number.isFinite(joint)||joint<0){
+        showMessage("سمك المونة يجب أن يكون صفرًا أو أكبر.","error","قيمة غير صحيحة");
+        isValid=false;
     }
 
-    const openings =
-        document.querySelectorAll('.opening-row');
+    const price=parseFloat(document.getElementById("brickPrice").value);
+    if(!Number.isFinite(price)||price<0){
+        showMessage("سعر الطوبة يجب أن يكون صفرًا أو أكبر.","error","قيمة غير صحيحة");
+        isValid=false;
+    }
 
-    for (const row of openings) {
-
-        const width =
-            parseFloat(
-                row.querySelector('.op-width').value
-            ) || 0;
-
-        const height =
-            parseFloat(
-                row.querySelector('.op-height').value
-            ) || 0;
-
-        const count =
-            parseInt(
-                row.querySelector('.counter-value').textContent
-            ) || 0;
-
-        /*
-            إذا كان العدد صفرًا فلا نطلب أبعادًا صحيحة،
-            لأن الفتحة لن تدخل في الحساب.
-        */
-
-        if (count === 0) {
-            continue;
-        }
-
-        if (
-            width <= 0 ||
-            height <= 0
-        ) {
-
-            alert(
-                'يرجى تحديد أبعاد كل باب أو شباك عدده أكبر من صفر.'
-            );
-
+    for(const row of document.querySelectorAll(".opening-row")){
+        const width=parseFloat(row.querySelector(".op-width").value)||0;
+        const height=parseFloat(row.querySelector(".op-height").value)||0;
+        const count=parseInt(row.querySelector(".counter-value").textContent,10)||0;
+        if(count>0&&(width<=0||height<=0)){
+            showMessage("يرجى تحديد أبعاد كل باب أو شباك عدده أكبر من صفر.","error","أبعاد الفتحة غير صحيحة");
             return false;
-
         }
-
     }
-
     return isValid;
-
 }
 
+function calculateWallGeometry(lengthM,widthM,heightM,wallThicknessM,dimensionType){
+    let grossWallPlanArea,externalLength,externalWidth;
 
-/* =========================
-   هندسة الجدار
-========================= */
-
-function calculateWallGeometry(
-    lengthM,
-    widthM,
-    heightM,
-    wallThicknessM,
-    dimensionType
-) {
-
-    let grossWallPlanArea;
-    let externalLength;
-    let externalWidth;
-
-    if (dimensionType === 'external') {
-
-        externalLength = lengthM;
-        externalWidth = widthM;
-
-        const innerLength =
-            externalLength -
-            (2 * wallThicknessM);
-
-        const innerWidth =
-            externalWidth -
-            (2 * wallThicknessM);
-
-        if (
-            innerLength <= 0 ||
-            innerWidth <= 0
-        ) {
-
-            throw new Error(
-                'أبعاد المبنى لا تسمح بسماكة الجدار المحددة.'
-            );
-
+    if(dimensionType==="external"){
+        externalLength=lengthM;
+        externalWidth=widthM;
+        const innerLength=externalLength-2*wallThicknessM;
+        const innerWidth=externalWidth-2*wallThicknessM;
+        if(innerLength<=0||innerWidth<=0){
+            throw new Error("أبعاد المبنى لا تسمح بسماكة الجدار المحددة.");
         }
-
-        grossWallPlanArea =
-            (
-                externalLength *
-                externalWidth
-            ) -
-            (
-                innerLength *
-                innerWidth
-            );
-
-    }
-    else {
-
-        externalLength =
-            lengthM +
-            (2 * wallThicknessM);
-
-        externalWidth =
-            widthM +
-            (2 * wallThicknessM);
-
-        grossWallPlanArea =
-            (
-                externalLength *
-                externalWidth
-            ) -
-            (
-                lengthM *
-                widthM
-            );
-
+        grossWallPlanArea=externalLength*externalWidth-innerLength*innerWidth;
+    }else{
+        externalLength=lengthM+2*wallThicknessM;
+        externalWidth=widthM+2*wallThicknessM;
+        grossWallPlanArea=externalLength*externalWidth-lengthM*widthM;
     }
 
-    const grossWallVolume =
-        grossWallPlanArea *
-        heightM;
+    const grossWallVolume=grossWallPlanArea*heightM;
+    const grossWallArea=2*(externalLength+externalWidth)*heightM;
 
-    const grossWallArea =
-        2 *
-        (
-            externalLength +
-            externalWidth
-        ) *
-        heightM;
+    return {externalLength,externalWidth,grossWallPlanArea,grossWallVolume,grossWallArea};
+}
+
+function calculateBrickModuleVolume(bL,bW,bH,jointCM){
+    const moduleL=(bL+jointCM)/100;
+    const moduleW=(bW+jointCM)/100;
+    const moduleH=(bH+jointCM)/100;
+    return {moduleL,moduleW,moduleH,volume:moduleL*moduleW*moduleH};
+}
+
+function calculateWallThickness(bL,bW,jointCM,layout){
+    if(layout==="header")return bL/100;
+    if(layout==="combined")return(bL+bW+jointCM)/100;
+    return bW/100;
+}
+
+function calculateCore(){
+    const bL=parseFloat(document.getElementById("brickLength").value);
+    const bW=parseFloat(document.getElementById("brickWidth").value);
+    const bH=parseFloat(document.getElementById("brickHeight").value);
+    const jointCM=parseFloat(document.getElementById("jointThickness").value)||0;
+    const lengthM=parseFloat(document.getElementById("buildingLength").value);
+    const widthM=parseFloat(document.getElementById("buildingWidth").value);
+    const heightM=parseFloat(document.getElementById("buildingHeight").value);
+    const layout=document.getElementById("wallLayout").value;
+    const dimensionType=document.getElementById("dimensionType").value;
+    const calculationMode=document.getElementById("calculationMode").value;
+
+    const wallThicknessM=calculateWallThickness(bL,bW,jointCM,layout);
+    if(wallThicknessM<=0)throw new Error("تعذر حساب سماكة الجدار.");
+
+    let geometry;
+
+    if(calculationMode==="wall") {
+        // جدار واحد: الطول × الارتفاع × سماكة الجدار.
+        const grossWallArea=lengthM*heightM;
+        if(grossWallArea<=0)throw new Error("أبعاد الجدار غير صحيحة.");
+        geometry={
+            externalLength:lengthM,
+            externalWidth:0,
+            grossWallPlanArea:lengthM*wallThicknessM,
+            grossWallVolume:grossWallArea*wallThicknessM,
+            grossWallArea
+        };
+    } else {
+        geometry=calculateWallGeometry(lengthM,widthM,heightM,wallThicknessM,dimensionType);
+    }
+
+    const openingsArea=calculateOpeningsArea();
+
+    if(openingsArea>geometry.grossWallArea){
+        throw new Error("مساحة الفتحات أكبر من مساحة الجدار. يرجى مراجعة أبعاد الجدار والفتحات.");
+    }
+
+    const openingsVolume=openingsArea*wallThicknessM;
+    const netWallArea=Math.max(0,geometry.grossWallArea-openingsArea);
+    const netWallVolume=Math.max(0,geometry.grossWallVolume-openingsVolume);
+    const module=calculateBrickModuleVolume(bL,bW,bH,jointCM);
+
+    if(module.volume<=0)throw new Error("تعذر حساب حجم وحدة البناء.");
+
+    const rawBricks=netWallVolume/module.volume;
+    const bricksNeeded=Math.ceil(rawBricks);
+    const waste=parseFloat(document.getElementById("wastePercentage").value)||0;
+    const bricksWithWaste=Math.ceil(bricksNeeded*(1+waste/100));
+    const price=parseFloat(document.getElementById("brickPrice").value)||0;
+    const totalCost=bricksWithWaste*price;
+    const bricksPerM2=netWallArea>0?rawBricks/netWallArea:0;
 
     return {
-        externalLength,
-        externalWidth,
-        grossWallPlanArea,
-        grossWallVolume,
-        grossWallArea
+        calculationMode,
+        bL,bW,bH,jointCM,layout,dimensionType,wallThicknessM,
+        wallThicknessCM:wallThicknessM*100,
+        grossWallArea:geometry.grossWallArea,
+        openingsArea,netWallArea,
+        grossWallVolume:geometry.grossWallVolume,
+        openingsVolume,netWallVolume,
+        moduleVolume:module.volume,
+        moduleL:module.moduleL,moduleW:module.moduleW,moduleH:module.moduleH,
+        rawBricks,bricksNeeded,bricksWithWaste,bricksPerM2,totalCost,
+        externalLength:geometry.externalLength,externalWidth:geometry.externalWidth
     };
-
 }
 
-
-/* =========================
-   حجم وحدة البناء
-========================= */
-
-function calculateBrickModuleVolume(
-    bL,
-    bW,
-    bH,
-    jointCM
-) {
-
-    const moduleL =
-        (bL + jointCM) / 100;
-
-    const moduleW =
-        (bW + jointCM) / 100;
-
-    const moduleH =
-        (bH + jointCM) / 100;
-
-    const volume =
-        moduleL *
-        moduleW *
-        moduleH;
-
-    return {
-        moduleL,
-        moduleW,
-        moduleH,
-        volume
-    };
-
-}
-
-
-/* =========================
-   سماكة الجدار
-========================= */
-
-function calculateWallThickness(
-    bL,
-    bW,
-    jointCM,
-    layout
-) {
-
-    if (layout === 'header') {
-        return bL / 100;
-    }
-
-    if (layout === 'combined') {
-        return (
-            bL +
-            bW +
-            jointCM
-        ) / 100;
-    }
-
-    return bW / 100;
-
-}
-
-
-/* =========================
-   الحساب الموحد
-========================= */
-
-function calculateCore() {
-
-    const bL =
-        parseFloat(
-            document.getElementById('brickLength').value
-        );
-
-    const bW =
-        parseFloat(
-            document.getElementById('brickWidth').value
-        );
-
-    const bH =
-        parseFloat(
-            document.getElementById('brickHeight').value
-        );
-
-    const jointCM =
-        parseFloat(
-            document.getElementById('jointThickness').value
-        ) || 0;
-
-    const lengthM =
-        parseFloat(
-            document.getElementById('buildingLength').value
-        );
-
-    const widthM =
-        parseFloat(
-            document.getElementById('buildingWidth').value
-        );
-
-    const heightM =
-        parseFloat(
-            document.getElementById('buildingHeight').value
-        );
-
-    const layout =
-        document.getElementById('wallLayout').value;
-
-    const dimensionType =
-        document.getElementById('dimensionType').value;
-
-    const wallThicknessM =
-        calculateWallThickness(
-            bL,
-            bW,
-            jointCM,
-            layout
-        );
-
-    if (wallThicknessM <= 0) {
-
-        throw new Error(
-            'تعذر حساب سماكة الجدار.'
-        );
-
-    }
-
-    const geometry =
-        calculateWallGeometry(
-            lengthM,
-            widthM,
-            heightM,
-            wallThicknessM,
-            dimensionType
-        );
-
-    const openingsArea =
-        calculateOpeningsArea();
-
-    if (
-        openingsArea >
-        geometry.grossWallArea
-    ) {
-
-        throw new Error(
-            'مساحة الفتحات أكبر من مساحة واجهات الجدران. يرجى مراجعة أبعاد المبنى والفتحات.'
-        );
-
-    }
-
-    const openingsVolume =
-        openingsArea *
-        wallThicknessM;
-
-    const netWallArea =
-        Math.max(
-            0,
-            geometry.grossWallArea -
-            openingsArea
-        );
-
-    const netWallVolume =
-        Math.max(
-            0,
-            geometry.grossWallVolume -
-            openingsVolume
-        );
-
-    const module =
-        calculateBrickModuleVolume(
-            bL,
-            bW,
-            bH,
-            jointCM
-        );
-
-    if (
-        module.volume <= 0
-    ) {
-
-        throw new Error(
-            'تعذر حساب حجم وحدة البناء.'
-        );
-
-    }
-
-    const rawBricks =
-        netWallVolume /
-        module.volume;
-
-    const bricksNeeded =
-        Math.ceil(rawBricks);
-
-    const waste =
-        parseFloat(
-            document.getElementById('wastePercentage').value
-        ) || 0;
-
-    const bricksWithWaste =
-        Math.ceil(
-            bricksNeeded *
-            (
-                1 +
-                waste / 100
-            )
-        );
-
-    const price =
-        parseFloat(
-            document.getElementById('brickPrice').value
-        ) || 0;
-
-    const totalCost =
-        bricksWithWaste *
-        price;
-
-    const bricksPerM2 =
-        netWallArea > 0
-            ? rawBricks / netWallArea
-            : 0;
-
-    return {
-
-        bL,
-        bW,
-        bH,
-        jointCM,
-        layout,
-        dimensionType,
-
-        wallThicknessM,
-
-        wallThicknessCM:
-            wallThicknessM * 100,
-
-        grossWallArea:
-            geometry.grossWallArea,
-
-        openingsArea,
-
-        netWallArea,
-
-        grossWallVolume:
-            geometry.grossWallVolume,
-
-        openingsVolume,
-
-        netWallVolume,
-
-        moduleVolume:
-            module.volume,
-
-        moduleL:
-            module.moduleL,
-
-        moduleW:
-            module.moduleW,
-
-        moduleH:
-            module.moduleH,
-
-        rawBricks,
-
-        bricksNeeded,
-
-        bricksWithWaste,
-
-        bricksPerM2,
-
-        totalCost,
-
-        externalLength:
-            geometry.externalLength,
-
-        externalWidth:
-            geometry.externalWidth
-
-    };
-
-}
-
-
-/* =========================
-   الحساب الهندسي
-========================= */
-
-function calculateBricks() {
-
-    if (!validateInputs()) {
-        return;
-    }
-
-    try {
-
-        state.results =
-            calculateCore();
-
+function calculateBricks(){
+    if(!validateInputs())return;
+    try{
+        state.results=calculateCore();
         displayResults();
-
-        showNotification(
-            'تم الحساب الهندسي بنجاح!'
-        );
-
+        showNotification("تم الحساب الهندسي بنجاح!","success","✓");
+    }catch(error){
+        showMessage(error.message||"حدث خطأ أثناء الحساب.","error","تعذر إجراء الحساب");
     }
-    catch (error) {
-
-        alert(
-            error.message ||
-            'حدث خطأ أثناء الحساب.'
-        );
-
-    }
-
 }
 
+function displayResults(){
+    if(!state.results)return;
+    const r=state.results;
 
-/* =========================
-   عرض النتائج
-========================= */
+    document.getElementById("netWallArea").textContent=r.netWallArea.toFixed(2);
+    document.getElementById("bricksWithWaste").textContent=r.bricksWithWaste.toLocaleString("en-US");
+    document.getElementById("bricksPerM2").textContent=r.bricksPerM2.toFixed(2);
 
-function displayResults() {
-
-    if (!state.results) {
-        return;
+    const costContainer=document.getElementById("costResult");
+    if(r.totalCost>0){
+        document.getElementById("totalCost").textContent=r.totalCost.toLocaleString("en-US",{minimumFractionDigits:2});
+        costContainer.style.display="block";
+    }else{
+        costContainer.style.display="none";
     }
 
-    const r =
-        state.results;
-
-    document.getElementById(
-        'netWallArea'
-    ).textContent =
-        r.netWallArea.toFixed(2);
-
-    document.getElementById(
-        'bricksWithWaste'
-    ).textContent =
-        r.bricksWithWaste.toLocaleString();
-
-    document.getElementById(
-        'bricksPerM2'
-    ).textContent =
-        r.bricksPerM2.toFixed(2);
-
-    const costContainer =
-        document.getElementById('costResult');
-
-    if (r.totalCost > 0) {
-
-        document.getElementById(
-            'totalCost'
-        ).textContent =
-            r.totalCost.toLocaleString(
-                undefined,
-                {
-                    minimumFractionDigits: 2
-                }
-            );
-
-        costContainer.style.display =
-            'block';
-
-    }
-    else {
-
-        costContainer.style.display =
-            'none';
-
-    }
-
-    document.getElementById(
-        'resultsContainer'
-    ).classList.remove('hidden');
-
-    document.getElementById(
-        'emptyState'
-    ).style.display =
-        'none';
-
+    document.getElementById("resultsContainer").classList.remove("hidden");
+    document.getElementById("emptyState").style.display="none";
 }
 
+let notificationTimer=null;
+function showNotification(message,type="success",icon="✓"){
+    const notif=document.getElementById("notification");
+    const text=document.getElementById("notificationText");
+    const iconEl=document.getElementById("notificationIcon");
 
-/* =========================
-   الإشعار
-========================= */
+    clearTimeout(notificationTimer);
+    notif.className=`notification ${type} show`;
+    text.textContent=message;
+    iconEl.textContent=icon;
 
-function showNotification(msg) {
-
-    const notif =
-        document.getElementById('notification');
-
-    document.getElementById(
-        'notificationText'
-    ).textContent =
-        msg;
-
-    notif.classList.add('show');
-
-    setTimeout(
-        () => {
-            notif.classList.remove('show');
-        },
-        3000
-    );
-
+    notificationTimer=setTimeout(()=>notif.classList.remove("show"),3500);
 }
 
-
-/* =========================
-   إعادة التعيين
-========================= */
-
-function resetForm() {
-
-    document.getElementById(
-        'brickPreset'
-    ).value =
-        'cement';
-
+function resetForm(){
+    document.getElementById("brickPreset").value="cement";
     applyBrickPreset();
 
-    document.getElementById(
-        'buildingLength'
-    ).value = '';
+    document.getElementById("calculationMode").value="building";
+    ["buildingLength","buildingWidth","buildingHeight"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("dimensionType").value="external";
+    document.getElementById("wallLayout").value="stretcher";
+    document.getElementById("jointThickness").value="1";
+    document.getElementById("wastePercentage").value="10";
+    document.getElementById("brickPrice").value="0";
+    document.getElementById("projectName").value="";
+    document.getElementById("openingsContainer").innerHTML="";
 
-    document.getElementById(
-        'buildingWidth'
-    ).value = '';
+    addOpeningRow("door_100",0);
+    addOpeningRow("win_100",0);
 
-    document.getElementById(
-        'buildingHeight'
-    ).value = '';
+    document.getElementById("resultsContainer").classList.add("hidden");
+    document.getElementById("emptyState").style.display="block";
+    state.results=null;
 
-    document.getElementById(
-        'dimensionType'
-    ).value =
-        'external';
-
-    document.getElementById(
-        'wallLayout'
-    ).value =
-        'stretcher';
-
-    document.getElementById(
-        'jointThickness'
-    ).value =
-        '1';
-
-    document.getElementById(
-        'wastePercentage'
-    ).value =
-        '10';
-
-    document.getElementById(
-        'brickPrice'
-    ).value =
-        '0';
-
-    document.getElementById(
-        'projectName'
-    ).value =
-        '';
-
-    document.getElementById(
-        'openingsContainer'
-    ).innerHTML =
-        '';
-
-    addOpeningRow('door_100', 0);
-    addOpeningRow('win_100', 0);
-
-    document.getElementById(
-        'resultsContainer'
-    ).classList.add('hidden');
-
-    document.getElementById(
-        'emptyState'
-    ).style.display =
-        'block';
-
-    state.results = null;
-
-    document
-        .querySelectorAll('.error')
-        .forEach(el => {
-            el.classList.remove('error');
-        });
-
-    document
-        .querySelectorAll('.error-message')
-        .forEach(el => {
-            el.classList.remove('show');
-        });
+    document.querySelectorAll(".error").forEach(el=>el.classList.remove("error"));
+    document.querySelectorAll(".error-message").forEach(el=>el.classList.remove("show"));
 
     updateBrickDimensionsDisplay();
     updateCalculatedThickness();
-
+    updateCalculationMode();
+    showNotification("تمت إعادة تعيين الحقول.","info","↻");
 }
 
-
-/* =========================
-   جمع الفتحات للحفظ
-========================= */
-
-function getOpeningsData() {
-
-    const rows =
-        document.querySelectorAll('.opening-row');
-
-    return Array.from(rows).map(row => {
-
-        return {
-
-            preset:
-                row.dataset.preset ||
-                'custom',
-
-            width:
-                row.querySelector('.op-width').value,
-
-            height:
-                row.querySelector('.op-height').value,
-
-            count:
-                parseInt(
-                    row.querySelector('.counter-value').textContent
-                ) || 0
-
-        };
-
-    });
-
+function getOpeningsData(){
+    return Array.from(document.querySelectorAll(".opening-row")).map(row=>({
+        preset:row.dataset.preset||"custom",
+        width:row.querySelector(".op-width").value,
+        height:row.querySelector(".op-height").value,
+        count:parseInt(row.querySelector(".counter-value").textContent,10)||0
+    }));
 }
 
-
-/* =========================
-   حفظ المشروع
-========================= */
-
-function saveProject() {
-
-    const name =
-        document.getElementById(
-            'projectName'
-        ).value.trim();
-
-    if (!name) {
-
-        alert(
-            'يرجى كتابة اسم المشروع أولاً.'
-        );
-
+function saveProject(){
+    const name=document.getElementById("projectName").value.trim();
+    if(!name){
+        showMessage("يرجى كتابة اسم المشروع أولاً.","warning","اسم المشروع مطلوب");
+        document.getElementById("projectName").focus();
         return;
-
     }
 
-    const project = {
-
-        id:
-            Date.now().toString(),
-
+    const project={
+        id:Date.now().toString()+"_"+Math.random().toString(36).slice(2,6),
         name,
-
-        date:
-            new Date().toLocaleDateString(
-                'ar-SA'
-            ),
-
-        inputs: {
-
-            preset:
-                document.getElementById(
-                    'brickPreset'
-                ).value,
-
-            bL:
-                document.getElementById(
-                    'brickLength'
-                ).value,
-
-            bW:
-                document.getElementById(
-                    'brickWidth'
-                ).value,
-
-            bH:
-                document.getElementById(
-                    'brickHeight'
-                ).value,
-
-            bLen:
-                document.getElementById(
-                    'buildingLength'
-                ).value,
-
-            bWid:
-                document.getElementById(
-                    'buildingWidth'
-                ).value,
-
-            bHei:
-                document.getElementById(
-                    'buildingHeight'
-                ).value,
-
-            dimensionType:
-                document.getElementById(
-                    'dimensionType'
-                ).value,
-
-            layout:
-                document.getElementById(
-                    'wallLayout'
-                ).value,
-
-            waste:
-                document.getElementById(
-                    'wastePercentage'
-                ).value,
-
-            joint:
-                document.getElementById(
-                    'jointThickness'
-                ).value,
-
-            price:
-                document.getElementById(
-                    'brickPrice'
-                ).value,
-
-            openings:
-                getOpeningsData()
-
+        date:new Date().toLocaleDateString("ar-SA"),
+        inputs:{
+            preset:document.getElementById("brickPreset").value,
+            bL:document.getElementById("brickLength").value,
+            bW:document.getElementById("brickWidth").value,
+            bH:document.getElementById("brickHeight").value,
+            bLen:document.getElementById("buildingLength").value,
+            bWid:document.getElementById("buildingWidth").value,
+            bHei:document.getElementById("buildingHeight").value,
+            calculationMode:document.getElementById("calculationMode").value,
+            dimensionType:document.getElementById("dimensionType").value,
+            layout:document.getElementById("wallLayout").value,
+            waste:document.getElementById("wastePercentage").value,
+            joint:document.getElementById("jointThickness").value,
+            price:document.getElementById("brickPrice").value,
+            openings:getOpeningsData()
         }
-
     };
 
     state.projects.unshift(project);
-
-    localStorage.setItem(
-        'brick_projects_v2',
-        JSON.stringify(state.projects)
-    );
-
+    persistProjects();
     updateProjectCount();
-
-    document.getElementById(
-        'projectName'
-    ).value = '';
-
-    showNotification(
-        'تم حفظ المشروع بنجاح!'
-    );
-
+    document.getElementById("projectName").value="";
+    showNotification("تم حفظ المشروع بنجاح!","success","✓");
 }
 
-
-/* =========================
-   تحميل المشاريع
-========================= */
-
-function loadProjects() {
-
-    try {
-
-        const stored =
-            localStorage.getItem(
-                'brick_projects_v2'
-            );
-
-        if (stored) {
-
-            const parsed =
-                JSON.parse(stored);
-
-            if (Array.isArray(parsed)) {
-                state.projects = parsed;
-            }
-
-        }
-
+function persistProjects(){
+    try{
+        localStorage.setItem("brick_projects_v2",JSON.stringify(state.projects));
+    }catch(error){
+        showNotification("تعذر حفظ المشروع على هذا الجهاز.","error","⚠️");
     }
-    catch (error) {
+}
 
-        state.projects = [];
-
+function loadProjects(){
+    try{
+        const stored=localStorage.getItem("brick_projects_v2");
+        if(!stored){state.projects=[];return;}
+        const parsed=JSON.parse(stored);
+        state.projects=Array.isArray(parsed)?parsed:[];
+    }catch(error){
+        state.projects=[];
     }
-
 }
 
-
-/* =========================
-   عدد المشاريع
-========================= */
-
-function updateProjectCount() {
-
-    document.getElementById(
-        'projectCount'
-    ).textContent =
-        state.projects.length;
-
+function updateProjectCount(){
+    document.getElementById("projectCount").textContent=state.projects.length;
 }
 
-
-/* =========================
-   حماية HTML
-========================= */
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
+function escapeHtml(value){
+    return String(value??"")
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
 }
 
+function escapeAttr(value){
+    return escapeHtml(value);
+}
 
-/* =========================
-   فتح المشاريع
-========================= */
+function openProjectsModal(){
+    const list=document.getElementById("projectsList");
 
-function openProjectsModal() {
-
-    const modal =
-        document.getElementById(
-            'projectsModal'
-        );
-
-    const list =
-        document.getElementById(
-            'projectsList'
-        );
-
-    if (state.projects.length === 0) {
-
-        list.innerHTML = `
-
-            <p style="
-                text-align:center;
-                color:#999;
-                padding:20px;">
-
-                لا توجد مشاريع محفوظة
-
-            </p>
-
-        `;
-
+    if(state.projects.length===0){
+        list.innerHTML=`<p style="text-align:center;color:#999;padding:20px">لا توجد مشاريع محفوظة.</p>`;
+    }else{
+        list.innerHTML=state.projects.map(p=>`
+            <div class="project-item">
+                <div>
+                    <strong>${escapeHtml(p.name)}</strong>
+                    <div style="font-size:.8em;color:#888;margin-top:4px">${escapeHtml(p.date||"")}</div>
+                </div>
+                <div class="project-actions">
+                    <button type="button" class="btn-info" onclick="loadProjectData('${escapeAttr(p.id)}')">تحميل</button>
+                    <button type="button" class="btn-danger" onclick="confirmDeleteProject('${escapeAttr(p.id)}')">حذف</button>
+                </div>
+            </div>
+        `).join("");
     }
-    else {
-
-        list.innerHTML =
-            state.projects
-                .map(p => `
-
-                    <div class="project-item">
-
-                        <div>
-
-                            <strong>
-                                ${escapeHtml(p.name)}
-                            </strong>
-
-                            <div style="
-                                font-size:0.8em;
-                                color:#888;">
-
-                                ${escapeHtml(p.date)}
-
-                            </div>
-
-                        </div>
-
-                        <div>
-
-                            <button
-                                class="btn-info"
-                                onclick="loadProjectData('${p.id}')">
-
-                                تحميل
-
-                            </button>
-
-                            <button
-                                class="btn-danger"
-                                onclick="deleteProject('${p.id}')">
-
-                                حذف
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                `)
-                .join('');
-
-    }
-
-    modal.classList.add('show');
-
+    document.getElementById("projectsModal").classList.add("show");
 }
 
-
-/* =========================
-   إغلاق المشاريع
-========================= */
-
-function closeProjectsModal() {
-
-    document
-        .getElementById('projectsModal')
-        .classList.remove('show');
-
+function closeProjectsModal(){
+    document.getElementById("projectsModal").classList.remove("show");
 }
 
+function loadProjectData(id){
+    const p=state.projects.find(item=>item.id===id);
+    if(!p)return;
 
-/* =========================
-   تحميل مشروع
-========================= */
-
-function loadProjectData(id) {
-
-    const p =
-        state.projects.find(
-            item => item.id === id
-        );
-
-    if (!p) return;
-
-    const inputs =
-        p.inputs || {};
-
-    document.getElementById(
-        'brickPreset'
-    ).value =
-        inputs.preset || 'custom';
-
-    document.getElementById(
-        'brickLength'
-    ).value =
-        inputs.bL || '';
-
-    document.getElementById(
-        'brickWidth'
-    ).value =
-        inputs.bW || '';
-
-    document.getElementById(
-        'brickHeight'
-    ).value =
-        inputs.bH || '';
-
-    document.getElementById(
-        'buildingLength'
-    ).value =
-        inputs.bLen || '';
-
-    document.getElementById(
-        'buildingWidth'
-    ).value =
-        inputs.bWid || '';
-
-    document.getElementById(
-        'buildingHeight'
-    ).value =
-        inputs.bHei || '';
-
-    document.getElementById(
-        'dimensionType'
-    ).value =
-        inputs.dimensionType ||
-        'external';
-
-    document.getElementById(
-        'wallLayout'
-    ).value =
-        inputs.layout ||
-        'stretcher';
-
-    document.getElementById(
-        'jointThickness'
-    ).value =
-        inputs.joint ?? '1';
-
-    document.getElementById(
-        'wastePercentage'
-    ).value =
-        inputs.waste ?? '10';
-
-    document.getElementById(
-        'brickPrice'
-    ).value =
-        inputs.price ?? '0';
+    const inputs=p.inputs||{};
+    document.getElementById("brickPreset").value=inputs.preset||"custom";
+    document.getElementById("brickLength").value=inputs.bL??"";
+    document.getElementById("brickWidth").value=inputs.bW??"";
+    document.getElementById("brickHeight").value=inputs.bH??"";
+    document.getElementById("buildingLength").value=inputs.bLen??"";
+    document.getElementById("buildingWidth").value=inputs.bWid??"";
+    document.getElementById("buildingHeight").value=inputs.bHei??"";
+    document.getElementById("calculationMode").value=inputs.calculationMode||"building";
+    document.getElementById("dimensionType").value=inputs.dimensionType||"external";
+    document.getElementById("wallLayout").value=inputs.layout||"stretcher";
+    document.getElementById("jointThickness").value=inputs.joint??"1";
+    document.getElementById("wastePercentage").value=inputs.waste??"10";
+    document.getElementById("brickPrice").value=inputs.price??"0";
 
     updateBrickDimensionsDisplay();
     updateCalculatedThickness();
+    updateCalculationMode();
 
-    const container =
-        document.getElementById(
-            'openingsContainer'
-        );
+    const container=document.getElementById("openingsContainer");
+    container.innerHTML="";
 
-    container.innerHTML = '';
-
-    if (
-        Array.isArray(inputs.openings) &&
-        inputs.openings.length > 0
-    ) {
-
-        inputs.openings.forEach(opening => {
-
+    if(Array.isArray(inputs.openings)&&inputs.openings.length){
+        inputs.openings.forEach(opening=>{
             addOpeningRow(
-
-                opening.preset ||
-                'custom',
-
-                Number(opening.count) || 0,
-
-                opening.width ||
-                '',
-
-                opening.height ||
-                ''
-
+                opening.preset||"custom",
+                Number(opening.count)||0,
+                opening.width??"",
+                opening.height??""
             );
-
         });
-
-    }
-    else {
-
-        addOpeningRow('door_100', 0);
-        addOpeningRow('win_100', 0);
-
+    }else{
+        addOpeningRow("door_100",0);
+        addOpeningRow("win_100",0);
     }
 
     closeProjectsModal();
 
-    calculateBricks();
+    const mode=document.getElementById("calculationMode").value;
+    const ready=mode==="wall"
+        ? document.getElementById("buildingLength").value && document.getElementById("buildingHeight").value
+        : document.getElementById("buildingLength").value && document.getElementById("buildingWidth").value && document.getElementById("buildingHeight").value;
 
+    if(ready){
+        calculateBricks();
+    }else{
+        showNotification(mode==="wall"?"تم تحميل المشروع. أكمل طول وارتفاع الجدار ثم احسب.":"تم تحميل المشروع. أكمل أبعاد المبنى ثم احسب.","info","ℹ️");
+    }
 }
 
+function confirmDeleteProject(id){
+    const p=state.projects.find(item=>item.id===id);
+    if(!p)return;
 
-/* =========================
-   حذف مشروع
-========================= */
-
-function deleteProject(id) {
-
-    state.projects =
-        state.projects.filter(
-            p => p.id !== id
-        );
-
-    localStorage.setItem(
-        'brick_projects_v2',
-        JSON.stringify(
-            state.projects
-        )
+    showConfirm(
+        "حذف المشروع",
+        `هل تريد حذف المشروع «${p.name}»؟ لا يمكن التراجع عن هذا الإجراء.`,
+        "🗑️",
+        ()=>{
+            state.projects=state.projects.filter(item=>item.id!==id);
+            persistProjects();
+            updateProjectCount();
+            openProjectsModal();
+            showNotification("تم حذف المشروع.","success","✓");
+        }
     );
-
-    updateProjectCount();
-
-    openProjectsModal();
-
 }
 
-
-/* =========================
-   الطباعة
-========================= */
-
-function exportPDF() {
-
-    window.print();
-
+let messageTimer=null;
+function showMessage(message,type="info",title=null,icon=null){
+    const titles={info:"تنبيه",success:"تمت العملية",warning:"تنبيه",error:"حدث خطأ"};
+    const icons={info:"ℹ️",success:"✓",warning:"⚠️",error:"✕"};
+    const modal=document.getElementById("messageModal");
+    const iconEl=document.getElementById("messageIcon");
+    iconEl.className=`message-icon ${type}`;
+    iconEl.textContent=icon||icons[type]||icons.info;
+    document.getElementById("messageTitle").textContent=title||titles[type]||titles.info;
+    document.getElementById("messageText").textContent=message;
+    modal.classList.add("show");
+}
+function closeMessage(){
+    document.getElementById("messageModal").classList.remove("show");
 }
 
+let confirmAction=null;
+function showConfirm(title,message,icon,action){
+    document.getElementById("confirmMessage").innerHTML=`<strong>${escapeHtml(title)}</strong><br>${escapeHtml(message)}`;
+    document.getElementById("confirmIcon").textContent=icon||"⚠️";
+    confirmAction=action;
+    document.getElementById("confirmModal").classList.add("show");
+    document.getElementById("confirmYes").onclick=()=>{
+        const fn=confirmAction;
+        closeConfirm();
+        if(typeof fn==="function")fn();
+    };
+}
+function closeConfirm(){
+    document.getElementById("confirmModal").classList.remove("show");
+    confirmAction=null;
+}
 
-/* =========================
-   إغلاق قوائم الفتحات عند
-   الضغط خارجها
-========================= */
+function fillPDFReport(){
+    const r=state.results;
+    if(!r)throw new Error("قم بإجراء الحساب الهندسي أولاً.");
 
-document.addEventListener(
-    'click',
-    function(event) {
+    const projectName=document.getElementById("projectName").value.trim()||"بدون اسم";
+    const brickType=document.getElementById("brickPreset").value;
+    const isWall=r.calculationMode==="wall";
 
-        if (
-            !event.target.closest(
-                '.opening-selector'
-            )
-        ) {
+    document.getElementById("pdfProjectTitle").textContent=projectName;
+    document.getElementById("pdfProjectName").textContent=projectName;
+    document.getElementById("pdfDate").textContent=new Date().toLocaleDateString("ar-SA");
+    document.getElementById("pdfCalculationMode").textContent=isWall?"جدار واحد":"المبنى بالكامل";
+    document.getElementById("pdfLengthLabel").textContent=isWall?"طول الجدار":"الطول";
+    document.getElementById("pdfHeightLabel").textContent=isWall?"ارتفاع الجدار":"الارتفاع";
+    document.getElementById("pdfLength").textContent=`${formatNumber(parseFloat(document.getElementById("buildingLength").value))} م`;
+    document.getElementById("pdfHeight").textContent=`${formatNumber(parseFloat(document.getElementById("buildingHeight").value))} م`;
 
-            document
-                .querySelectorAll(
-                    '.opening-presets'
-                )
-                .forEach(menu => {
+    const widthField=document.getElementById("pdfWidthField");
+    const dimensionField=document.getElementById("pdfDimensionTypeField");
+    widthField.style.display=isWall?"none":"block";
+    dimensionField.style.display=isWall?"none":"block";
 
-                    menu.classList.remove(
-                        'show'
-                    );
+    if(!isWall){
+        document.getElementById("pdfWidth").textContent=`${formatNumber(parseFloat(document.getElementById("buildingWidth").value))} م`;
+        document.getElementById("pdfDimensionType").textContent=dimensionNames[r.dimensionType]||r.dimensionType;
+    }
 
-                });
+    document.getElementById("pdfBrickType").textContent=presetNames[brickType]||"طوب مخصص";
+    document.getElementById("pdfLayout").textContent=layoutNames[r.layout]||r.layout;
+    document.getElementById("pdfWallThickness").textContent=`${r.wallThicknessCM.toFixed(1)} سم`;
+    document.getElementById("pdfJoint").textContent=`${r.jointCM.toFixed(1)} سم`;
+    document.getElementById("pdfNetArea").textContent=`${r.netWallArea.toFixed(2)} م²`;
+    document.getElementById("pdfBricks").textContent=r.bricksWithWaste.toLocaleString("en-US")+" طوبة";
+    document.getElementById("pdfTotalCost").textContent=r.totalCost>0?r.totalCost.toLocaleString("en-US",{minimumFractionDigits:2}):"غير محددة";
+}
 
+function formatNumber(value){
+    return Number.isFinite(value)?value.toLocaleString("en-US",{maximumFractionDigits:2}):"—";
+}
+
+function loadExternalScript(src){
+    return new Promise((resolve,reject)=>{
+        if(src.includes("html2canvas")&&window.html2canvas){resolve();return;}
+        if(src.includes("jspdf")&&window.jspdf){resolve();return;}
+        const script=document.createElement("script");
+        script.src=src;
+        script.onload=()=>resolve();
+        script.onerror=()=>reject(new Error("تعذر تحميل مكتبة إنشاء PDF."));
+        document.head.appendChild(script);
+    });
+}
+
+async function generateDirectPDF(){
+    fillPDFReport();
+
+    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+
+    const report=document.getElementById("pdfReport");
+    const old={
+        left:report.style.left,
+        top:report.style.top,
+        zIndex:report.style.zIndex,
+        visibility:report.style.visibility,
+        position:report.style.position
+    };
+
+    // نجعل التقرير داخل مجال التصوير مؤقتًا حتى يعمل html2canvas بشكل موثوق داخل WebView.
+    report.style.position="fixed";
+    report.style.left="0";
+    report.style.top="0";
+    report.style.zIndex="99999";
+    report.style.visibility="visible";
+
+    try{
+        const canvas=await window.html2canvas(report,{
+            scale:2,
+            backgroundColor:"#ffffff",
+            useCORS:true,
+            logging:false,
+            width:794,
+            windowWidth:794
+        });
+
+        const imgData=canvas.toDataURL("image/jpeg",.95);
+        const {jsPDF}=window.jspdf;
+        const pdf=new jsPDF({orientation:"p",unit:"mm",format:"a4",compress:true});
+        const pageWidth=210;
+        const pageHeight=297;
+        const margin=8;
+        const usableWidth=pageWidth-margin*2;
+        const usableHeight=pageHeight-margin*2;
+        const imageHeight=canvas.height*usableWidth/canvas.width;
+
+        if(imageHeight<=usableHeight){
+            pdf.addImage(imgData,"JPEG",margin,margin,usableWidth,imageHeight);
+        }else{
+            const pageCanvas=document.createElement("canvas");
+            const pagePixelHeight=Math.floor(canvas.width*usableHeight/usableWidth);
+            pageCanvas.width=canvas.width;
+            pageCanvas.height=pagePixelHeight;
+            const ctx=pageCanvas.getContext("2d");
+            let offset=0;
+            let page=0;
+
+            while(offset<canvas.height){
+                ctx.fillStyle="#fff";
+                ctx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
+                ctx.drawImage(canvas,0,offset,canvas.width,pagePixelHeight,0,0,canvas.width,pagePixelHeight);
+                const pageImg=pageCanvas.toDataURL("image/jpeg",.95);
+                if(page>0)pdf.addPage();
+                const actualHeight=Math.min(pagePixelHeight,canvas.height-offset)*usableWidth/canvas.width;
+                pdf.addImage(pageImg,"JPEG",margin,margin,usableWidth,actualHeight);
+                offset+=pagePixelHeight;
+                page++;
+            }
         }
 
+        const safeName=(document.getElementById("projectName").value.trim()||"تقرير_حصر_الطوب")
+            .replace(/[\\/:*?"<>|]/g,"_");
+        pdf.save(`${safeName}.pdf`);
+    }finally{
+        report.style.left=old.left;
+        report.style.top=old.top;
+        report.style.zIndex=old.zIndex;
+        report.style.visibility=old.visibility;
+        report.style.position=old.position;
     }
-);
+}
 
+function isAndroidWebView(){
+    const ua=navigator.userAgent||"";
+    return /Android/i.test(ua) && (/; wv\)/i.test(ua) || /Version\/4\.0/i.test(ua));
+}
+
+async function exportPDF(){
+    if(!state.results){
+        showMessage("قم بإجراء الحساب الهندسي أولاً، ثم اضغط زر التقرير PDF.","warning","لا توجد نتيجة بعد");
+        return;
+    }
+
+    showNotification("جاري تجهيز ملف PDF...","info","📄");
+
+    try{
+        await generateDirectPDF();
+        showNotification("تم إنشاء تقرير PDF بنجاح.","success","✓");
+    }catch(error){
+        console.error(error);
+        if(isAndroidWebView()){
+            showMessage(
+                "تعذر إنشاء ملف PDF داخل التطبيق. تأكد من تفعيل JavaScript وInternet Permission في إعدادات WebIntoApp ثم أعد المحاولة.",
+                "error",
+                "تعذر إنشاء PDF"
+            );
+        }else{
+            showMessage(
+                "تعذر إنشاء PDF مباشرة. يمكنك استخدام نافذة الطباعة كخيار احتياطي.",
+                "warning",
+                "تعذر إنشاء PDF"
+            );
+            setTimeout(()=>window.print(),400);
+        }
+    }
+}
+
+document.addEventListener("click",event=>{
+    if(!event.target.closest(".opening-selector")){
+        document.querySelectorAll(".opening-presets").forEach(menu=>menu.classList.remove("show"));
+    }
+    if(event.target===document.getElementById("projectsModal"))closeProjectsModal();
+    if(event.target===document.getElementById("messageModal"))closeMessage();
+    if(event.target===document.getElementById("confirmModal"))closeConfirm();
+});
 </script>
 
 </body>

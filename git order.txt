@@ -1,0 +1,145 @@
+أكيد 😁 بما أنك متعود على الـPC، أعطيك العملية كاملة مرة واحدة. هدفنا أن يصبح عندك:
+
+الهاتف → GitHub ← الكمبيوتر
+
+ومجلد Projects على الهاتف يبقى في مكانه كما هو.
+
+1. تأكد من Git في Cmder
+
+افتح Cmder:
+
+git --version
+
+إذا ظهر مثل:
+
+git version 2.x.x
+
+فأنت جاهز.
+
+
+---
+
+2. اختر مكانًا لمجلد Projects على الكمبيوتر
+
+مثلًا:
+
+D:\Projects
+
+مهم: لا تنشئ المجلد بنفسك إذا كنت ستستخدم git clone؛ Git سيقوم بإنشائه.
+
+اذهب في Cmder إلى المكان الذي تريد وضع المشروع فيه، مثل:
+
+cd /d D:\
+
+ثم نفّذ:
+
+git clone git@github.com:Khalifa-fattah/Projects.git
+
+سيتم إنشاء:
+
+D:\Projects
+
+وبداخله جميع مشاريعك.
+
+
+---
+
+3. افتح Projects في VS Code
+
+بعد انتهاء clone:
+
+cd Projects
+code .
+
+إذا كان أمر code غير معروف، افتح VS Code يدويًا ثم:
+
+File → Open Folder → Projects
+
+
+---
+
+4. الآن الكمبيوتر والهاتف متصلان بنفس المستودع
+
+على الكمبيوتر:
+
+D:\Projects
+
+وعلى الهاتف:
+
+/storage/emulated/0/Projects
+
+والاثنان مرتبطان بـ:
+
+GitHub → Khalifa-fattah/Projects
+
+
+---
+
+🔄 عندما تعدّل من الكمبيوتر
+
+بعد الانتهاء من التعديلات:
+
+git add .
+git commit -m "Update projects"
+git push
+
+أصبح التعديل موجودًا على GitHub.
+
+
+---
+
+📱 عندما تريد جلب التعديلات إلى الهاتف
+
+في Termux:
+
+cd ~
+git -C /storage/emulated/0/Projects pull
+
+لاحظ أننا نستخدم cd ~ أولًا بسبب مشكلة current working directory التي ظهرت معنا.
+
+
+---
+
+📱 إذا عدّلت من الهاتف
+
+بعد التعديل:
+
+cd ~
+git -C /storage/emulated/0/Projects add .
+git -C /storage/emulated/0/Projects commit -m "Update from phone"
+git -C /storage/emulated/0/Projects push
+
+ثم على الكمبيوتر:
+
+git pull
+
+
+---
+
+⚠️ قاعدة مهمة جدًا
+
+قبل أن تبدأ العمل على جهاز، إذا كنت قد عدّلت الملفات من الجهاز الآخر، اعمل:
+
+git pull
+
+وبعد الانتهاء من عملك:
+
+git add .
+git commit -m "وصف التعديل"
+git push
+
+بهذا لن تضطر إلى نقل الملفات يدويًا بين الهاتف والكمبيوتر.
+
+وبالنسبة لـ family-tree
+
+النسخة الموجودة الآن داخل:
+
+Projects/family-tree
+
+هي مجلد عادي داخل مستودع Projects، وهذا بالضبط ما أردته.
+
+أما مستودع GitHub القديم:
+
+Khalifa-fattah/family-tree
+
+لا تحذفه الآن. بعد أن نتأكد أن كل شيء يعمل من الكمبيوتر، يمكنك حذفه بأمان إذا لم تعد تحتاجه.
