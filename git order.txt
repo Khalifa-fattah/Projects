@@ -9,7 +9,7 @@
 cd ~
 git -C /storage/emulated/0/Projects add .
 git -C /storage/emulated/0/Projects commit -m "Update from phone"
-git -C /storage/emulated/0/Projects push
+HOME=/data/data/com.termux/files/home git -C /storage/emulated/0/Projects push
 
 2. جلب آخر تعديلات من GitHub إلى الهاتف
 
