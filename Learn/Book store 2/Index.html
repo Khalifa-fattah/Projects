@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Code Book Store</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <h1>Code Book Store</h1>
+
+  <div id="book-list">
+    <div class="book">
+      <img src="book1.jpg" alt="Book 1">
+      <h3>Book 1</h3>
+      <p>Author: Author 1</p>
+      <p>Price: $10</p>
+      <button onclick="addToCart('Book 1')">Add to Cart</button>
+    </div>
+
+    <div class="book">
+      <img src="book2.jpg" alt="Book 2">
+      <h3>Book 2</h3>
+      <p>Author: Author 2</p>
+      <p>Price: $15</p>
+      <button onclick="addToCart('Book 2')">Add to Cart</button>
+    </div>
+
+    <!-- Add more book items here -->
+    
+  </div>
+
+  <div id="cart">
+    <h2>Your Cart:</h2>
+    <ul id="cart-items"></ul>
+    Total: $<span id="total-price">0.00</span><br><br>
+    <button onclick="checkout()">Checkout</button>
+  </div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

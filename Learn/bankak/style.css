@@ -1,0 +1,184 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+:root {
+  --main-color: rgb(232, 0, 0);
+}
+.box {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  margin: 0px auto;
+  height: 100vh;
+}
+
+.box .text {
+  margin-bottom: 30px;
+  display: block;
+  height: 265px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-direction: column;
+  text-align: center;
+  background-color: var(--main-color);
+}
+
+.box .text div {
+  color: white;
+  position: absolute;
+  top: 83px;
+}
+
+.box .text p:first-child {
+  font-size: 30px;
+}
+
+.box .text p:first-child::first-letter {
+  color: gold;
+}
+
+.box .text p:last-child {
+  font-size: 30px;
+}
+
+.box .text p:last-child::first-letter {
+  color: gold;
+}
+
+.box .input-form {
+  text-align: center;
+  position: absolute;
+  top: 170px;
+}
+
+.box .input-form > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px auto;
+}
+
+.box .input-form > div input {
+  border: 1px solid black;
+  outline: none;
+  position: relative;
+  padding: 10px;
+  text-align: right;
+  width: 300px;
+  transition: 0.3s;
+  border-radius: 4px;
+}
+.box .input-form > div input:focus {
+  border-color: var(--main-color);
+}
+.box .input-form > div input::placeholder {
+  font-size: 18px;
+  color: gray;
+}
+.box .input-form > div input:focus::placeholder {
+  /* opacity: 1;
+  visibility: visible; */
+  transition: 0.3s;
+  font-size: 14px;
+  position: absolute;
+  right: 10px;
+  top: 4px;
+}
+
+.box .input-form .submit a {
+  background-color: red;
+  color: white;
+  font-size: 24px;
+  border: none;
+  text-align: center;
+  outline: none;
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  width: 100%;
+  transition: 0.3s;
+  padding: 6px 0px;
+  border-radius: 4px;
+}
+.box .input-form .submit a:hover {
+  background-color: var(--main-color);
+}
+.box .input-form .data {
+  justify-content: space-between;
+}
+.box .input-form .data a {
+  color: #00000073;
+  text-decoration: none;
+  font-size: 18px;
+  transition: 0.3s;
+}
+.box .input-form .data a:hover {
+  color: var(--main-color);
+}
+.page {
+  width: 400px;
+  margin: 0px auto;
+}
+.page .logo {
+  background-color: var(--main-color);
+}
+.page .logo p {
+  font-size: 32px;
+  text-align: center;
+  color: white;
+}
+.page .logo p::first-letter {
+  color: goldenrod;
+}
+.page .user-name {
+  padding: 10px;
+}
+.page .user-name p {
+  direction: rtl;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+.page .boxes {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+}
+.page .boxes .box {
+  width: 70px;
+  height: 70px;
+  position: relative;
+  border-radius: 4px;
+  transition: 0.3s;
+  background-color: var(--main-color);
+}
+.page .boxes .box::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  transition: 0.3s;
+
+  background-color: rgba(255, 255, 255, 0.198);
+}
+.page .boxes .box:hover {
+  background-color: rgb(210, 8, 8);
+}
+.page .boxes .box:hover::before {
+  height: 100%;
+}
+.page .boxes .box::after {
+  content: "this desc";
+  text-align: center;
+  font-size: 18px;
+  position: absolute;
+  left: 0;
+  bottom: -20px;
+  width: 100%;
+}

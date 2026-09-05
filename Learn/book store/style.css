@@ -1,0 +1,2273 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: white;
+  /* background-color: rgb(157, 156, 156); */
+  background-image: url("fff.png");
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center center;
+  /* 
+    background تختصر الفوق في سطر واحد بالترتيب التالي
+
+    background-color | background-image | background-repeat | 
+    background-attachment | background-position
+
+    background: #FFCC66 url("fff.pngf") no-repeat fixed center center;
+    */
+  background-size: cover;
+  font-family: serif, arial, tahoma, "Times New Roman";
+  font-weight: 500;
+
+  /* font تجمع كل الخائص بالترتيب
+    
+    font-style | font-variant | font-weight | font-size | font-family
+
+    */
+
+  margin: 10px 10px 10px 10px;
+}
+
+h1 {
+  color: rgb(252, 250, 250);
+  background-color: rgb(9, 6, 6);
+  font-style: oblique;
+  letter-spacing: 6px;
+  width: 262px;
+  /* h-shadow v-shadow blur color */
+  text-shadow: 2px 2px 2px red;
+}
+
+h3 {
+  color: rgb(0, 0, 199);
+  font-variant: normal;
+  /* small caps */
+  text-transform: uppercase;
+}
+
+#ff {
+  color: red;
+  border-style: groove;
+  border-color: transparent transparent yellow ;
+  border-width: 7px;
+  padding: 5px;
+  margin-right: 1120px;
+}
+
+#mm {
+  color: rgb(197, 6, 6);
+  text-transform: capitalize;
+  margin-right: 1150px;
+  border-width: thick;
+  border-color: gold;
+  border-style: dotted;
+}
+
+.username {
+  float: left;
+  width: 200px;
+  height: 30px;
+  outline: none;
+  border: 2px solid black;
+  border-radius: 7px;
+}
+
+.username:focus {
+  border: 2px solid red;
+}
+
+.password {
+  position: relative;
+  left: 20px;
+  width: 200px;
+  height: 30px;
+  outline: none;
+  border: 2px solid black;
+  border-radius: 7px;
+}
+
+.password:focus {
+  border: 2px solid red;
+}
+
+td {
+  text-align: center;
+}
+
+.booking {
+  float: left;
+  text-align: center;
+  padding-top: 10px;
+  margin-left: 1%;
+  width: calc(95% / 3);
+  border: 3px solid black;
+}
+
+a:not(.secret):link {
+  background-color: blue;
+  color: white;
+  padding: 5px 10px;
+  display: inline-block;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+a:not(.secret):visited {
+  color: rgb(179, 177, 177);
+}
+
+a:not(.secret):active {
+  opacity: 0.5;
+}
+
+a:not(.secret):hover {
+  color: red;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+p.three {
+  text-indent: 50px;
+  font-size: large;
+  color: rgb(157, 222, 6);
+  line-height: 40px;
+}
+
+#list1 {
+  list-style-position: outside;
+}
+
+#list2 {
+  list-style-position: inside;
+  list-style-type: square;
+}
+
+#list3 {
+  list-style-position: hanging;
+  list-style-type: circle;
+}
+
+#test {
+  font-weight: bold;
+  color: red;
+  margin-right: 1250px;
+}
+
+.table1 {
+  background-color: rgb(116, 114, 114);
+}
+
+.table2 {
+  color: black;
+  width: 400px;
+  border: 1px solid red;
+  border-spacing: 0px;
+}
+
+.table2 td {
+  padding: 15px;
+  border: 1px solid red;
+  background-color: #eee;
+}
+
+.table2 thead th {
+  padding: 10px;
+  background-color: red;
+  color: white;
+}
+
+#w {
+  color: red;
+}
+
+#m {
+  color: black;
+  background-color: orange;
+  text-transform: capitalize;
+  padding-left: 200px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+div.box {
+  color: black;
+  border: 2px solid black;
+  background-color: gold;
+  width: 400px;
+  float: right;
+}
+
+#picture {
+  width: 100px;
+  float: left;
+  margin-right: 10px;
+}
+
+#box1 {
+  border: 2px solid rgb(85, 85, 85);
+  background-color: black;
+  width: 400px;
+  padding: 5px;
+}
+
+#box1 p {
+  text-indent: 20px;
+}
+
+#head {
+  text-align: center;
+  position: absolute;
+  top: 300px;
+  left: 600px;
+}
+
+#picture1 {
+  position: relative;
+  left: 50px;
+}
+
+b {
+  color: black;
+  font-size: large;
+}
+
+#pic1 {
+  z-index: 1;
+}
+
+#pic2 {
+  z-index: 2;
+  position: relative;
+  left: -65px;
+  top: 15px;
+}
+
+#pic3 {
+  z-index: 3;
+  position: relative;
+  left: -130px;
+  top: 30px;
+}
+
+#pic4 {
+  z-index: 4;
+  position: relative;
+  left: -195px;
+  top: 45px;
+}
+
+.box2 {
+  color: rgb(241, 238, 238);
+  width: 500px;
+  height: 200px;
+  margin: 20px auto;
+  padding: 5px;
+  background-color: rgb(254, 12, 12);
+  overflow: hidden;
+  outline: 5px solid black;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  overflow: auto;
+}
+
+span {
+  color: gold;
+}
+
+div h4 {
+  color: black;
+  font-size: large;
+}
+
+#bankak {
+  color: white;
+  background-color: red;
+}
+
+#formed {
+  color: black;
+  text-align: center;
+  padding: 20px;
+  background-color: #eee;
+  font-size: 20px;
+  width: 400px;
+  margin: auto;
+  border: 3px solid red;
+}
+
+div #formed1 {
+  border: inherit;
+  padding: inherit;
+}
+
+#formed:hover {
+  border-color: blue;
+}
+
+.project {
+  padding: 10px 0px;
+  text-align: center;
+  color: black;
+  float: left;
+  width: calc((100% - 60px) / 5);
+  margin-left: 10px;
+}
+
+.perent {
+  width: 400px;
+  height: 200px;
+  background-color: white;
+  position: relative;
+}
+
+.perent #div1 {
+  width: 70px;
+  text-align: center;
+  border-radius: 4px;
+  background-color: red;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+.perent #div2 {
+  width: 70px;
+  text-align: center;
+  border-radius: 4px;
+  background-color: blue;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+.perent #div3 {
+  width: 70px;
+  text-align: center;
+  border-radius: 4px;
+  background-color: green;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+}
+.perent #div4 {
+  width: 70px;
+  text-align: center;
+  border-radius: 4px;
+  background-color: rgb(255, 136, 0);
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+
+#crazy {
+  color: white;
+  text-shadow: 1px 1px 2px black;
+  font-weight: bold;
+  text-align: center;
+  width: 70px;
+  background-color: red;
+  border: 2px solid black;
+  border-radius: 3px;
+  position: fixed;
+  bottom: 2px;
+  right: 5px;
+  z-index: 99;
+}
+
+.scroll-div {
+  background-color: #00b7db;
+  padding: 10px;
+  position: sticky;
+  top: 0px;
+  margin: 0 -10px;
+  cursor: wait;
+  z-index: 100;
+}
+
+#q:checked + label {
+  color: red;
+}
+#p:checked + label {
+  color: red;
+}
+#u:checked + label {
+  color: red;
+}
+
+#para {
+  background-color: red;
+  text-align: center;
+  font-size: 60px;
+  width: 180px;
+  outline-width: 2px;
+  outline-style: dashed;
+  outline-color: black;
+}
+#para::first-letter {
+  color: gold;
+}
+
+.perentt {
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.onee {
+  color: black;
+  background-color: #eee;
+  padding: 10px;
+  width: 600px;
+  float: left;
+  position: relative;
+}
+
+.onee::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 100%;
+  right: 0px;
+  top: 0px;
+  background-color: aqua;
+}
+
+.onee::before {
+  content: "";
+  width: 0px;
+  height: 0px;
+  border: 12px solid;
+  border-color: transparent aqua transparent transparent;
+  position: absolute;
+  left: -24px;
+  top: 27px;
+}
+
+.user {
+  color: black;
+  background-color: #eee;
+  width: 65px;
+  height: 75px;
+  margin-right: 20px;
+  padding: 10px;
+  text-align: center;
+  font-size: 50px;
+  float: left;
+}
+
+/* الجاي دا بخلي الديف مرقمة */
+
+.perentt2 {
+  margin-bottom: 20px;
+  overflow: hidden;
+  counter-increment: member-counter;
+}
+
+.onee2 {
+  color: black;
+  background-color: #eee;
+  padding: 10px;
+  width: 600px;
+  float: left;
+  position: relative;
+}
+
+.user2 {
+  color: black;
+  background-color: #eee;
+  width: 65px;
+  height: 75px;
+  margin-right: 20px;
+  padding: 10px;
+  text-align: center;
+  font-size: 50px;
+  float: left;
+}
+
+.onee2::after {
+  content: counter(member-counter);
+  background-color: black;
+  position: absolute;
+  color: white;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  font-weight: bold;
+  right: -10px;
+  top: 50%;
+  margin-top: -10px;
+}
+
+.onee2::before {
+  content: attr(data-text);
+  text-align: center;
+  font-weight: bold;
+  display: none;
+}
+
+.onee2:hover::before {
+  display: inline-block;
+  background-color: red;
+  width: 100px;
+  color: #eee;
+  border-radius: 2px;
+  text-shadow: 1px 1px 2px black;
+}
+
+.katab {
+  background-color: #0083ff;
+  padding: 10px;
+  width: 180px;
+  height: 175px;
+  margin: 0px auto;
+  overflow: hidden;
+  border-top-left-radius: 20px 30px;
+  border-bottom-right-radius: 20px 30px;
+  outline: 5px groove #00b8ff;
+  text-shadow: 1px 1px 3px black;
+  transition-duration: 5s;
+  transition-property: border-radius;
+}
+
+.katab:hover {
+  background-color: red;
+  outline: 5px groove red;
+  border-radius: 20%;
+  overflow: hidden;
+}
+
+.katab2 {
+  color: black;
+  background-color: #eee;
+  width: 600px;
+  padding: 10px;
+  margin: 0 auto !important;
+  box-shadow: 0 0 10px 8px rgb(7 52 255 / 40%);
+  transition-duration: 3s;
+  transition-delay: 1s;
+}
+
+.katab2:hover {
+  background-color: yellow;
+  width: 800px;
+  margin: 0;
+}
+
+:root {
+  --mainColor: #e91e63;
+  --mainPadding: 40px;
+}
+
+.main {
+  background-color: var(--mainColor);
+  color: white;
+  padding: var(--mainPadding);
+  font-size: x-large;
+}
+
+#h1 {
+  background-color: #eee;
+  color: var(--mainColor);
+  padding: var(--mainPadding);
+  font-weight: bold;
+  font-size: xx-large;
+}
+
+#gaol {
+  background-color: var(--mainColor);
+}
+
+#p {
+  border: 5px solid var(--mainColor);
+  padding: var(--mainPadding);
+  font-size: x-large;
+}
+
+.flex {
+  background-color: #eee;
+  width: 600px;
+  padding: 20px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  /* justify-content: flex-end; */
+  /* justify-content: space-between; */
+  align-items: stretch;
+}
+
+.flex div {
+  background-color: red;
+  color: white;
+  width: 25%;
+  text-align: center;
+  padding: 20px;
+}
+
+.float {
+  overflow: hidden;
+  background-color: #eee;
+  width: 600px;
+  padding: 20px;
+  margin: 20px auto;
+}
+
+.float div {
+  float: left;
+  background-color: red;
+  color: white;
+  width: 25%;
+  text-align: center;
+  padding: 20px;
+}
+
+.number {
+  display: flex;
+  background-color: #eee;
+  width: 900px;
+  padding: 10px;
+  margin: 50px auto;
+}
+
+.number div {
+  background-color: red;
+  width: 100px;
+  text-align: center;
+  padding: 20px;
+  margin-right: 5px;
+  flex-grow: 1;
+}
+
+#n1 {
+  background-color: green;
+  flex-grow: 4;
+}
+#n6 {
+  background-color: blue;
+  flex-shrink: 6;
+}
+#n3 {
+  background-color: #8e44ad;
+  flex-basis: 200px;
+}
+
+.imgg {
+  display: flex;
+  justify-content: space-between;
+}
+
+#img1 {
+  transition: 1.5s;
+  filter: grayscale(100%);
+}
+
+#img1:hover {
+  filter: grayscale(0);
+}
+
+#img2 {
+  transition: 1.5s;
+  filter: blur(5px);
+}
+
+#img2:hover {
+  filter: blur(0);
+}
+
+#img3 {
+  transition: 1.5s;
+  filter: hue-rotate(70deg);
+}
+
+#img3:hover {
+  filter: hue-rotate(0);
+}
+
+.gradient {
+  background-image: linear-gradient(
+    to right,
+    red 200px,
+    orange 400px,
+    yellow 600px
+  );
+  width: 600px;
+  height: 200px;
+  margin: 40px auto;
+  transition-delay: 1.5s;
+}
+
+.gradient:hover {
+  background-image: linear-gradient(
+    to right,
+    #005aff 143px,
+    rgb(0, 251, 255) 281px,
+    rgb(0, 255, 26) 580px
+  );
+}
+
+.gradient2 {
+  color: black;
+  font-size: x-large;
+  padding: 10px;
+  outline: none;
+  background-color: #eee;
+  width: 600px;
+  height: 200px;
+  margin: 70px auto;
+  position: relative;
+}
+
+.gradient2::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background-image: linear-gradient(
+    to right,
+    #2080b9 20%,
+    #27ae60 20%,
+    #27ae60 40%,
+    #d35400 40%,
+    #d35400 60%,
+    #8e44ad 60%,
+    #8e44ad 80%,
+    #c0392b 80%
+  );
+}
+
+.hgh {
+  display: none;
+}
+
+.gradient2:hover .hgh {
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  color: #8d9599;
+}
+
+.gradient2:focus .hgh {
+  display: none;
+}
+
+.pointer {
+  width: 727px;
+  padding: 85px 100px 100px 220px;
+  margin: 0 auto;
+  border: 2px solid blue;
+  background-image: url(../media/imgs/img2.jpg);
+  caret-color: blue; /* تغير لون مؤشر الكتابة */
+}
+
+.pointer input {
+  color: blue;
+  background-color: #eeeeee85;
+  font-size: large;
+  width: 200px;
+  height: 30px;
+  border: 2px solid blue;
+  border-radius: 4px;
+  outline: none;
+}
+
+.pointer p {
+  color: blue;
+  outline: none;
+  text-shadow: 1px 1px 1px black;
+  font-size: xx-large;
+  margin-top: 5px;
+}
+
+.pointer a {
+  pointer-events: none; /* تغير الاستجابة لما تدوس على الحاجة المعينة */
+}
+
+.pointer input::placeholder {
+  color: rgba(0, 0, 255, 0.527);
+}
+
+.grid {
+  background-color: #eee;
+  width: 800px;
+  height: 280px;
+  padding: 20px;
+  margin: 80px auto 0;
+  position: relative;
+  display: grid;
+  /* grid-template-columns: 120px auto repeat(2, 1fr) 40%; */
+  /* grid-template-rows: 65px 120px 65px; */
+  grid-template-columns: auto auto auto auto auto;
+  row-gap: 9px;
+  column-gap: 10px;
+}
+
+.grid div {
+  background-color: red;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  /* margin: 4px 5px; */
+}
+
+.grid:hover {
+  grid-template-columns: 120px auto repeat(2, 1fr) 40%;
+  grid-template-rows: 65px 120px 65px;
+  height: 310px;
+}
+
+.grid:hover::before {
+  content: "اكتب في 2";
+  position: absolute;
+  top: -35px;
+  left: 140px;
+  width: 65px;
+  height: 20px;
+  background-color: #2080b9;
+  outline: 2px solid black;
+  padding: 3px 0px 3px 7px;
+  border-radius: 20px;
+}
+
+#grid1:hover {
+  background-color: #2080b9;
+  outline: 2px solid black;
+}
+
+.GRID {
+  display: flex;
+}
+
+.grid3 {
+  background-color: #eee;
+  width: 600px;
+  height: 500px;
+  padding: 20px;
+  margin: 80px auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px 10px;
+}
+
+.grid3 div {
+  background-color: red;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+#gridq {
+  background-color: blue;
+  grid-row: span 4;
+}
+
+#gride {
+  background-color: blue;
+  grid-row: span 2;
+}
+
+#gridw {
+  background-color: blue;
+  grid-column: span 3;
+}
+
+.grid4 {
+  background-color: #eee;
+  width: 600px;
+  height: 500px;
+  padding: 20px;
+  margin: 80px auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px 10px;
+}
+
+.grid4 div {
+  background-color: red;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+#grid-area {
+  background-color: blue;
+  line-height: 250px;
+  grid-area: 2 / 2 / 5 / 6;
+}
+
+.transform {
+  background-color: white;
+  color: black;
+  box-shadow: -2px 4px 19px 12px #0000007a;
+  margin: 50px;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto 1fr auto 1fr auto;
+  grid-template-areas:
+    "shape shape1"
+    "lapel lapel1"
+    "shape2 shape3"
+    "lapel2 lapel3"
+    "shape4 shape5"
+    "lapel4 lapel5";
+}
+
+.lapel {
+  grid-area: lapel;
+  text-align: center;
+  background-color: #ec7474;
+  width: 100px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+
+.shape {
+  grid-area: shape;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 1s;
+}
+
+.shape:hover div {
+  transform: scale(1.25, 1.25);
+}
+
+.lapel1 {
+  grid-area: lapel1;
+  text-align: center;
+  background-color: #ec7474;
+  width: 150px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+
+.shape1 {
+  grid-area: shape1;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial1 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial1::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial1 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial1::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape1 div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 1s;
+}
+
+.shape1:hover div {
+  transform: rotate(45deg); /* deg \ rad \ grad \ turn */
+}
+
+.lapel2 {
+  grid-area: lapel2;
+  text-align: center;
+  background-color: #ec7474;
+  width: 200px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+
+.shape2 {
+  grid-area: shape2;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial2 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial2::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial2 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial2::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape2 div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 1s;
+}
+
+.shape2:hover div {
+  transform: translate(15px, 15px);
+}
+
+.lapel3 {
+  grid-area: lapel3;
+  text-align: center;
+  background-color: #ec7474;
+  width: 150px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+.shape3 {
+  grid-area: shape3;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial3 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial3::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial3 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial3::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape3 div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 1s;
+}
+
+.shape3:hover div {
+  transform: skewy(0.1turn);
+}
+
+.lapel4 {
+  grid-area: lapel4;
+  text-align: center;
+  background-color: #ec7474;
+  width: 100px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+
+.shape4 {
+  grid-area: shape4;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial4 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial4::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial4 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial4::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape4 div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 2s;
+}
+
+.shape4:hover div {
+  transform: scalex(-1);
+}
+
+.lapel5 {
+  grid-area: lapel5;
+  text-align: center;
+  background-color: #ec7474;
+  width: 100px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+}
+
+.shape5 {
+  grid-area: shape5;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial5 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial5::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial5 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial5::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape5 div {
+  width: 90%;
+  height: 90%;
+  background-color: #ff000078;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 2s;
+}
+
+.shape5:hover div {
+  transform: matrix(1, 0.2679, 0.3, 1, 60, 20);
+}
+
+.image1 {
+  overflow: hidden;
+  width: 800px;
+  height: 350px;
+  margin: 0px auto;
+}
+
+.image1 img {
+  width: 800px;
+  height: 350px;
+  transition: 1s;
+}
+
+.image1:hover img {
+  transform: scale(1.2) rotate(4deg);
+  opacity: 0.7;
+}
+
+.rotate3d {
+  background-color: white;
+  color: black;
+  box-shadow: -2px 4px 19px 12px #0000007a;
+  margin: 50px;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "shape6 shape7 shape8"
+    "lapel6 lapel7 lapel8";
+}
+
+.lapel6 {
+  grid-area: lapel6;
+  text-align: center;
+  background-color: #75757596;
+  color: black;
+  width: 220px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+  position: relative;
+  top: 7px;
+}
+
+.shape6 {
+  grid-area: shape6;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.origin {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: black;
+  border-radius: 50%;
+  left: 16px;
+  top: 94%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.x-axial6 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial6::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial6 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial6::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape6 div {
+  width: 90%;
+  height: 90%;
+  background-color: #75757596;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 5s;
+  transform-origin: left bottom;
+  transform: rotate3d(0, 0, 1, -360deg);
+}
+
+.shape6:hover div {
+  transform-origin: left bottom;
+  transform: rotate3d(0, 0, 1, 0deg);
+}
+
+.lapel7 {
+  grid-area: lapel7;
+  text-align: center;
+  background-color: #75757596;
+  color: black;
+  width: 280px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+  position: relative;
+  top: 7px;
+}
+
+.shape7 {
+  grid-area: shape7;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial7 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial7::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial7 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial7::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape7 div {
+  width: 90%;
+  height: 90%;
+  background-color: #75757596;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 2s;
+  transform-origin: left top;
+  transform: rotateY(90deg);
+}
+
+.shape7:hover div {
+  transform-origin: left top;
+  transform: rotate3d(0, 1, 0, 0deg);
+}
+
+.lapel8 {
+  grid-area: lapel8;
+  text-align: center;
+  background-color: #75757596;
+  color: black;
+  width: 280px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+  position: relative;
+  top: 7px;
+}
+
+.shape8 {
+  grid-area: shape8;
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+}
+
+.x-axial8 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial8::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial8 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial8::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape8 div {
+  width: 90%;
+  height: 90%;
+  background-color: #75757596;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 2s;
+  transform: rotate3d(1, 0, 1, 180deg);
+}
+
+.shape8:hover div {
+  transform: rotate3d(0, 0, 0, 0deg);
+}
+
+.lapel9 {
+  text-align: center;
+  background-color: #75757596;
+  color: black;
+  width: 280px;
+  padding: 10px;
+  margin: 0 auto 20px;
+  outline: 2px solid black;
+  border-radius: 10px;
+  position: relative;
+  bottom: -455px;
+}
+
+.shape9 {
+  width: 300px;
+  height: 300px;
+  background-color: #dbdbdb;
+  margin: 50px auto;
+  padding-top: 1px;
+  position: relative;
+  perspective: 100px;
+}
+
+.x-axial9 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  bottom: -20px;
+}
+
+.x-axial9::after {
+  content: "X-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.y-axial9 {
+  width: 100%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -170px;
+  top: 148px;
+  transform: rotate(90deg);
+}
+
+.y-axial9::after {
+  content: "Y-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 125px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.z-axial9 {
+  width: 80%;
+  height: 4px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  left: -227px;
+  bottom: -108px;
+  transform: rotate(-45deg);
+}
+
+.z-axial9::after {
+  content: "Z-Axial";
+  color: black;
+  width: 60px;
+  position: absolute;
+  text-align: center;
+  left: 100px;
+  bottom: -6px;
+  background: white;
+  font-weight: bold;
+}
+
+.shape9 div {
+  width: 90%;
+  height: 90%;
+  background-color: #75757596;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  margin-top: 5%;
+  margin-left: 5%;
+  transition: 2s;
+}
+
+.shape9:hover div {
+  transform: translate3d(0, 0, 50px);
+}
+
+#hlkl {
+  background-color: white;
+  width: 950px;
+  height: 700px;
+  margin: 0px auto 50px;
+  padding: 60px 0 0 60px;
+}
+
+.container {
+  display: inline-block;
+  position: relative;
+  left: 193px;
+  margin: 40px 0;
+  width: 200px;
+  perspective: 500px;
+}
+
+.box5 {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 2s;
+}
+
+.container:hover .box5 {
+  transform: rotateY(-180deg);
+}
+
+.box5 .face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  color: white ;
+  backface-visibility: hidden;
+}
+
+.box5 .front {
+  background-color: red;
+}
+
+.box5 .back {
+  background-color: green;
+  transform: rotateY(180deg);
+}
+
+.container1 {
+  display: inline-block;
+  position: relative;
+  left: 738px;
+  margin: 40px 0;
+  width: 200px;
+  perspective: 500px;
+}
+
+.box6 {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 2s;
+  transform-origin: right center;
+}
+
+.container1:hover .box6 {
+  transform: translate(-100%) rotateY(-180deg);
+}
+
+.box6 .face1 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 30px;
+  color: white ;
+  backface-visibility: hidden;
+}
+
+.box6 .front1 {
+  background-color: red;
+}
+
+.box6 .back1 {
+  background-color: green;
+  transform: rotateY(180deg);
+}
+
+.animation {
+  background-color: black;
+  padding: 70px;
+  margin: 50px auto;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+
+  animation-name: chang-color;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  /* animation-direction: reverse; */
+  /* animation-delay: 3s; */
+  /* animation-fill-mode: forwards; */
+  /* animation-play-state: running; */
+
+  /* animation: spin 1s linear 5s infinite reverse; */
+}
+
+.animation:hover {
+  animation-play-state: paused;
+}
+
+@keyframes chang-color {
+  0% {
+    background-color: black;
+    color: white;
+    border: 5px solid white;
+    text-shadow: 1px 1px 2px white;
+  }
+  20% {
+    background-color: white;
+    color: black;
+    border: 5px solid black;
+    text-shadow: 1px 1px 2px black;
+  }
+  40% {
+    background-color: black;
+    color: white;
+    border: 5px solid white;
+    text-shadow: 1px 1px 2px white;
+  }
+  60% {
+    background-color: white;
+    color: black;
+    border: 5px solid black;
+    text-shadow: 1px 1px 2px black;
+  }
+  80% {
+    background-color: black;
+    color: white;
+    border: 5px solid white;
+    text-shadow: 1px 1px 2px white;
+  }
+  100% {
+    background-color: white;
+    color: black;
+    border: 5px solid black;
+    text-shadow: 1px 1px 2px black;
+  }
+}
+
+.animation1 {
+  background-color: #cfcfcf;
+  padding: 70px;
+  margin: 50px auto;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+  border-radius: 50%;
+  border: 8px solid #e91e63;
+  border-left-color: transparent;
+
+  animation-name: spin;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: reverse;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animation1:hover {
+  animation-play-state: paused;
+}
+
+.animation2 {
+  width: 600px;
+  height: 120px;
+  background-color: #333;
+  margin: 0px auto 50px;
+}
+
+.load {
+  display: flex;
+  justify-content: center;
+  padding: 50px 0;
+}
+
+.load div {
+  width: 20px;
+  height: 20px;
+  background-color: orchid;
+  border-radius: 50%;
+  margin: 0 5px;
+  animation-name: up-dawn;
+  animation-duration: 0.9s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.load .tow-2 {
+  animation-delay: 0.3s;
+}
+
+.load .three-3 {
+  animation-delay: 0.6s;
+}
+
+@keyframes up-dawn {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.2;
+    transform: translateY(-20px);
+  }
+}
+
+.selector div:not(.personal) {
+  color: red;
+}
+
+.selector p:nth-last-child(8) {
+  color: red;
+}
+
+.selector p:nth-of-type(2) {
+  color: #27ae60;
+}
+
+.selector input[type="checkbox"]:checked + label{
+  padding: 3px;
+  font-weight: bold;
+  border-radius: 3px;
+  color: black;
+  background-color: #00b7db;
+  /* display: none; */
+}
+
+.selector input[type="text"]:focus {
+  height: 40px;
+}
+
+.selector input:focus::placeholder {
+  color: red;
+  transform: translateY(-12px);
+}
+
+.selector div:last-child {
+  background-color: red;
+  color: azure;
+  margin: 80px 0 30px;
+  width: fit-content;
+  padding: 10px;
+}
+
+.selector div:empty {
+  display: none;
+}
+
+.media {
+  display: flex;
+  justify-content: space-between;
+}
+.media div {
+  width: 200px;
+  height: 30px;
+  background-color: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1100px) and (min-width: 200px) {
+  .media div {
+  background-color: rgb(0, 4, 255);
+  }
+}
+
+.btn {
+  display: inline-block;
+  margin-bottom: 20px;
+  margin-right: 5px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  border-radius: .25rem;
+  transition: 
+  color .9s,
+  background-color .9s,
+  border-color .9s
+  ;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #0083ff;
+  border-color: #0083ff;
+}
+.btn-seconder {
+  color: #fff;
+  background-color: #5a5858;
+  border-color: #5a5858;
+}
+.btn-success {
+  color: #fff;
+  background-color: #27ae60;
+  border-color: #27ae60;
+}
+.btn-danger {
+  color: #fff;
+  background-color: #c0392b;
+  border-color: #c0392b;
+}
+.btn-watting {
+  color: black;
+  background-color: yellow;
+  border-color: yellow;
+}
+.btn-light {
+  color: black;
+  background-color: #eee;
+  border-color: #eee;
+}
+.btn-dark {
+  color: #fff;
+  background-color: black;
+  border-color: black;
+}
+
+footer {
+padding: 10px 0 10px 100px;
+  background-color: #00b7db;
+  color: black;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 4px 4px 15px 13px black;
+  margin: 0 -10px -10px;
+}
+
+.secret {
+  text-decoration: none;
+}
+
+/* ===================================================================== */
+
+.father {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+}
+
+.father div {
+  padding: 20px;
+  background-color: #27ae60;
+  font-size: 20px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+/* Mobile */
+
+@media (max-width: 767px) {
+  .father div {
+    width: 100%;
+  }
+}
+
+/* smalle screens */
+
+@media (min-width: 768px) {
+  .father div {
+    width: calc(50% - 10px);
+    background-color: #005aff;
+  }
+}
+
+/* medium screens */
+
+@media (min-width: 992px) {
+  .father div {
+    width: calc(25% - 5px);
+    background-color: red;
+  }
+}
+
+/* large  screens */
+
+@media (min-width: 1200px) {
+
+}

@@ -1,0 +1,65 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    list-style: none;
+}
+
+ul li {
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.page {
+    height: 100vh;
+    background-color: #eee;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: 50px auto 100px;
+    grid-template-areas:
+    " logo  nav  nav nav nav nav nav nav nav nav "
+    " cont cont cont cont cont cont cont cont side side"
+    " foot foot foot foot foot foot foot foot foot foot "; /* تعمل نقطة بينهم اذا عايز عمود فاضي */
+}
+
+h2 {
+    grid-area: logo;
+    background-color: red;
+    color: white;
+    text-align: center;
+    line-height: 40px;
+}
+
+nav {
+    grid-area: nav;
+    background-color: blue;
+    color: white;
+    line-height: 50px;
+}
+
+section {
+    grid-area: cont;
+    background-color: yellow;
+    color: black;
+    text-align: center;
+    line-height: 100px;
+}
+
+aside {
+    grid-area: side;
+    background-color: green;
+    color: white;
+    text-align: center;
+    line-height: 460px;
+}
+
+footer {
+    grid-area: foot;
+    background-color: gray;
+    color: white;
+    text-align: center;
+    line-height: 100px;
+}

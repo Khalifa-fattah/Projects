@@ -1,0 +1,113 @@
+.instegram {
+    width: 300px;
+    height: 300px;
+    margin: 130px auto;
+    background-image: linear-gradient(
+        150deg,
+        rgb(140, 0, 255) 50px,
+        rgb(255, 0, 221) 128px,
+        rgb(255, 0, 43) 202px,
+        rgb(255, 145, 0) 360px
+    );
+    border-radius: 60px;
+    position: relative;
+    box-shadow: 3px 4px 14px 1px #000000a8;
+}
+
+.instegram:hover {
+    background-image: none;
+    background-color: brown;
+}
+
+.instegram .one {
+    border: 15px solid white;
+    width: 210px;
+    height: 210px;
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    border-radius: 60px;
+}
+
+.instegram .tow {
+    border: 15px solid white;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    top: 27%;
+    left: 28%;
+}
+
+.instegram .three {
+    border: 15px solid white;
+    border-radius: 50%;
+    width: 0px;
+    position: absolute;
+    top: 21%;
+    left: 69%;
+}
+
+.facebook {
+    font-family: system-ui;
+    background-color: rgb(0, 81, 255);
+    color: white;
+    width: 250px;
+    height: 250px;
+    margin: 200px auto;
+    border-radius: 25%;
+    font-size: 260px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 285px;
+    overflow: hidden;
+    box-shadow: 3px 4px 14px 3px #000000a8;
+}
+
+.you-tube {
+    background-color: red;
+    width: 280px;
+    height: 150px;
+    margin: 200px auto;
+    border-radius: 30px;
+    position: relative;
+    box-shadow: 3px 4px 14px 1px #000000a8;
+}
+
+.you-tube .one {
+    width: 0px;
+    border: 40px solid;
+    border-color: transparent transparent transparent white;
+    position: absolute;
+    top: 32px;
+    left: 130px;
+}
+
+.google {
+    position: absolute;
+    top: 33%;
+    left: 32%;
+    font-weight: bold;
+    font-size: 146px;
+    font-family: system-ui;
+    text-shadow: 2px 2px 4px black;
+}
+
+.google #zero {
+    color: blue;
+}
+.google #one {
+    color: red;
+}
+.google #tow {
+    color: gold;
+}
+.google #three {
+    color: blue;
+}
+.google #four {
+    color: green;
+}
+.google #five {
+    color: red;
+}

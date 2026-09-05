@@ -1,0 +1,1 @@
+print('I Love Single Quote \'Test\' ')

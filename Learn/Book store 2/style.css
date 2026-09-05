@@ -1,0 +1,37 @@
+body {
+   font-family: Arial, sans-serif;
+   margin: 0;
+   padding: 20px;
+}
+
+h1 {
+   text-align: center;
+}
+
+#book-list {
+   display: flex;
+   justify-content: space-between;
+   flex-wrap: wrap;
+}
+
+.book {
+   width: 200px;
+   margin-bottom: 20px;
+   text-align: center;
+}
+
+.book img {
+   width: 100%;
+}
+
+#cart {
+   margin-top: 50px;
+}
+
+#cart-items {
+   list-style-type: none;
+}
+
+button {
+   padding: 5px 10px;
+}

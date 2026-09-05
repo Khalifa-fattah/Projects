@@ -1,0 +1,126 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --main-color: #2080b9;
+}
+
+body {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  direction: rtl;
+}
+
+.contener {
+  perspective: 100px;
+  background-image: linear-gradient( 
+    180deg,
+    #2080b9 30%,
+    white 30% );
+
+  height: 665px;
+  display: flex;
+}
+
+.form {
+  position: absolute;
+  top: 250px;
+  left: calc(50% - 300px);
+  width: 600px;
+  display: grid;
+  grid-template-rows: repeat(3, 70px);
+}
+
+.form input {
+  margin-bottom: 10px;
+  height: 50px;
+  outline: none;
+  border: 2px solid rgb(110, 110, 110);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.form input:not(input[type="submit"]):focus {
+  border: 2px solid var(--main-color);
+
+}
+
+input[type="submit"] {
+  border: none;
+  background-color: var(--main-color);
+  color: white;
+  font-weight: bold;
+  font-size: 25px;
+}
+
+input[type="submit"]:hover {
+  background-color: #2073a3;
+  cursor: pointer;
+}
+
+input::placeholder {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+input:focus::placeholder {
+  transform: translateY(-10px);
+}
+
+.data {
+  color: var(--main-color);
+  font-weight: 800;
+  font-size: 25px;
+}
+
+a {
+  color: rgb(110, 110, 110);
+  text-decoration: none;
+}
+
+a:hover {
+  color: unset;
+}
+
+#A {
+  margin-left: 330px;
+}
+
+i {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  font-size: 64px;
+  color: white;
+}
+
+i:hover {
+  animation-name: icon;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes icon {
+  0% {
+    transform: scale(1.0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.0);
+  }
+}
+
+span {
+  color: white;
+  font-size: 30px;
+  position: absolute;
+  top: 127px;
+  right: calc(50% - 94px);
+  font-family: cursive;
+}
+
