@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة الطوب للمباني</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0f2ff 0%, #ffffff 50%, #e0f2ff 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        input[type="text"].error,
+        input[type="number"].error,
+        select.error {
+            border-color: #d32f2f;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Button Styles */
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn-info {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0b7dda;
+        }
+
+        /* Results Section */
+        .results-container {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e8f5e9 100%);
+            border-radius: 12px;
+            padding: 30px;
+            border-left: 4px solid #4caf50;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .results-container.hidden {
+            display: none;
+        }
+
+        .result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1a73e8;
+        }
+
+        .result-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1a73e8;
+        }
+
+        .result-item.cost {
+            border-left-color: #ff9800;
+        }
+
+        .result-item.cost .result-value {
+            color: #ff9800;
+        }
+
+        .result-item.total {
+            border-left-color: #4caf50;
+            background: linear-gradient(135deg, #f1f8e9 0%, #c8e6c9 100%);
+        }
+
+        .result-item.total .result-value {
+            color: #2e7d32;
+            font-size: 2.2em;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-left: 4px solid #4caf50;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            animation: slideInNotification 0.4s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideInNotification {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification.show {
+            display: flex;
+        }
+
+        .notification-icon {
+            font-size: 1.5em;
+            color: #4caf50;
+        }
+
+        .notification-text {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1a1a1a;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .project-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .project-item:hover {
+            background: #efefef;
+        }
+
+        .project-info {
+            flex: 1;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .project-date {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .project-actions button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            min-width: auto;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #999;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-primary {
+                grid-column: span 1;
+            }
+
+            .notification {
+                left: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <span class="notification-icon">✓</span>
+        <span class="notification-text">تم حساب عدد الطوب بنجاح!</span>
+    </div>
+
+    <!-- Modal for Saved Projects -->
+    <div class="modal" id="projectsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>المشاريع المحفوظة</h2>
+                <button class="close-btn" onclick="closeProjectsModal()">×</button>
+            </div>
+            <div id="projectsList"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>حاسبة الطوب للمباني</h1>
+            <p>احسب العدد الدقيق للطوب المطلوب لمشروعك السكني أو التجاري. حدد أبعاد الطوب والمبنى وسمك الجدران واتجاه وضع الطوب للحصول على نتائج دقيقة.</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Left Column - Inputs -->
+            <div>
+                <!-- Brick Specifications -->
+                <div class="card">
+                    <h2>مواصفات الطوب</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="brickLength">الطول (سم)</label>
+                            <input type="number" id="brickLength" value="20" min="1">
+                            <div class="error-message" id="error-brickLength"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="brickWidth">العرض (سم)</label>
+                            <input type="number" id="brickWidth" value="10" min="1">
+                            <div class="error-message" id="error-brickWidth"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="brickHeight">الارتفاع (سم)</label>
+                            <input type="number" id="brickHeight" value="10" min="1">
+                            <div class="error-message" id="error-brickHeight"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Building Dimensions -->
+                <div class="card">
+                    <h2>أبعاد المبنى</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="buildingLength">الطول (متر)</label>
+                            <input type="number" id="buildingLength" value="20" min="1">
+                            <div class="error-message" id="error-buildingLength"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="buildingWidth">العرض (متر)</label>
+                            <input type="number" id="buildingWidth" value="15" min="1">
+                            <div class="error-message" id="error-buildingWidth"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="buildingHeight">الارتفاع (متر)</label>
+                            <input type="number" id="buildingHeight" value="3" min="1">
+                            <div class="error-message" id="error-buildingHeight"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wall Configuration -->
+                <div class="card">
+                    <h2>إعدادات الجدران</h2>
+                    <div class="form-group">
+                        <label for="wallThickness">سمك الجدار (سم) - ينطبق على جميع الجدران الأربعة</label>
+                        <input type="number" id="wallThickness" value="20" min="1">
+                        <div class="error-message" id="error-wallThickness"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="orientation">اتجاه وضع الطوب - ينطبق على جميع الجدران الأربعة</label>
+                        <select id="orientation">
+                            <option value="lengthwise">طولي (Lengthwise)</option>
+                            <option value="widthwise">عرضي (Widthwise)</option>
+                            <option value="mixed">مختلط (Mixed)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Additional Settings -->
+                <div class="card">
+                    <h2>إعدادات إضافية</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wastePercentage">نسبة الهدر (%)</label>
+                            <input type="number" id="wastePercentage" value="5" min="0">
+                            <div class="error-message" id="error-wastePercentage"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="brickPrice">سعر الطوبة الواحدة (ريال)</label>
+                            <input type="number" id="brickPrice" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Management -->
+                <div class="card">
+                    <h2>إدارة المشاريع</h2>
+                    <div class="form-group">
+                        <label for="projectName">اسم المشروع</label>
+                        <input type="text" id="projectName" placeholder="أدخل اسم المشروع">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-success" onclick="saveProject()">💾 حفظ المشروع</button>
+                        <button class="btn-info" onclick="openProjectsModal()">📁 المشاريع المحفوظة (<span id="projectCount">0</span>)</button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button class="btn-primary" onclick="calculateBricks()">احسب الطوب</button>
+                    <button class="btn-secondary" onclick="resetForm()">↻ إعادة تعيين</button>
+                </div>
+            </div>
+
+            <!-- Right Column - Results -->
+            <div>
+                <div class="results-container hidden" id="resultsContainer">
+                    <div class="result-item">
+                        <div class="result-label">إجمالي حجم الجدران</div>
+                        <div class="result-value"><span id="wallVolume">0</span> م³</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">الطوب لكل جدار (مع الهدر)</div>
+                        <div id="wallsBreakdown" style="font-size: 0.95em; color: #666;"></div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">إجمالي الطوب (بدون هدر)</div>
+                        <div class="result-value"><span id="bricksNeeded">0</span></div>
+                    </div>
+
+                    <div class="result-item total">
+                        <div class="result-label">إجمالي الطوب (مع الهدر)</div>
+                        <div class="result-value"><span id="bricksWithWaste">0</span></div>
+                    </div>
+
+                    <div class="result-item cost" id="costResult" style="display: none;">
+                        <div class="result-label">التكلفة الإجمالية</div>
+                        <div class="result-value"><span id="totalCost">0</span> ريال</div>
+                    </div>
+
+                    <button class="btn-danger" style="width: 100%; margin-top: 20px;" onclick="exportPDF()">📥 تحميل التقرير PDF</button>
+                </div>
+
+                <div id="emptyState" class="card" style="text-align: center; padding: 60px 20px;">
+                    <div class="empty-state-icon">🏗️</div>
+                    <p style="font-size: 1.1em; color: #999;">أدخل جميع البيانات وانقر على "احسب الطوب" لعرض النتائج هنا.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>حسابات دقيقة لتخطيط المشاريع الاحترافية. جميع القيم مقربة للاستخدام العملي.</p>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            results: null,
+            projects: []
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjects();
+            updateProjectCount();
+        });
+
+        // Validation
+        function validateInputs() {
+            const errors = {};
+            const fields = [
+                'brickLength', 'brickWidth', 'brickHeight',
+                'buildingLength', 'buildingWidth', 'buildingHeight',
+                'wastePercentage', 'wallThickness'
+            ];
+
+            fields.forEach(field => {
+                const input = document.getElementById(field);
+                const value = parseFloat(input.value);
+
+                if (!input.value || input.value.trim() === '') {
+                    errors[field] = 'هذا الحقل مطلوب';
+                } else if (isNaN(value)) {
+                    errors[field] = 'الرجاء إدخال رقم صحيح';
+                } else if (value <= 0) {
+                    errors[field] = 'يجب أن تكون القيمة أكبر من 0';
+                }
+            });
+
+            // Display errors
+            fields.forEach(field => {
+                const errorEl = document.getElementById(`error-${field}`);
+                const input = document.getElementById(field);
+                if (errors[field]) {
+                    errorEl.textContent = errors[field];
+                    errorEl.classList.add('show');
+                    input.classList.add('error');
+                } else {
+                    errorEl.classList.remove('show');
+                    input.classList.remove('error');
+                }
+            });
+
+            return Object.keys(errors).length === 0;
+        }
+
+        // Clear errors on input
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', function() {
+                const errorEl = document.getElementById(`error-${this.id}`);
+                if (errorEl) {
+                    errorEl.classList.remove('show');
+                    this.classList.remove('error');
+                }
+            });
+        });
+
+        // Calculate Bricks
+        function calculateBricks() {
+            if (!validateInputs()) return;
+
+            const brickLength = parseFloat(document.getElementById('brickLength').value);
+            const brickWidth = parseFloat(document.getElementById('brickWidth').value);
+            const brickHeight = parseFloat(document.getElementById('brickHeight').value);
+            const buildingLength = parseFloat(document.getElementById('buildingLength').value);
+            const buildingWidth = parseFloat(document.getElementById('buildingWidth').value);
+            const buildingHeight = parseFloat(document.getElementById('buildingHeight').value);
+            const wastePercentage = parseFloat(document.getElementById('wastePercentage').value);
+            const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+            const orientation = document.getElementById('orientation').value;
+            const brickPrice = parseFloat(document.getElementById('brickPrice').value) || 0;
+
+            // Calculate for each wall
+            const walls = [
+                { name: 'Wall 1 (Length)', length: buildingLength },
+                { name: 'Wall 2 (Width)', length: buildingWidth },
+                { name: 'Wall 3 (Length)', length: buildingLength },
+                { name: 'Wall 4 (Width)', length: buildingWidth }
+            ];
+
+            let totalBricksNeeded = 0;
+            let totalBricksWithWaste = 0;
+            let totalWallVolume = 0;
+            let wallsBreakdown = '';
+
+            walls.forEach(wall => {
+                const wallLengthM = wall.length;
+                const wallHeightM = buildingHeight;
+                const wallThicknessM = wallThickness / 100;
+
+                const brickLengthM = brickLength / 100;
+                const brickWidthM = brickWidth / 100;
+                const brickHeightM = brickHeight / 100;
+
+                const wallVolume = wallLengthM * wallHeightM * wallThicknessM;
+                let brickVolume = brickLengthM * brickWidthM * brickHeightM;
+
+                if (orientation === 'mixed') {
+                    brickVolume = (brickLengthM * brickWidthM * brickHeightM + brickWidthM * brickLengthM * brickHeightM) / 2;
+                }
+
+                const bricksNeeded = Math.round(wallVolume / brickVolume);
+                const bricksWithWaste = Math.round(bricksNeeded * (1 + wastePercentage / 100));
+
+                totalBricksNeeded += bricksNeeded;
+                totalBricksWithWaste += bricksWithWaste;
+                totalWallVolume += wallVolume;
+
+                wallsBreakdown += `<div style="padding: 8px; background: #f9f9f9; border-radius: 4px; margin: 5px 0;">
+                    <span style="color: #666;">${wall.name}</span>: <strong style="color: #1a73e8;">${bricksWithWaste.toLocaleString()}</strong>
+                </div>`;
+            });
+
+            const totalCost = totalBricksWithWaste * brickPrice;
+
+            state.results = {
+                wallVolume: totalWallVolume,
+                bricksNeeded: totalBricksNeeded,
+                bricksWithWaste: totalBricksWithWaste,
+                totalCost: totalCost,
+                wallsBreakdown: wallsBreakdown
+            };
+
+            displayResults();
+            showNotification();
+        }
+
+        // Display Results
+        function displayResults() {
+            if (!state.results) return;
+
+            document.getElementById('wallVolume').textContent = state.results.wallVolume.toFixed(3);
+            document.getElementById('bricksNeeded').textContent = state.results.bricksNeeded.toLocaleString();
+            document.getElementById('bricksWithWaste').textContent = state.results.bricksWithWaste.toLocaleString();
+            document.getElementById('wallsBreakdown').innerHTML = state.results.wallsBreakdown;
+
+            const costResult = document.getElementById('costResult');
+            if (state.results.totalCost > 0) {
+                document.getElementById('totalCost').textContent = state.results.totalCost.toLocaleString('ar-SA', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                costResult.style.display = 'block';
+            } else {
+                costResult.style.display = 'none';
+            }
+
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        // Show Notification
+        function showNotification() {
+            const notification = document.getElementById('notification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Reset Form
+        function resetForm() {
+            document.getElementById('brickLength').value = '20';
+            document.getElementById('brickWidth').value = '10';
+            document.getElementById('brickHeight').value = '10';
+            document.getElementById('buildingLength').value = '20';
+            document.getElementById('buildingWidth').value = '15';
+            document.getElementById('buildingHeight').value = '3';
+            document.getElementById('wastePercentage').value = '5';
+            document.getElementById('wallThickness').value = '20';
+            document.getElementById('orientation').value = 'lengthwise';
+            document.getElementById('brickPrice').value = '0';
+            document.getElementById('projectName').value = '';
+
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('emptyState').style.display = 'block';
+
+            state.results = null;
+        }
+
+        // Project Management
+        function saveProject() {
+            const projectName = document.getElementById('projectName').value.trim();
+            if (!projectName) {
+                alert('الرجاء إدخال اسم المشروع');
+                return;
+            }
+
+            const project = {
+                id: Date.now().toString(),
+                name: projectName,
+                timestamp: new Date().toLocaleString('ar-SA'),
+                data: {
+                    brickLength: document.getElementById('brickLength').value,
+                    brickWidth: document.getElementById('brickWidth').value,
+                    brickHeight: document.getElementById('brickHeight').value,
+                    buildingLength: document.getElementById('buildingLength').value,
+                    buildingWidth: document.getElementById('buildingWidth').value,
+                    buildingHeight: document.getElementById('buildingHeight').value,
+                    wastePercentage: document.getElementById('wastePercentage').value,
+                    wallThickness: document.getElementById('wallThickness').value,
+                    orientation: document.getElementById('orientation').value,
+                    brickPrice: document.getElementById('brickPrice').value
+                }
+            };
+
+            state.projects.unshift(project);
+            saveProjects();
+            updateProjectCount();
+            document.getElementById('projectName').value = '';
+            showNotification();
+        }
+
+        function loadProjects() {
+            const stored = localStorage.getItem('brickCalculatorProjects');
+            if (stored) {
+                try {
+                    state.projects = JSON.parse(stored);
+                } catch (e) {
+                    console.error('Failed to load projects:', e);
+                }
+            }
+        }
+
+        function saveProjects() {
+            localStorage.setItem('brickCalculatorProjects', JSON.stringify(state.projects));
+        }
+
+        function updateProjectCount() {
+            document.getElementById('projectCount').textContent = state.projects.length;
+        }
+
+        function openProjectsModal() {
+            const modal = document.getElementById('projectsModal');
+            const projectsList = document.getElementById('projectsList');
+
+            if (state.projects.length === 0) {
+                projectsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد مشاريع محفوظة بعد</p></div>';
+            } else {
+                projectsList.innerHTML = state.projects.map(project => `
+                    <div class="project-item">
+                        <div class="project-info">
+                            <div class="project-name">${project.name}</div>
+                            <div class="project-date">${project.timestamp}</div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn-info" onclick="loadProjectData('${project.id}')">تحميل</button>
+                            <button class="btn-danger" onclick="deleteProject('${project.id}')">حذف</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeProjectsModal() {
+            document.getElementById('projectsModal').classList.remove('show');
+        }
+
+        function loadProjectData(projectId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const data = project.data;
+            document.getElementById('brickLength').value = data.brickLength;
+            document.getElementById('brickWidth').value = data.brickWidth;
+            document.getElementById('brickHeight').value = data.brickHeight;
+            document.getElementById('buildingLength').value = data.buildingLength;
+            document.getElementById('buildingWidth').value = data.buildingWidth;
+            document.getElementById('buildingHeight').value = data.buildingHeight;
+            document.getElementById('wastePercentage').value = data.wastePercentage;
+            document.getElementById('wallThickness').value = data.wallThickness;
+            document.getElementById('orientation').value = data.orientation;
+            document.getElementById('brickPrice').value = data.brickPrice;
+
+            closeProjectsModal();
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        function deleteProject(projectId) {
+            if (confirm('هل تريد حذف هذا المشروع؟')) {
+                state.projects = state.projects.filter(p => p.id !== projectId);
+                saveProjects();
+                updateProjectCount();
+                openProjectsModal();
+            }
+        }
+
+        // PDF Export
+        function exportPDF() {
+            if (!state.results) return;
+
+            const doc = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+        h1 { text-align: center; color: #1a73e8; }
+        .section { margin: 20px 0; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        .section-title { font-weight: bold; color: #1a73e8; margin-bottom: 10px; }
+        .item { margin: 8px 0; }
+        .label { color: #666; }
+        .value { font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>تقرير حساب الطوب للمباني</h1>
+    <p style="text-align: center; color: #999;">التاريخ: ${new Date().toLocaleDateString('ar-SA')}</p>
+
+    <div class="section">
+        <div class="section-title">مواصفات الطوب</div>
+        <div class="item"><span class="label">الطول:</span> <span class="value">${document.getElementById('brickLength').value} سم</span></div>
+        <div class="item"><span class="label">العرض:</span> <span class="value">${document.getElementById('brickWidth').value} سم</span></div>
+        <div class="item"><span class="label">الارتفاع:</span> <span class="value">${document.getElementById('brickHeight').value} سم</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">أبعاد المبنى</div>
+        <div class="item"><span class="label">الطول:</span> <span class="value">${document.getElementById('buildingLength').value} متر</span></div>
+        <div class="item"><span class="label">العرض:</span> <span class="value">${document.getElementById('buildingWidth').value} متر</span></div>
+        <div class="item"><span class="label">الارتفاع:</span> <span class="value">${document.getElementById('buildingHeight').value} متر</span></div>
+        <div class="item"><span class="label">سمك الجدار:</span> <span class="value">${document.getElementById('wallThickness').value} سم</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">نتائج الحساب</div>
+        <div class="item"><span class="label">إجمالي حجم الجدران:</span> <span class="value">${state.results.wallVolume.toFixed(3)} م³</span></div>
+        <div class="item"><span class="label">عدد الطوب (بدون هدر):</span> <span class="value">${state.results.bricksNeeded.toLocaleString()}</span></div>
+        <div class="item"><span class="label">نسبة الهدر:</span> <span class="value">${document.getElementById('wastePercentage').value}%</span></div>
+        <div class="item"><span class="label">عدد الطوب (مع الهدر):</span> <span class="value">${state.results.bricksWithWaste.toLocaleString()}</span></div>
+        ${state.results.totalCost > 0 ? `<div class="item"><span class="label">التكلفة الإجمالية:</span> <span class="value">${state.results.totalCost.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال</span></div>` : ''}
+    </div>
+</body>
+</html>
+            `;
+
+            const blob = new Blob([doc], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'تقرير_حساب_الطوب.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('projectsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProjectsModal();
+            }
+        });
+    </script>
+</body>
+</html>

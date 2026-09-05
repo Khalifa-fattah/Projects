@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="110" fill="#1e293b"/>
+  <!-- Bricks -->
+  <rect x="100" y="120" width="140" height="70" rx="12" fill="#e53e3e"/>
+  <rect x="255" y="120" width="157" height="70" rx="12" fill="#e53e3e"/>
+  <rect x="100" y="205" width="220" height="70" rx="12" fill="#dd6b20"/>
+  <rect x="335" y="205" width="77" height="70" rx="12" fill="#e53e3e"/>
+  <!-- Calculator Icon Badge -->
+  <circle cx="370" cy="370" r="85" fill="#3182ce"/>
+  <path d="M335 330 h70 v80 h-70 z" fill="none" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
+  <rect x="348" y="345" width="44" height="15" fill="#ffffff" rx="3"/>
+  <circle cx="355" cy="380" r="5" fill="#ffffff"/>
+  <circle cx="370" cy="380" r="5" fill="#ffffff"/>
+  <circle cx="385" cy="380" r="5" fill="#ffffff"/>
+  <circle cx="355" cy="395" r="5" fill="#ffffff"/>
+  <circle cx="370" cy="395" r="5" fill="#ffffff"/>
+  <circle cx="385" cy="395" r="5" fill="#ffffff"/>
+</svg>

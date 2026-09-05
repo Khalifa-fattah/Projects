@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة استهلاك الباقة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📊 حاسبة استهلاك الباقة</h1>
+        <p>أدخل البيانات المتبقية في باقتك لمعرفة متوسط استهلاكك اليومي.</p>
+    </header>
+
+    <main>
+        <div class="input-group">
+            <label for="gb">الجيجابايت المتبقية (GB)</label>
+            <input type="number" id="gb" placeholder="مثال: 50" min="0">
+            <div class="error-message" id="gb-error"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="days">الأيام المتبقية</label>
+            <input type="number" id="days" placeholder="مثال: 15" min="1">
+            <div class="error-message" id="days-error"></div>
+        </div>
+
+        <div id="result-container" class="hidden">
+            <p>متوسط استهلاكك اليومي الموصى به:</p>
+            <div class="result-display">
+                <span id="main-result" class="highlight"></span>
+                <span id="sub-result"></span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="consumption-progress" class="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- حاوية الجدول الأسبوعي الجديدة -->
+        <div id="weekly-table-container"></div>
+    </main>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

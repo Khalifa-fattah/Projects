@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آلة حاسبة</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* تعيين خط Inter كخط أساسي */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* تخصيص زر النقر */
+        .btn-press:active {
+            transform: scale(0.95);
+            filter: brightness(0.85);
+        }
+
+        /* تنسيقات خاصة لشاشة العرض */
+        #display-container {
+            height: 120px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- حاوية الآلة الحاسبة الرئيسية -->
+    <div class="w-full max-w-sm bg-gray-900 shadow-2xl rounded-2xl overflow-hidden transform transition duration-300 hover:shadow-gray-700/50">
+
+        <!-- شاشة العرض -->
+        <div id="display-container" class="p-5 text-left flex flex-col justify-end">
+            <!-- عرض العملية السابقة/السجل -->
+            <div id="history-display" class="text-gray-400 text-lg mb-1 h-6 truncate"></div>
+            <!-- عرض الإدخال الحالي/النتيجة -->
+            <div id="input-display" class="text-white text-5xl font-light h-14 overflow-hidden break-all">0</div>
+        </div>
+
+        <!-- أزرار الآلة الحاسبة -->
+        <div class="grid grid-cols-4 gap-2 p-3">
+            <!-- الصف الأول: الوظائف الخاصة -->
+            <button class="calc-btn function-btn bg-gray-700 text-white col-span-2" data-value="AC">مسح (AC)</button>
+            <button class="calc-btn function-btn bg-gray-700 text-white" data-value="DEL">حذف</button>
+            <button class="calc-btn operator-btn bg-orange-500 text-white" data-value="/">÷</button>
+
+            <!-- الصف الثاني -->
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="7">7</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="8">8</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="9">9</button>
+            <button class="calc-btn operator-btn bg-orange-500 text-white" data-value="*">×</button>
+
+            <!-- الصف الثالث -->
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="4">4</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="5">5</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="6">6</button>
+            <button class="calc-btn operator-btn bg-orange-500 text-white" data-value="-">-</button>
+
+            <!-- الصف الرابع -->
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="1">1</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="2">2</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value="3">3</button>
+            <button class="calc-btn operator-btn bg-orange-500 text-white" data-value="+">+</button>
+
+            <!-- الصف الخامس -->
+            <button class="calc-btn number-btn bg-gray-800 text-white col-span-2" data-value="0">0</button>
+            <button class="calc-btn number-btn bg-gray-800 text-white" data-value=".">.</button>
+            <button class="calc-btn equals-btn bg-orange-400 text-white" data-value="=">=</button>
+        </div>
+    </div>
+
+    <!-- JavaScript للآلة الحاسبة -->
+    <script>
+        // دالة تحويل العلامات لتكون صديقة للعرض
+        function formatDisplay(input) {
+            return input.replace(/\*/g, '×').replace(/\//g, '÷');
+        }
+
+        // دالة آمنة لحساب القيمة
+        function safeEval(expression) {
+            try {
+                // إزالة أي شيء غير آمن قبل التقييم
+                const cleanExpression = expression.replace(/[^-()\d/*+.]/g, '');
+                
+                // استخدام دالة الدخل لتنفيذ العملية
+                // (في تطبيق إنتاجي، يجب استخدام مكتبة تحليل رياضيات آمنة)
+                // هنا نستخدم 'new Function' كبديل لـ 'eval' لتقليل المخاطر قليلاً، على الرغم من أن 'eval' أبسط.
+                // سنستخدم Eval لغرض العرض البسيط هنا.
+                
+                let result = eval(cleanExpression);
+
+                // معالجة الأرقام العشرية الطويلة
+                if (result !== null && result !== undefined && typeof result === 'number') {
+                    // تحديد عدد الأماكن العشرية (على سبيل المثال، 10)
+                    result = parseFloat(result.toFixed(10)); 
+                }
+
+                return result;
+            } catch (e) {
+                console.error("Calculator Error:", e);
+                return "خطأ"; // رسالة خطأ باللغة العربية
+            }
+        }
+        
+        const historyDisplay = document.getElementById('history-display');
+        const inputDisplay = document.getElementById('input-display');
+        const buttons = document.querySelectorAll('.calc-btn');
+
+        let currentInput = '';
+        let resultCalculated = false; // لتحديد ما إذا كانت النتيجة قد تم حسابها للتو
+
+        // تهيئة الأزرار عند تحميل الصفحة
+        window.onload = function() {
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const value = button.getAttribute('data-value');
+                    handleInput(value);
+                });
+                // إضافة فئة للضغط لجعلها تفاعلية
+                button.classList.add('btn-press', 'p-4', 'rounded-xl', 'text-2xl', 'font-medium', 'cursor-pointer', 'select-none', 'transition-all', 'duration-100', 'active:ring-4', 'active:ring-opacity-50');
+            });
+
+            // ضمان عرض '0' عند البدء
+            updateDisplay();
+        };
+
+        function updateDisplay() {
+            inputDisplay.textContent = formatDisplay(currentInput) || '0';
+        }
+
+        function handleInput(value) {
+            // معالجة وظيفة مسح الكل (AC)
+            if (value === 'AC') {
+                currentInput = '';
+                historyDisplay.textContent = '';
+                resultCalculated = false;
+            } 
+            // معالجة وظيفة الحذف (DEL)
+            else if (value === 'DEL') {
+                if (currentInput === 'خطأ') { // إذا كانت الشاشة تعرض خطأ، مسحها بالكامل
+                    currentInput = '';
+                    resultCalculated = false;
+                } else if (currentInput.length > 0) {
+                    currentInput = currentInput.slice(0, -1);
+                }
+            }
+            // معالجة وظيفة يساوي (=)
+            else if (value === '=') {
+                if (currentInput && !resultCalculated) {
+                    historyDisplay.textContent = formatDisplay(currentInput) + ' =';
+                    const result = safeEval(currentInput);
+                    currentInput = String(result);
+                    resultCalculated = true;
+                }
+            } 
+            // معالجة إدخال الأرقام والعلامة العشرية
+            else if (!isNaN(parseFloat(value)) || value === '.') {
+                if (resultCalculated) {
+                    currentInput = value; // ابدأ إدخالاً جديداً بعد النتيجة
+                    resultCalculated = false;
+                    historyDisplay.textContent = '';
+                } else {
+                    // منع أكثر من علامة عشرية في الرقم الحالي
+                    const lastSegment = currentInput.split(/[\+\-\*\/]/).pop();
+                    if (value === '.' && lastSegment.includes('.')) {
+                        return;
+                    }
+                    currentInput += value;
+                }
+            } 
+            // معالجة إدخال العمليات (+, -, *, /)
+            else {
+                // إذا تم حساب نتيجة للتو، استخدم النتيجة كبداية للعملية الجديدة
+                if (resultCalculated) {
+                    historyDisplay.textContent = formatDisplay(currentInput) + ' ' + value;
+                    currentInput += value;
+                    resultCalculated = false;
+                } else if (currentInput) {
+                    const lastChar = currentInput.slice(-1);
+                    // إذا كان الحرف الأخير عملية، استبدلها بالعملية الجديدة
+                    if (['+', '-', '*', '/'].includes(lastChar)) {
+                        currentInput = currentInput.slice(0, -1) + value;
+                    } else {
+                        // إضافة العملية الجديدة
+                        currentInput += value;
+                    }
+                }
+            }
+
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
+

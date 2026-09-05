@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة الطوب للمباني</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .input-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #8B4513;
+            outline: none;
+        }
+        
+        .unit {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .unit input {
+            padding-right: 60px;
+        }
+        
+        .unit-symbol {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        .brick-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .brick-type {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .brick-type:hover {
+            border-color: #8B4513;
+            background-color: #f9f5f2;
+        }
+        
+        .brick-type.selected {
+            border-color: #8B4513;
+            background-color: #f0e6de;
+        }
+        
+        .brick-type h4 {
+            margin-top: 0;
+            color: #8B4513;
+        }
+        
+        .calculate-btn {
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            transition: background-color 0.3s;
+            font-weight: 600;
+        }
+        
+        .calculate-btn:hover {
+            background-color: #A0522D;
+        }
+        
+        .results {
+            background-color: #f9f5f2;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .results h2 {
+            color: #8B4513;
+            margin-top: 0;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-box {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #8B4513;
+            margin: 10px 0;
+        }
+        
+        .result-label {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .details {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #777;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .calculator {
+                padding: 20px;
+            }
+            
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>حاسبة الطوب للمباني</h1>
+            <p class="subtitle">أداة دقيقة لحساب كمية الطوب المطلوبة لأي مبنى</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="calculator">
+            <h2>أدخل بيانات المبنى</h2>
+            <p>املأ البيانات التالية لحساب كمية الطوب المطلوبة لمشروعك</p>
+            
+            <div class="input-section">
+                <div>
+                    <div class="input-group">
+                        <label for="length">طول المبنى (متر)</label>
+                        <div class="unit">
+                            <input type="number" id="length" min="1" step="0.1" value="10">
+                            <span class="unit-symbol">م</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="width">عرض المبنى (متر)</label>
+                        <div class="unit">
+                            <input type="number" id="width" min="1" step="0.1" value="8">
+                            <span class="unit-symbol">م</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="height">ارتفاع الجدران (متر)</label>
+                        <div class="unit">
+                            <input type="number" id="height" min="1" step="0.1" value="3">
+                            <span class="unit-symbol">م</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="input-group">
+                        <label for="wallThickness">سُمك الجدار</label>
+                        <select id="wallThickness">
+                            <option value="0.1">جدار رفيع (10 سم)</option>
+                            <option value="0.2" selected>جدار عادي (20 سم)</option>
+                            <option value="0.3">جدار مزدوج (30 سم)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="openings">مساحة الفتحات (النوافذ والأبواب) بالمتر المربع</label>
+                        <div class="unit">
+                            <input type="number" id="openings" min="0" step="0.1" value="5">
+                            <span class="unit-symbol">م²</span>
+                        </div>
+                        <small>اجمع مساحة جميع النوافذ والأبواب في المبنى</small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>نوع الطوب</label>
+                        <div class="brick-types">
+                            <div class="brick-type selected" data-size="0.25">
+                                <h4>طوب أسمنتي</h4>
+                                <p>20 × 10 × 6 سم</p>
+                                <p>≈ 0.25 م² للطوبة</p>
+                            </div>
+                            <div class="brick-type" data-size="0.20">
+                                <h4>طوب طفلي</h4>
+                                <p>25 × 12 × 6.5 سم</p>
+                                <p>≈ 0.20 م² للطوبة</p>
+                            </div>
+                            <div class="brick-type" data-size="0.18">
+                                <h4>طوب خفيف</h4>
+                                <p>40 × 20 × 20 سم</p>
+                                <p>≈ 0.18 م² للطوبة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="calculate" class="calculate-btn">احسب كمية الطوب المطلوبة</button>
+            
+            <div id="results" class="results">
+                <h2>نتائج الحساب</h2>
+                
+                <div class="result-grid">
+                    <div class="result-box">
+                        <div class="result-value" id="totalBricks">0</div>
+                        <div class="result-label">طوبة مطلوبة</div>
+                    </div>
+                    
+                    <div class="result-box">
+                        <div class="result-value" id="totalArea">0</div>
+                        <div class="result-label">المساحة الكلية للجدران (م²)</div>
+                    </div>
+                    
+                    <div class="result-box">
+                        <div class="result-value" id="wallVolume">0</div>
+                        <div class="result-label">حجم الجدران (م³)</div>
+                    </div>
+                </div>
+                
+                <div class="details">
+                    <h3>تفاصيل الحساب</h3>
+                    <p id="calculationDetails">سيتم عرض تفاصيل الحساب هنا بعد إدخال البيانات.</p>
+                    
+                    <h4>ملاحظات هامة:</h4>
+                    <ul>
+                        <li>يتم حساب كمية الطوب مع إضافة نسبة 5% هامش للكسر والهدر.</li>
+                        <li>النتائج تقريبية وقد تختلف حسب طريقة البناء والمهارة.</li>
+                        <li>يفضل شراء كمية إضافية من الطوب (نسبة 5-10%) لمواجهة أي طوارئ.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 حاسبة الطوب للمباني | تم التطوير لمساعدة المهندسين والعاملين في مجال البناء</p>
+            <p>جميع الحسابات تقريبية ويجب الاستعانة بمهندس متخصص للمشاريع الكبيرة</p>
+        </footer>
+    </div>
+
+    <script>
+        // اختيار نوع الطوب
+        const brickTypes = document.querySelectorAll('.brick-type');
+        let selectedBrickSize = 0.25; // القيمة الافتراضية
+        
+        brickTypes.forEach(type => {
+            type.addEventListener('click', function() {
+                // إزالة التحديد من جميع العناصر
+                brickTypes.forEach(t => t.classList.remove('selected'));
+                // إضافة التحديد للعنصر الحالي
+                this.classList.add('selected');
+                // تحديث حجم الطوبة المختارة
+                selectedBrickSize = parseFloat(this.getAttribute('data-size'));
+            });
+        });
+        
+        // حساب كمية الطوب
+        document.getElementById('calculate').addEventListener('click', function() {
+            // جمع البيانات من النموذج
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+            const openings = parseFloat(document.getElementById('openings').value);
+            
+            // التحقق من صحة البيانات
+            if (!length || !width || !height || !wallThickness || openings < 0) {
+                alert('الرجاء إدخال قيم صحيحة في جميع الحقول');
+                return;
+            }
+            
+            // حساب محيط المبنى
+            const perimeter = 2 * (length + width);
+            
+            // حساب المساحة الإجمالية للجدران (بدون فتحات)
+            const totalWallArea = perimeter * height;
+            
+            // طرح مساحة الفتحات
+            const netWallArea = totalWallArea - openings;
+            
+            // حساب حجم الجدران
+            const wallVolume = netWallArea * wallThickness;
+            
+            // حساب عدد الطوب المطلوب
+            const bricksWithoutWaste = netWallArea / selectedBrickSize;
+            
+            // إضافة نسبة 5% هامش للكسر
+            const totalBricks = Math.ceil(bricksWithoutWaste * 1.05);
+            
+            // عرض النتائج
+            document.getElementById('totalBricks').textContent = totalBricks.toLocaleString('ar-EG');
+            document.getElementById('totalArea').textContent = netWallArea.toFixed(2);
+            document.getElementById('wallVolume').textContent = wallVolume.toFixed(2);
+            
+            // عرض تفاصيل الحساب
+            const brickTypeName = document.querySelector('.brick-type.selected h4').textContent;
+            document.getElementById('calculationDetails').innerHTML = `
+                <p><strong>تفاصيل المبنى:</strong> طول ${length} م × عرض ${width} م × ارتفاع ${height} م</p>
+                <p><strong>المحيط الكلي:</strong> ${perimeter.toFixed(2)} متر</p>
+                <p><strong>المساحة الإجمالية للجدران:</strong> ${totalWallArea.toFixed(2)} م²</p>
+                <p><strong>مساحة الفتحات المقتطعة:</strong> ${openings.toFixed(2)} م²</p>
+                <p><strong>صافي مساحة الجدران:</strong> ${netWallArea.toFixed(2)} م²</p>
+                <p><strong>نوع الطوب المستخدم:</strong> ${brickTypeName} (حجم الطوبة: ${selectedBrickSize} م²)</p>
+                <p><strong>الكمية الأساسية:</strong> ${Math.ceil(bricksWithoutWaste).toLocaleString('ar-EG')} طوبة</p>
+                <p><strong>الهامش المضاف (5%):</strong> ${Math.ceil(bricksWithoutWaste * 0.05).toLocaleString('ar-EG')} طوبة</p>
+                <p><strong>الكمية النهائية الموصى بها:</strong> ${totalBricks.toLocaleString('ar-EG')} طوبة</p>
+            `;
+            
+            // إظهار قسم النتائج
+            document.getElementById('results').style.display = 'block';
+            
+            // التمرير إلى النتائج
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // حساب أولي عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('calculate').click();
+        });
+    </script>
+</body>
+</html>
