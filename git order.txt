@@ -1,145 +1,132 @@
-أكيد 😁 بما أنك متعود على الـPC، أعطيك العملية كاملة مرة واحدة. هدفنا أن يصبح عندك:
+أوامر Git - Projects
 
-الهاتف → GitHub ← الكمبيوتر
+📱 الهاتف - Termux
 
-ومجلد Projects على الهاتف يبقى في مكانه كما هو.
+1. رفع تعديلات الهاتف إلى GitHub
 
-1. تأكد من Git في Cmder
-
-افتح Cmder:
-
-git --version
-
-إذا ظهر مثل:
-
-git version 2.x.x
-
-فأنت جاهز.
-
-
----
-
-2. اختر مكانًا لمجلد Projects على الكمبيوتر
-
-مثلًا:
-
-D:\Projects
-
-مهم: لا تنشئ المجلد بنفسك إذا كنت ستستخدم git clone؛ Git سيقوم بإنشائه.
-
-اذهب في Cmder إلى المكان الذي تريد وضع المشروع فيه، مثل:
-
-cd /d D:\
-
-ثم نفّذ:
-
-git clone git@github.com:Khalifa-fattah/Projects.git
-
-سيتم إنشاء:
-
-D:\Projects
-
-وبداخله جميع مشاريعك.
-
-
----
-
-3. افتح Projects في VS Code
-
-بعد انتهاء clone:
-
-cd Projects
-code .
-
-إذا كان أمر code غير معروف، افتح VS Code يدويًا ثم:
-
-File → Open Folder → Projects
-
-
----
-
-4. الآن الكمبيوتر والهاتف متصلان بنفس المستودع
-
-على الكمبيوتر:
-
-D:\Projects
-
-وعلى الهاتف:
-
-/storage/emulated/0/Projects
-
-والاثنان مرتبطان بـ:
-
-GitHub → Khalifa-fattah/Projects
-
-
----
-
-🔄 عندما تعدّل من الكمبيوتر
-
-بعد الانتهاء من التعديلات:
-
-git add .
-git commit -m "Update projects"
-git push
-
-أصبح التعديل موجودًا على GitHub.
-
-
----
-
-📱 عندما تريد جلب التعديلات إلى الهاتف
-
-في Termux:
-
-cd ~
-git -C /storage/emulated/0/Projects pull
-
-لاحظ أننا نستخدم cd ~ أولًا بسبب مشكلة current working directory التي ظهرت معنا.
-
-
----
-
-📱 إذا عدّلت من الهاتف
-
-بعد التعديل:
+أضف التعديلات ثم احفظها وارفعها
 
 cd ~
 git -C /storage/emulated/0/Projects add .
 git -C /storage/emulated/0/Projects commit -m "Update from phone"
 git -C /storage/emulated/0/Projects push
 
-ثم على الكمبيوتر:
+2. جلب آخر تعديلات من GitHub إلى الهاتف
 
-git pull
+cd ~
+git -C /storage/emulated/0/Projects pull
 
+3. معرفة حالة الملفات
+
+cd ~
+git -C /storage/emulated/0/Projects status
+
+4. معرفة سجل التعديلات
+
+cd ~
+git -C /storage/emulated/0/Projects log --oneline
+
+5. التأكد من رابط GitHub
+
+git -C /storage/emulated/0/Projects remote -v
+
+6. اختبار اتصال GitHub
+
+ssh -T git@github.com
 
 ---
 
-⚠️ قاعدة مهمة جدًا
+💻 الكمبيوتر - Cmder
 
-قبل أن تبدأ العمل على جهاز، إذا كنت قد عدّلت الملفات من الجهاز الآخر، اعمل:
+1. تحميل Projects لأول مرة
 
-git pull
+cd /d D:
+git clone git@github.com:Khalifa-fattah/Projects.git
 
-وبعد الانتهاء من عملك:
+2. الدخول إلى Projects
 
+cd /d D:\Projects
+
+3. فتح Projects في VS Code
+
+cd /d D:\Projects
+code .
+
+4. رفع تعديلات الكمبيوتر إلى GitHub
+
+cd /d D:\Projects
 git add .
-git commit -m "وصف التعديل"
+git commit -m "Update from PC"
 git push
 
-بهذا لن تضطر إلى نقل الملفات يدويًا بين الهاتف والكمبيوتر.
+5. جلب آخر تعديلات من GitHub
 
-وبالنسبة لـ family-tree
+cd /d D:\Projects
+git pull
 
-النسخة الموجودة الآن داخل:
+6. معرفة حالة الملفات
 
-Projects/family-tree
+cd /d D:\Projects
+git status
 
-هي مجلد عادي داخل مستودع Projects، وهذا بالضبط ما أردته.
+7. معرفة سجل التعديلات
 
-أما مستودع GitHub القديم:
+cd /d D:\Projects
+git log --oneline
 
-Khalifa-fattah/family-tree
+8. معرفة رابط GitHub
 
-لا تحذفه الآن. بعد أن نتأكد أن كل شيء يعمل من الكمبيوتر، يمكنك حذفه بأمان إذا لم تعد تحتاجه.
+cd /d D:\Projects
+git remote -v
+
+---
+
+🔄 المزامنة بين الهاتف والكمبيوتر
+
+إذا عدلت من الهاتف:
+
+1. نفّذ رفع تعديلات الهاتف.
+2. على الكمبيوتر نفّذ:
+   cd /d D:\Projects
+   git pull
+
+إذا عدلت من الكمبيوتر:
+
+1. نفّذ رفع تعديلات الكمبيوتر.
+2. على الهاتف نفّذ:
+   cd ~
+   git -C /storage/emulated/0/Projects pull
+
+---
+
+⚠️ مهم
+
+قبل البدء بالعمل على جهاز، إذا كنت قد عدلت الملفات من الجهاز الآخر:
+نفّذ git pull أولًا.
+
+بعد الانتهاء من التعديلات:
+نفّذ add ثم commit ثم push.
+
+لا تستخدم:
+git push --force
+
+إلا إذا كنت تعرف بالضبط لماذا تستخدمه.
+
+---
+
+📝 أمثلة لأسماء Commit
+
+من الهاتف:
+git -C /storage/emulated/0/Projects commit -m "Update from phone"
+
+من الكمبيوتر:
+git commit -m "Update from PC"
+
+تعديلات على حاسبة الطوب:
+git commit -m "Update brick calculator"
+
+تعديلات على شجرة العائلة:
+git commit -m "Update family tree"
+
+تعديلات على BBAN:
+git commit -m "Update BBAN"
