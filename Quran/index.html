@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1F3D3A">
+<title>محفظتي — رفيق حفظ القرآن</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F1E3;
+    --paper-soft:#FBF7EE;
+    --card:#FFFDF8;
+    --ink:#1F3D3A;
+    --ink-soft:#4B6B63;
+    --ink-faint:#8A9E97;
+    --gold:#B9922F;
+    --gold-soft:#E7D6A6;
+    --maroon:#7A2E2E;
+    --line:#E4D9BE;
+    --shadow: 0 1px 0 rgba(31,61,58,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:none;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(185,146,47,0.07), transparent 40%),
+      var(--paper);
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    padding:22px 20px 16px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+  }
+  header.top .wordmark{
+    font-family:'Amiri',serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--ink);
+    letter-spacing:0.5px;
+  }
+  header.top .wordmark span{color:var(--gold);}
+  header.top .date-hint{
+    font-size:12px;
+    color:var(--ink-faint);
+  }
+
+  /* ---------- Main scroll area ---------- */
+  main{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 16px 96px;
+  }
+  section.view{display:none;}
+  section.view.active{display:block; animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  /* ---------- Empty state ---------- */
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state .glyph{
+    font-family:'Amiri',serif;
+    font-size:42px;
+    color:var(--gold-soft);
+    margin-bottom:10px;
+  }
+  .empty-state p{margin:4px 0; font-size:14px; line-height:1.9;}
+  .empty-state button{margin-top:14px;}
+
+  /* ---------- Stats strip ---------- */
+  .stats-strip{
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .stat-box{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 10px;
+    text-align:center;
+  }
+  .stat-box .num{
+    font-family:'Amiri',serif;
+    font-size:22px;
+    font-weight:700;
+    color:var(--ink);
+    display:block;
+  }
+  .stat-box .lbl{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:2px;
+    display:block;
+  }
+
+  /* ---------- Surah group ---------- */
+  .surah-group{margin-bottom:14px;}
+  .surah-group-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 4px 8px;
+  }
+  .surah-group-head .name{
+    font-family:'Amiri',serif;
+    font-size:18px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .surah-group-head .progress{
+    font-size:11px;
+    color:var(--gold);
+    font-weight:700;
+  }
+  .surah-group-head .progress.done{color:#3E7A5D;}
+
+  .entry-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 14px;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:border-color .15s;
+  }
+  .entry-card:active{border-color:var(--gold);}
+  .entry-marker{
+    width:34px;
+    height:34px;
+    min-width:34px;
+    border-radius:50%;
+    border:1.5px solid var(--gold-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Amiri',serif;
+    font-weight:700;
+    font-size:13px;
+    color:var(--gold);
+  }
+  .entry-body{flex:1; min-width:0;}
+  .entry-range{
+    font-size:14px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .entry-meta{
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin-top:2px;
+  }
+  .entry-del{
+    color:var(--ink-faint);
+    background:none;
+    border:none;
+    font-size:18px;
+    padding:4px 6px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .entry-del:active{color:var(--maroon);}
+
+  /* ---------- Buttons & Inputs ---------- */
+  button{font-family:inherit;}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    border:none;
+    border-radius:10px;
+    padding:13px 18px;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    width:100%;
+  }
+  .btn-primary{background:var(--ink); color:var(--paper-soft);}
+  .btn-primary:active{background:#152D2A;}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn-gold{background:var(--gold); color:#fff;}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    color:var(--ink);
+    font-family:'Tajawal',sans-serif;
+    font-size:15px;
+  }
+  .field select:focus, .field input:focus{outline:2px solid var(--gold-soft);}
+  .field .hint{font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+  .whole-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:-6px 0 16px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .whole-toggle input{width:16px; height:16px;}
+  .form-error{
+    background:#FBEAEA;
+    color:var(--maroon);
+    border:1px solid #EAC7C7;
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:13px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .form-error.show{display:block;}
+  h1.page-title{
+    font-family:'Amiri',serif;
+    font-size:21px;
+    margin:2px 4px 18px;
+  }
+
+  /* ---------- Bottom nav ---------- */
+  nav.bottom{
+    position:sticky;
+    bottom:0;
+    display:flex;
+    background:var(--paper-soft);
+    border-top:1px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    max-width:520px;
+    margin:0 auto;
+    width:100%;
+  }
+  nav.bottom button{
+    flex:1;
+    background:none;
+    border:none;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px 0;
+    color:var(--ink-faint);
+    cursor:pointer;
+  }
+  nav.bottom button.active{color:var(--ink);}
+  nav.bottom button svg{width:22px; height:22px;}
+  nav.bottom button span{font-size:11px; font-weight:700;}
+
+  /* ---------- Review overlay ---------- */
+  #reviewOverlay{
+    position:fixed;
+    inset:0;
+    background:var(--paper);
+    z-index:50;
+    display:none;
+    flex-direction:column;
+    max-width:520px;
+    margin:0 auto;
+  }
+  #reviewOverlay.active{display:flex;}
+  .review-head{
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--paper-soft);
+  }
+  .review-head .titles .t1{font-family:'Amiri',serif; font-size:19px; font-weight:700;}
+  .review-head .titles .t2{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .review-close{
+    background:none; border:none; font-size:22px; color:var(--ink-soft); cursor:pointer; padding:4px 8px;
+  }
+  .review-toolbar{
+    display:flex;
+    gap:8px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .review-toolbar button{
+    flex:1;
+    font-size:12.5px;
+    padding:9px 8px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink-soft);
+    font-weight:700;
+    cursor:pointer;
+  }
+  .review-toolbar button.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .review-body{flex:1; overflow-y:auto; padding:20px 20px 100px;}
+  .ayah-line{
+    font-family:'Amiri',serif;
+    font-size:23px;
+    line-height:2.3;
+    text-align:justify;
+    margin-bottom:6px;
+  }
+  .ayah-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:26px; height:26px;
+    border:1px solid var(--gold-soft);
+    border-radius:50%;
+    font-family:'Tajawal',sans-serif;
+    font-size:10.5px;
+    color:var(--gold);
+    vertical-align:middle;
+    margin:0 4px;
+  }
+  .ayah-text{transition:filter .15s, opacity .15s; cursor:pointer;}
+  .ayah-text.hidden-test{filter:blur(7px); opacity:.55;}
+  .review-loading, .review-error{
+    text-align:center; color:var(--ink-faint); padding:40px 20px; font-size:14px;
+  }
+  .review-error{color:var(--maroon);}
+  .review-footer{
+    position:absolute; bottom:0; left:0; right:0;
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--paper) 60%, transparent);
+  }
+  .toast{
+    position:fixed;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:20px;
+    font-size:13px;
+    z-index:100;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="wordmark">محفظ<span>تي</span></div>
+    <div class="date-hint" id="todayHint"></div>
+  </header>
+
+  <main>
+
+    <!-- ============ LIST VIEW ============ -->
+    <section class="view active" id="view-list">
+      <h1 class="page-title">محفوظاتي</h1>
+      <div class="stats-strip" id="listStatsStrip"></div>
+      <div id="listContent"></div>
+    </section>
+
+    <!-- ============ ADD VIEW ============ -->
+    <section class="view" id="view-add">
+      <h1 class="page-title">إضافة حفظ جديد</h1>
+      <div class="form-error" id="addError"></div>
+      <div class="field">
+        <label for="surahSelect">السورة</label>
+        <select id="surahSelect"></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fromAyah">من آية</label>
+          <input type="number" id="fromAyah" min="1" value="1">
+        </div>
+        <div class="field">
+          <label for="toAyah">إلى آية</label>
+          <input type="number" id="toAyah" min="1" value="1">
+        </div>
+      </div>
+      <label class="whole-toggle">
+        <input type="checkbox" id="wholeSurahBox">
+        تحديد السورة كاملة
+      </label>
+      <div class="field hint" id="surahAyahHint" style="margin-top:-10px;"></div>
+      <button class="btn btn-primary" id="saveEntryBtn">حفظ في قائمة المراجعة</button>
+    </section>
+
+    <!-- ============ STATS VIEW ============ -->
+    <section class="view" id="view-stats">
+      <h1 class="page-title">إحصائياتي</h1>
+      <div id="statsContent"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom">
+    <button data-tab="list" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span>محفوظاتي</span>
+    </button>
+    <button data-tab="add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+      <span>إضافة</span>
+    </button>
+    <button data-tab="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19V9M12 19V5M19 19v-7"/></svg>
+      <span>الإحصائيات</span>
+    </button>
+  </nav>
+
+  <!-- ============ REVIEW OVERLAY ============ -->
+  <div id="reviewOverlay">
+    <div class="review-head">
+      <div class="titles">
+        <div class="t1" id="reviewTitle">—</div>
+        <div class="t2" id="reviewSubtitle">—</div>
+      </div>
+      <button class="review-close" id="reviewCloseBtn">✕</button>
+    </div>
+    <div class="review-toolbar">
+      <button id="toggleHideBtn">إخفاء النص للاختبار</button>
+      <button id="markReviewedBtn">✓ تمت المراجعة الآن</button>
+    </div>
+    <div class="review-body" id="reviewBody">
+      <div class="review-loading">جارٍ تحميل الآيات…</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
