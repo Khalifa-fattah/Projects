@@ -19,7 +19,23 @@
     --gold-soft:#E7D6A6;
     --maroon:#7A2E2E;
     --line:#E4D9BE;
+    --error-bg:#FBEAEA;
+    --error-border:#EAC7C7;
     --shadow: 0 1px 0 rgba(31,61,58,0.06);
+  }
+  body.dark-theme{
+    --paper:#141F1C;
+    --paper-soft:#182722;
+    --card:#1E2F2A;
+    --ink:#ECE6D6;
+    --ink-soft:#B9C4BE;
+    --ink-faint:#728179;
+    --gold:#D9B463;
+    --gold-soft:#5B4A28;
+    --maroon:#C24B4B;
+    --line:#2B3B35;
+    --error-bg:#3A1F1F;
+    --error-border:#5C2E2E;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -30,6 +46,7 @@
     min-height:100vh;
     -webkit-tap-highlight-color:transparent;
     overscroll-behavior-y:none;
+    transition:background .2s, color .2s;
   }
   #app{
     max-width:520px;
@@ -63,6 +80,25 @@
     font-size:12px;
     color:var(--ink-faint);
   }
+  header.top .top-right{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .theme-toggle{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:6px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:32px;
+  }
+  .theme-toggle svg{width:17px; height:17px;}
 
   /* ---------- Main scroll area ---------- */
   main{
@@ -205,7 +241,7 @@
   .btn-primary{background:var(--ink); color:var(--paper-soft);}
   .btn-primary:active{background:#152D2A;}
   .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
-  .btn-gold{background:var(--gold); color:#fff;}
+  .btn-gold{background:var(--gold); color:#2A2110;}
 
   .field{margin-bottom:16px;}
   .field label{
@@ -241,9 +277,9 @@
   }
   .whole-toggle input{width:16px; height:16px;}
   .form-error{
-    background:#FBEAEA;
+    background:var(--error-bg);
     color:var(--maroon);
-    border:1px solid #EAC7C7;
+    border:1px solid var(--error-border);
     padding:10px 12px;
     border-radius:8px;
     font-size:13px;
@@ -365,8 +401,8 @@
     bottom:90px;
     left:50%;
     transform:translateX(-50%);
-    background:var(--ink);
-    color:#fff;
+    background:#20302B;
+    color:#F5EFE0;
     padding:10px 18px;
     border-radius:20px;
     font-size:13px;
@@ -374,16 +410,62 @@
     opacity:0;
     pointer-events:none;
     transition:opacity .25s, transform .25s;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+
+  /* ---------- Custom confirm modal ---------- */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(10,15,13,0.55);
+    z-index:200;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .modal-backdrop.active{display:flex;}
+  .modal-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px 20px 20px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 12px 30px rgba(0,0,0,0.25);
+    animation:fadeIn .2s ease;
+  }
+  .modal-card .modal-icon{
+    font-family:'Amiri',serif;
+    font-size:28px;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  .modal-msg{
+    font-size:14.5px;
+    color:var(--ink);
+    margin:0 0 18px;
+    line-height:1.8;
+  }
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions button{flex:1; padding:11px 10px;}
 </style>
 </head>
 <body>
 <div id="app">
 
   <header class="top">
-    <div class="wordmark">محفظ<span>تي</span></div>
-    <div class="date-hint" id="todayHint"></div>
+    <div class="wordmark">صاح<span>ب</span></div>
+    <div class="top-right">
+      <div class="date-hint" id="todayHint"></div>
+      <button class="theme-toggle" id="themeToggleBtn" title="تبديل الوضع الليلي">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -464,9 +546,559 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- ============ CONFIRM MODAL ============ -->
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal-card">
+      <div class="modal-icon">﴾ ! ﴿</div>
+      <p class="modal-msg" id="confirmMsg">هل أنت متأكد؟</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirmCancelBtn">إلغاء</button>
+        <button class="btn" id="confirmOkBtn" style="background:var(--maroon); color:#fff;">حذف</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script>
+// بيانات أسماء السور الرسمية وعدد آياتها (Al Quran Cloud API)
+const SURAHS = [
+  {n:1, name:"سُورَةُ ٱلْفَاتِحَةِ", ayahs:7},
+  {n:2, name:"سُورَةُ البَقَرَةِ", ayahs:286},
+  {n:3, name:"سُورَةُ آلِ عِمۡرَانَ", ayahs:200},
+  {n:4, name:"سُورَةُ النِّسَاءِ", ayahs:176},
+  {n:5, name:"سُورَةُ المَائـِدَةِ", ayahs:120},
+  {n:6, name:"سُورَةُ الأَنۡعَامِ", ayahs:165},
+  {n:7, name:"سُورَةُ الأَعۡرَافِ", ayahs:206},
+  {n:8, name:"سُورَةُ الأَنفَالِ", ayahs:75},
+  {n:9, name:"سُورَةُ التَّوۡبَةِ", ayahs:129},
+  {n:10, name:"سُورَةُ يُونُسَ", ayahs:109},
+  {n:11, name:"سُورَةُ هُودٍ", ayahs:123},
+  {n:12, name:"سُورَةُ يُوسُفَ", ayahs:111},
+  {n:13, name:"سُورَةُ الرَّعۡدِ", ayahs:43},
+  {n:14, name:"سُورَةُ إِبۡرَاهِيمَ", ayahs:52},
+  {n:15, name:"سُورَةُ الحِجۡرِ", ayahs:99},
+  {n:16, name:"سُورَةُ النَّحۡلِ", ayahs:128},
+  {n:17, name:"سُورَةُ الإِسۡرَاءِ", ayahs:111},
+  {n:18, name:"سُورَةُ الكَهۡفِ", ayahs:110},
+  {n:19, name:"سُورَةُ مَرۡيَمَ", ayahs:98},
+  {n:20, name:"سُورَةُ طه", ayahs:135},
+  {n:21, name:"سُورَةُ الأَنبِيَاءِ", ayahs:112},
+  {n:22, name:"سُورَةُ الحَجِّ", ayahs:78},
+  {n:23, name:"سُورَةُ المُؤۡمِنُونَ", ayahs:118},
+  {n:24, name:"سُورَةُ النُّورِ", ayahs:64},
+  {n:25, name:"سُورَةُ الفُرۡقَانِ", ayahs:77},
+  {n:26, name:"سُورَةُ الشُّعَرَاءِ", ayahs:227},
+  {n:27, name:"سُورَةُ النَّمۡلِ", ayahs:93},
+  {n:28, name:"سُورَةُ القَصَصِ", ayahs:88},
+  {n:29, name:"سُورَةُ العَنكَبُوتِ", ayahs:69},
+  {n:30, name:"سُورَةُ الرُّومِ", ayahs:60},
+  {n:31, name:"سُورَةُ لُقۡمَانَ", ayahs:34},
+  {n:32, name:"سُورَةُ السَّجۡدَةِ", ayahs:30},
+  {n:33, name:"سُورَةُ الأَحۡزَابِ", ayahs:73},
+  {n:34, name:"سُورَةُ سَبَإٍ", ayahs:54},
+  {n:35, name:"سُورَةُ فَاطِرٍ", ayahs:45},
+  {n:36, name:"سُورَةُ يسٓ", ayahs:83},
+  {n:37, name:"سُورَةُ الصَّافَّاتِ", ayahs:182},
+  {n:38, name:"سُورَةُ صٓ", ayahs:88},
+  {n:39, name:"سُورَةُ الزُّمَرِ", ayahs:75},
+  {n:40, name:"سُورَةُ غَافِرٍ", ayahs:85},
+  {n:41, name:"سُورَةُ فُصِّلَتۡ", ayahs:54},
+  {n:42, name:"سُورَةُ الشُّورَىٰ", ayahs:53},
+  {n:43, name:"سُورَةُ الزُّخۡرُفِ", ayahs:89},
+  {n:44, name:"سُورَةُ الدُّخَانِ", ayahs:59},
+  {n:45, name:"سُورَةُ الجَاثِيَةِ", ayahs:37},
+  {n:46, name:"سُورَةُ الأَحۡقَافِ", ayahs:35},
+  {n:47, name:"سُورَةُ مُحَمَّدٍ", ayahs:38},
+  {n:48, name:"سُورَةُ الفَتۡحِ", ayahs:29},
+  {n:49, name:"سُورَةُ الحُجُرَاتِ", ayahs:18},
+  {n:50, name:"سُورَةُ قٓ", ayahs:45},
+  {n:51, name:"سُورَةُ الذَّارِيَاتِ", ayahs:60},
+  {n:52, name:"سُورَةُ الطُّورِ", ayahs:49},
+  {n:53, name:"سُورَةُ النَّجۡمِ", ayahs:62},
+  {n:54, name:"سُورَةُ القَمَرِ", ayahs:55},
+  {n:55, name:"سُورَةُ الرَّحۡمَٰن", ayahs:78},
+  {n:56, name:"سُورَةُ الوَاقِعَةِ", ayahs:96},
+  {n:57, name:"سُورَةُ الحَدِيدِ", ayahs:29},
+  {n:58, name:"سُورَةُ المُجَادلَةِ", ayahs:22},
+  {n:59, name:"سُورَةُ الحَشۡرِ", ayahs:24},
+  {n:60, name:"سُورَةُ المُمۡتَحنَةِ", ayahs:13},
+  {n:61, name:"سُورَةُ الصَّفِّ", ayahs:14},
+  {n:62, name:"سُورَةُ الجُمُعَةِ", ayahs:11},
+  {n:63, name:"سُورَةُ المُنَافِقُونَ", ayahs:11},
+  {n:64, name:"سُورَةُ التَّغَابُنِ", ayahs:18},
+  {n:65, name:"سُورَةُ الطَّلَاقِ", ayahs:12},
+  {n:66, name:"سُورَةُ التَّحۡرِيمِ", ayahs:12},
+  {n:67, name:"سُورَةُ المُلۡكِ", ayahs:30},
+  {n:68, name:"سُورَةُ القَلَمِ", ayahs:52},
+  {n:69, name:"سُورَةُ الحَاقَّةِ", ayahs:52},
+  {n:70, name:"سُورَةُ المَعَارِجِ", ayahs:44},
+  {n:71, name:"سُورَةُ نُوحٍ", ayahs:28},
+  {n:72, name:"سُورَةُ الجِنِّ", ayahs:28},
+  {n:73, name:"سُورَةُ المُزَّمِّلِ", ayahs:20},
+  {n:74, name:"سُورَةُ المُدَّثِّرِ", ayahs:56},
+  {n:75, name:"سُورَةُ القِيَامَةِ", ayahs:40},
+  {n:76, name:"سُورَةُ الإِنسَانِ", ayahs:31},
+  {n:77, name:"سُورَةُ المُرۡسَلَاتِ", ayahs:50},
+  {n:78, name:"سُورَةُ النَّبَإِ", ayahs:40},
+  {n:79, name:"سُورَةُ النَّازِعَاتِ", ayahs:46},
+  {n:80, name:"سُورَةُ عَبَسَ", ayahs:42},
+  {n:81, name:"سُورَةُ التَّكۡوِيرِ", ayahs:29},
+  {n:82, name:"سُورَةُ الانفِطَارِ", ayahs:19},
+  {n:83, name:"سُورَةُ المُطَفِّفِينَ", ayahs:36},
+  {n:84, name:"سُورَةُ الانشِقَاقِ", ayahs:25},
+  {n:85, name:"سُورَةُ البُرُوجِ", ayahs:22},
+  {n:86, name:"سُورَةُ الطَّارِقِ", ayahs:17},
+  {n:87, name:"سُورَةُ الأَعۡلَىٰ", ayahs:19},
+  {n:88, name:"سُورَةُ الغَاشِيَةِ", ayahs:26},
+  {n:89, name:"سُورَةُ الفَجۡرِ", ayahs:30},
+  {n:90, name:"سُورَةُ البَلَدِ", ayahs:20},
+  {n:91, name:"سُورَةُ الشَّمۡسِ", ayahs:15},
+  {n:92, name:"سُورَةُ اللَّيۡلِ", ayahs:21},
+  {n:93, name:"سُورَةُ الضُّحَىٰ", ayahs:11},
+  {n:94, name:"سُورَةُ الشَّرۡحِ", ayahs:8},
+  {n:95, name:"سُورَةُ التِّينِ", ayahs:8},
+  {n:96, name:"سُورَةُ العَلَقِ", ayahs:19},
+  {n:97, name:"سُورَةُ القَدۡرِ", ayahs:5},
+  {n:98, name:"سُورَةُ البَيِّنَةِ", ayahs:8},
+  {n:99, name:"سُورَةُ الزَّلۡزَلَةِ", ayahs:8},
+  {n:100, name:"سُورَةُ العَادِيَاتِ", ayahs:11},
+  {n:101, name:"سُورَةُ القَارِعَةِ", ayahs:11},
+  {n:102, name:"سُورَةُ التَّكَاثُرِ", ayahs:8},
+  {n:103, name:"سُورَةُ العَصۡرِ", ayahs:3},
+  {n:104, name:"سُورَةُ الهُمَزَةِ", ayahs:9},
+  {n:105, name:"سُورَةُ الفِيلِ", ayahs:5},
+  {n:106, name:"سُورَةُ قُرَيۡشٍ", ayahs:4},
+  {n:107, name:"سُورَةُ المَاعُونِ", ayahs:7},
+  {n:108, name:"سُورَةُ الكَوۡثَرِ", ayahs:3},
+  {n:109, name:"سُورَةُ الكَافِرُونَ", ayahs:6},
+  {n:110, name:"سُورَةُ النَّصۡرِ", ayahs:3},
+  {n:111, name:"سُورَةُ المَسَدِ", ayahs:5},
+  {n:112, name:"سُورَةُ الإِخۡلَاصِ", ayahs:4},
+  {n:113, name:"سُورَةُ الفَلَقِ", ayahs:5},
+  {n:114, name:"سُورَةُ النَّاسِ", ayahs:6},
+];
+
+// =====================================================================
+// محفظتي — رفيق حفظ القرآن الكريم
+// تخزين محلي بالكامل على الجهاز (localStorage) + جلب نصوص الآيات من
+// واجهة Al Quran Cloud API عند الحاجة للمراجعة فقط.
+// =====================================================================
+
+const STORAGE_KEY = 'quran_hifz_entries_v1';
+const CACHE_KEY = 'quran_text_cache_v1';
+const API_BASE = 'https://api.alquran.cloud/v1';
+const EDITION = 'quran-uthmani';
+
+let entries = loadEntries();
+let textCache = loadCache();
+let currentReviewEntry = null;
+let hideTestMode = false;
+
+// ---------------------------------------------------------------
+// تخزين
+// ---------------------------------------------------------------
+function loadEntries() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+function saveEntries() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveCache() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(textCache)); }
+  catch (e) { /* قد تمتلئ المساحة، تجاهل بصمت */ }
+}
+
+function surahByNumber(n) {
+  return SURAHS.find(s => s.n === n);
+}
+
+// ---------------------------------------------------------------
+// أدوات عامة
+// ---------------------------------------------------------------
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function formatDate(iso) {
+  if (!iso) return 'لم تُراجَع بعد';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ---------------------------------------------------------------
+// الوضع الليلي
+// ---------------------------------------------------------------
+const MOON_ICON = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+const SUN_ICON = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+
+function applyTheme(isDark) {
+  document.body.classList.toggle('dark-theme', isDark);
+  document.getElementById('themeIcon').innerHTML = isDark ? SUN_ICON : MOON_ICON;
+  localStorage.setItem('quran_theme_v1', isDark ? 'dark' : 'light');
+}
+document.getElementById('themeToggleBtn').addEventListener('click', () => {
+  applyTheme(!document.body.classList.contains('dark-theme'));
+});
+applyTheme(localStorage.getItem('quran_theme_v1') === 'dark');
+
+// ---------------------------------------------------------------
+// نافذة تأكيد مخصصة (بديل window.confirm الافتراضي)
+// ---------------------------------------------------------------
+function showConfirm(message, okLabel) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('confirmModal');
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    document.getElementById('confirmMsg').textContent = message;
+    okBtn.textContent = okLabel || 'حذف';
+    backdrop.classList.add('active');
+
+    function cleanup(result) {
+      backdrop.classList.remove('active');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      backdrop.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onBackdrop(e) { if (e.target === backdrop) cleanup(false); }
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    backdrop.addEventListener('click', onBackdrop);
+  });
+}
+
+// ---------------------------------------------------------------
+// التنقل بين التبويبات
+// ---------------------------------------------------------------
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  document.querySelectorAll('nav.bottom button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  if (tab === 'list') renderList();
+  if (tab === 'stats') renderStats();
+  if (tab === 'add') resetAddForm();
+}
+document.querySelectorAll('nav.bottom button').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// ---------------------------------------------------------------
+// تبويب: إضافة حفظ جديد
+// ---------------------------------------------------------------
+const surahSelect = document.getElementById('surahSelect');
+SURAHS.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s.n;
+  opt.textContent = `${s.n}. ${s.name}`;
+  surahSelect.appendChild(opt);
+});
+
+function resetAddForm() {
+  document.getElementById('addError').classList.remove('show');
+  document.getElementById('fromAyah').value = 1;
+  document.getElementById('toAyah').value = 1;
+  document.getElementById('wholeSurahBox').checked = false;
+  updateSurahHint();
+}
+function updateSurahHint() {
+  const s = surahByNumber(parseInt(surahSelect.value, 10));
+  document.getElementById('surahAyahHint').textContent = s ? `عدد آيات هذه السورة: ${s.ayahs}` : '';
+  document.getElementById('fromAyah').max = s ? s.ayahs : 286;
+  document.getElementById('toAyah').max = s ? s.ayahs : 286;
+  if (document.getElementById('wholeSurahBox').checked && s) {
+    document.getElementById('fromAyah').value = 1;
+    document.getElementById('toAyah').value = s.ayahs;
+  }
+}
+surahSelect.addEventListener('change', updateSurahHint);
+document.getElementById('wholeSurahBox').addEventListener('change', updateSurahHint);
+updateSurahHint();
+
+document.getElementById('saveEntryBtn').addEventListener('click', () => {
+  const surahNum = parseInt(surahSelect.value, 10);
+  const s = surahByNumber(surahNum);
+  const from = parseInt(document.getElementById('fromAyah').value, 10);
+  const to = parseInt(document.getElementById('toAyah').value, 10);
+  const errBox = document.getElementById('addError');
+
+  if (!from || !to || from < 1 || to < 1 || from > s.ayahs || to > s.ayahs) {
+    errBox.textContent = `فضلاً أدخل أرقام آيات صحيحة بين 1 و${s.ayahs}.`;
+    errBox.classList.add('show');
+    return;
+  }
+  if (from > to) {
+    errBox.textContent = 'رقم آية البداية يجب أن يكون أصغر من أو يساوي رقم النهاية.';
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+
+  entries.push({
+    id: 'e' + Date.now() + Math.floor(Math.random() * 1000),
+    surah: surahNum,
+    surahName: s.name,
+    from, to,
+    dateAdded: todayStr(),
+    lastReviewed: null,
+    reviewCount: 0
+  });
+  saveEntries();
+  showToast('تم الحفظ في قائمة المراجعة');
+  switchTab('list');
+});
+
+// ---------------------------------------------------------------
+// تبويب: محفوظاتي (القائمة)
+// ---------------------------------------------------------------
+function coveredMap() {
+  // خريطة: رقم السورة -> مجموعة أرقام الآيات المحفوظة (لتفادي تكرار العد عند تداخل النطاقات)
+  const map = new Map();
+  entries.forEach(e => {
+    if (!map.has(e.surah)) map.set(e.surah, new Set());
+    const set = map.get(e.surah);
+    for (let i = e.from; i <= e.to; i++) set.add(i);
+  });
+  return map;
+}
+
+function renderList() {
+  const container = document.getElementById('listContent');
+  const stripEl = document.getElementById('listStatsStrip');
+
+  if (entries.length === 0) {
+    stripEl.innerHTML = '';
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="glyph">﴿ ٱقْرَأْ ﴾</div>
+        <p>لا توجد آيات محفوظة بعد.</p>
+        <p>ابدأ بإضافة أول مقطع تحفظه من القرآن الكريم.</p>
+        <button class="btn btn-gold" onclick="switchTab('add')" style="width:auto; padding:12px 24px;">إضافة الآن</button>
+      </div>`;
+    return;
+  }
+
+  const cov = coveredMap();
+  let totalAyat = 0;
+  cov.forEach(set => totalAyat += set.size);
+  let completedSurahs = 0;
+  cov.forEach((set, surahNum) => {
+    const s = surahByNumber(surahNum);
+    if (s && set.size >= s.ayahs) completedSurahs++;
+  });
+
+  stripEl.innerHTML = `
+    <div class="stat-box"><span class="num">${totalAyat}</span><span class="lbl">آية محفوظة</span></div>
+    <div class="stat-box"><span class="num">${completedSurahs}</span><span class="lbl">سورة كاملة</span></div>
+    <div class="stat-box"><span class="num">${cov.size}</span><span class="lbl">سورة قيد الحفظ</span></div>
+  `;
+
+  // تجميع حسب السورة، مرتبة برقم السورة
+  const bySurah = new Map();
+  entries.forEach(e => {
+    if (!bySurah.has(e.surah)) bySurah.set(e.surah, []);
+    bySurah.get(e.surah).push(e);
+  });
+  const sortedSurahNums = Array.from(bySurah.keys()).sort((a, b) => a - b);
+
+  container.innerHTML = sortedSurahNums.map(surahNum => {
+    const s = surahByNumber(surahNum);
+    const list = bySurah.get(surahNum).sort((a, b) => a.from - b.from);
+    const set = cov.get(surahNum);
+    const isDone = s && set.size >= s.ayahs;
+    const progressLabel = isDone ? 'محفوظة كاملة ✓' : `${set.size} / ${s.ayahs}`;
+
+    const cards = list.map(e => `
+      <div class="entry-card" data-id="${e.id}">
+        <div class="entry-marker">${e.from}-${e.to}</div>
+        <div class="entry-body">
+          <div class="entry-range">الآيات ${e.from} إلى ${e.to} <span style="color:var(--ink-faint); font-weight:400;">(${e.to - e.from + 1} آية)</span></div>
+          <div class="entry-meta">أُضيفت ${formatDate(e.dateAdded)} · ${e.lastReviewed ? 'آخر مراجعة ' + formatDate(e.lastReviewed) : 'لم تُراجَع بعد'}</div>
+        </div>
+        <button class="entry-del" data-del="${e.id}" title="حذف">🗑</button>
+      </div>
+    `).join('');
+
+    return `
+      <div class="surah-group">
+        <div class="surah-group-head">
+          <div class="name">${s.name}</div>
+          <div class="progress ${isDone ? 'done' : ''}">${progressLabel}</div>
+        </div>
+        ${cards}
+      </div>
+    `;
+  }).join('');
+
+  // ربط الأحداث
+  container.querySelectorAll('.entry-card').forEach(card => {
+    card.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-del]')) return;
+      openReview(card.dataset.id);
+    });
+  });
+  container.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const ok = await showConfirm('هل تريد حذف هذا المقطع من قائمة المراجعة؟', 'حذف');
+      if (ok) {
+        entries = entries.filter(e => e.id !== btn.dataset.del);
+        saveEntries();
+        renderList();
+        showToast('تم الحذف');
+      }
+    });
+  });
+}
+
+// ---------------------------------------------------------------
+// تبويب: الإحصائيات
+// ---------------------------------------------------------------
+function renderStats() {
+  const container = document.getElementById('statsContent');
+  const TOTAL_QURAN_AYAT = 6236;
+
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="glyph">﴿ ﴾</div>
+      <p>أضف أول محفوظاتك لتظهر إحصائياتك هنا.</p>
+    </div>`;
+    return;
+  }
+
+  const cov = coveredMap();
+  let totalAyat = 0;
+  cov.forEach(set => totalAyat += set.size);
+  let completedSurahs = 0;
+  cov.forEach((set, surahNum) => {
+    const s = surahByNumber(surahNum);
+    if (s && set.size >= s.ayahs) completedSurahs++;
+  });
+  const pct = ((totalAyat / TOTAL_QURAN_AYAT) * 100).toFixed(2);
+
+  const reviewed7 = entries.filter(e => {
+    if (!e.lastReviewed) return false;
+    const diffDays = (Date.now() - new Date(e.lastReviewed).getTime()) / 86400000;
+    return diffDays <= 7;
+  }).length;
+
+  const neverReviewed = entries.filter(e => !e.lastReviewed).length;
+
+  container.innerHTML = `
+    <div class="stats-strip">
+      <div class="stat-box"><span class="num">${totalAyat}</span><span class="lbl">آية محفوظة</span></div>
+      <div class="stat-box"><span class="num">${completedSurahs}</span><span class="lbl">سورة كاملة</span></div>
+      <div class="stat-box"><span class="num">${pct}%</span><span class="lbl">من القرآن</span></div>
+    </div>
+    <div class="entry-card" style="cursor:default;">
+      <div class="entry-body">
+        <div class="entry-range">راجعت ${reviewed7} مقطعًا خلال آخر ٧ أيام</div>
+        <div class="entry-meta">${neverReviewed > 0 ? neverReviewed + ' مقطعًا لم تُراجَع بعد منذ إضافتها' : 'أحسنت! كل المقاطع رُوجعت مرة على الأقل'}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------
+// شاشة المراجعة (Overlay) — جلب نص الآيات وعرضها
+// ---------------------------------------------------------------
+const overlay = document.getElementById('reviewOverlay');
+const reviewBody = document.getElementById('reviewBody');
+
+async function getSurahAyahs(surahNum) {
+  if (textCache[surahNum]) return textCache[surahNum];
+  const res = await fetch(`${API_BASE}/surah/${surahNum}/${EDITION}`);
+  if (!res.ok) throw new Error('network');
+  const json = await res.json();
+  const ayahs = json.data.ayahs.map(a => a.text);
+  textCache[surahNum] = ayahs;
+  saveCache();
+  return ayahs;
+}
+
+async function openReview(entryId) {
+  const entry = entries.find(e => e.id === entryId);
+  if (!entry) return;
+  currentReviewEntry = entry;
+  hideTestMode = false;
+  document.getElementById('toggleHideBtn').classList.remove('on');
+  document.getElementById('toggleHideBtn').textContent = 'إخفاء النص للاختبار';
+
+  document.getElementById('reviewTitle').textContent = entry.surahName;
+  document.getElementById('reviewSubtitle').textContent = `الآيات ${entry.from} إلى ${entry.to}`;
+  reviewBody.innerHTML = '<div class="review-loading">جارٍ تحميل الآيات…</div>';
+  overlay.classList.add('active');
+
+  try {
+    const ayahs = await getSurahAyahs(entry.surah);
+    const slice = [];
+    for (let i = entry.from; i <= entry.to; i++) slice.push({ num: i, text: ayahs[i - 1] });
+    reviewBody.innerHTML = slice.map(a => `
+      <span class="ayah-line">
+        <span class="ayah-text">${a.text}</span>
+        <span class="ayah-num">${a.num}</span>
+      </span>
+    `).join(' ');
+    reviewBody.querySelectorAll('.ayah-text').forEach(el => {
+      el.addEventListener('click', () => el.classList.toggle('hidden-test'));
+    });
+  } catch (err) {
+    reviewBody.innerHTML = `<div class="review-error">
+      تعذّر الاتصال بالإنترنت لجلب نص الآيات.<br>
+      تحتاج شبكة إنترنت أول مرة لعرض كل سورة، وبعدها تُحفظ نصوصها على جهازك للاستخدام لاحقًا دون اتصال.
+    </div>`;
+  }
+}
+
+document.getElementById('reviewCloseBtn').addEventListener('click', () => {
+  overlay.classList.remove('active');
+  renderList();
+});
+
+document.getElementById('toggleHideBtn').addEventListener('click', (e) => {
+  hideTestMode = !hideTestMode;
+  e.target.classList.toggle('on', hideTestMode);
+  e.target.textContent = hideTestMode ? 'إظهار كل النص' : 'إخفاء النص للاختبار';
+  reviewBody.querySelectorAll('.ayah-text').forEach(el => {
+    el.classList.toggle('hidden-test', hideTestMode);
+  });
+});
+
+document.getElementById('markReviewedBtn').addEventListener('click', () => {
+  if (!currentReviewEntry) return;
+  currentReviewEntry.lastReviewed = todayStr();
+  currentReviewEntry.reviewCount = (currentReviewEntry.reviewCount || 0) + 1;
+  saveEntries();
+  showToast('أحسنت! سجّلنا مراجعتك اليوم');
+  document.getElementById('reviewSubtitle').textContent =
+    `الآيات ${currentReviewEntry.from} إلى ${currentReviewEntry.to} · رُوجعت ${currentReviewEntry.reviewCount} مرة`;
+});
+
+// ---------------------------------------------------------------
+// تشغيل أولي
+// ---------------------------------------------------------------
+document.getElementById('todayHint').textContent = formatDate(todayStr());
+renderList();
+
+</script>
 </body>
 </html>
