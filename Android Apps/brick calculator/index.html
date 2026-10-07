@@ -3,111 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>حاسبة الطوب للمباني</title>
+<title>حاسبة البناء</title>
 
 <style>
 :root{
-    --primary-color:#1a73e8;
-    --primary-hover:#1557b0;
+    --primary-color:#1a73e8;--primary-hover:#1557b0;
     --bg-gradient:linear-gradient(135deg,#f0f4f8 0%,#d9e2ec 100%);
-    --card-bg:#fff;
-    --text-main:#2d3748;
-    --text-muted:#718096;
-    --border-color:#e2e8f0;
-    --success-color:#38a169;
-    --danger-color:#e53e3e;
-    --warning-color:#dd6b20;
+    --card-bg:#fff;--text-main:#2d3748;--text-muted:#718096;--border-color:#e2e8f0;
+    --success-color:#38a169;--danger-color:#e53e3e;--warning-color:#dd6b20;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{
-    font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
-    background:var(--bg-gradient);
-    min-height:100vh;
-    padding:30px 15px;
-    color:var(--text-main);
-}
+body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-gradient);min-height:100vh;padding:30px 15px;color:var(--text-main)}
 .container{max-width:1200px;margin:auto}
+.tabs{display:flex;gap:10px;justify-content:center;margin-bottom:25px;flex-wrap:wrap}
+.tab-btn{background:#fff;color:var(--text-main);border:1.5px solid var(--border-color);min-width:150px;padding:12px 22px;font-size:1em}
+.tab-btn.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
 .header{text-align:center;margin-bottom:35px}
 .header h1{font-size:2.3em;color:#1a202c;margin-bottom:10px;font-weight:700}
 .header p{font-size:1.05em;color:var(--text-muted);max-width:700px;margin:auto;line-height:1.6}
 .main-grid{display:grid;grid-template-columns:1.8fr 1.2fr;gap:25px;margin-bottom:30px}
 @media(max-width:992px){.main-grid{grid-template-columns:1fr}}
-.card{
-    background:var(--card-bg);border-radius:16px;padding:25px;
-    box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:20px;
-    border:1px solid var(--border-color)
-}
-.card h2{
-    font-size:1.25em;color:#2b6cb0;margin-bottom:18px;padding-bottom:10px;
-    border-bottom:2px solid #ebf8ff;display:flex;align-items:center;gap:8px
-}
+.card{background:var(--card-bg);border-radius:16px;padding:25px;box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:20px;border:1px solid var(--border-color)}
+.card h2{font-size:1.25em;color:#2b6cb0;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #ebf8ff;display:flex;align-items:center;gap:8px}
 .form-group{margin-bottom:15px}
 .calculation-mode-card{background:linear-gradient(135deg,#f7fbff,#eef6ff);border:1px solid #d8eaff;border-radius:12px;padding:14px;margin-bottom:18px}
 .calculation-mode-badge{display:inline-flex;align-items:center;gap:6px;background:#eaf4ff;color:var(--primary-color);padding:6px 10px;border-radius:999px;font-size:.8em;font-weight:700;margin-top:8px}
 .hidden-field{display:none!important}
 .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px}
 label{display:block;font-size:.9em;font-weight:600;color:var(--text-main);margin-bottom:6px}
-input[type=text],input[type=number],select{
-    width:100%;padding:11px 14px;border:1.5px solid var(--border-color);
-    border-radius:10px;font-size:.95em;font-family:inherit;background:#f7fafc;
-    transition:.25s
-}
+input[type=text],input[type=number],select{width:100%;padding:11px 14px;border:1.5px solid var(--border-color);border-radius:10px;font-size:.95em;font-family:inherit;background:#f7fafc;transition:.25s}
+input:disabled{opacity:.55;cursor:not-allowed}
 input:focus,select:focus{outline:none;border-color:var(--primary-color);background:#fff;box-shadow:0 0 0 3px rgba(26,115,232,.15)}
 input.error{border-color:var(--danger-color)}
 .error-message{color:var(--danger-color);font-size:.8em;margin-top:4px;display:none}
 .error-message.show{display:block}
-.brick-dimensions-card{
-    margin-top:15px;background:linear-gradient(135deg,#f7fbff,#eef6ff);
-    border:1px solid #d8eaff;border-radius:14px;padding:18px;text-align:center
-}
+.brick-dimensions-card{margin-top:15px;background:linear-gradient(135deg,#f7fbff,#eef6ff);border:1px solid #d8eaff;border-radius:14px;padding:18px;text-align:center}
 .brick-dimensions-title{color:var(--text-muted);font-size:.85em;margin-bottom:8px}
 .brick-dimensions-value{font-size:1.45em;font-weight:800;color:var(--primary-color);letter-spacing:.5px;direction:ltr}
 .edit-dimensions-btn{margin-top:12px;background:#fff;color:var(--primary-color);border:1px solid #c8def8;padding:8px 15px;font-size:.85em}
 .edit-dimensions-btn:hover{background:#eaf4ff}
 .hidden-dimensions{display:none;margin-top:15px;padding:15px;border-top:1px dashed var(--border-color)}
-.opening-row{
-    display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
-    margin-bottom:10px;background:#f7fafc;padding:12px;border-radius:12px;border:1px solid var(--border-color)
-}
+.opening-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;margin-bottom:10px;background:#f7fafc;padding:12px;border-radius:12px;border:1px solid var(--border-color)}
 .opening-selector{position:relative}
-.opening-name-btn{
-    width:100%;background:#fff;color:var(--text-main);border:1px solid var(--border-color);
-    justify-content:space-between
-}
+.opening-name-btn{width:100%;background:#fff;color:var(--text-main);border:1px solid var(--border-color);justify-content:space-between}
 .opening-name-btn:hover{border-color:var(--primary-color);background:#f8fbff}
 .opening-details{display:none;margin-top:8px;padding:8px 10px;background:#edf6ff;color:#2b6cb0;border-radius:8px;font-size:.82em;text-align:center}
 .opening-details.show{display:block}
-.opening-presets{
-    display:none;position:absolute;z-index:20;top:calc(100% + 5px);right:0;left:0;
-    background:#fff;border:1px solid var(--border-color);border-radius:10px;
-    box-shadow:0 8px 25px rgba(0,0,0,.12);overflow:hidden
-}
+.opening-presets{display:none;position:absolute;z-index:20;top:calc(100% + 5px);right:0;left:0;background:#fff;border:1px solid var(--border-color);border-radius:10px;box-shadow:0 8px 25px rgba(0,0,0,.12);overflow:hidden}
 .opening-presets.show{display:block}
-.opening-option{
-    width:100%;background:#fff;color:var(--text-main);border-radius:0;
-    border-bottom:1px solid #edf2f7;padding:10px;font-size:.85em
-}
+.opening-option{width:100%;background:#fff;color:var(--text-main);border-radius:0;border-bottom:1px solid #edf2f7;padding:10px;font-size:.85em}
 .opening-option:hover{background:#f0f7ff;color:var(--primary-color)}
-.counter{
-    display:flex;align-items:center;background:#fff;border:1px solid var(--border-color);
-    border-radius:10px;overflow:hidden;direction:ltr
-}
+.counter{display:flex;align-items:center;background:#fff;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;direction:ltr}
 .counter button{width:38px;height:40px;padding:0;border-radius:0;background:#edf2f7;color:var(--text-main);font-size:1.2em}
 .counter button:hover{background:#e2e8f0}
 .counter-value{width:42px;text-align:center;font-weight:700;color:var(--primary-color);direction:ltr}
 .remove-opening{width:40px;height:40px;padding:0;background:#fff5f5;color:var(--danger-color);border:1px solid #fed7d7}
 .remove-opening:hover{background:#fed7d7}
-@media(max-width:650px){
-    .opening-row{grid-template-columns:1fr auto}
-    .opening-selector{grid-column:1/-1}
-}
+@media(max-width:650px){.opening-row{grid-template-columns:1fr auto}.opening-selector{grid-column:1/-1}}
 .button-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:20px}
-button{
-    padding:12px 18px;border:none;border-radius:10px;font-size:.95em;font-weight:600;
-    cursor:pointer;transition:.2s;font-family:inherit;display:inline-flex;
-    align-items:center;justify-content:center;gap:7px;line-height:1.2;
-    white-space:normal;text-align:center
-}
+button{padding:12px 18px;border:none;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.2;white-space:normal;text-align:center}
 .btn-primary{background:var(--primary-color);color:#fff}
 .btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
 .btn-secondary{background:#edf2f7;color:#4a5568}
@@ -117,10 +71,7 @@ button{
 .btn-danger{background:var(--danger-color);color:#fff}
 .btn-info{background:#3182ce;color:#fff}
 .btn-info:hover{background:#2b6cb0}
-.results-container{
-    background:#fff;border-radius:16px;padding:25px;border-right:5px solid var(--success-color);
-    box-shadow:0 4px 20px rgba(0,0,0,.06);position:sticky;top:20px
-}
+.results-container{background:#fff;border-radius:16px;padding:25px;border-right:5px solid var(--success-color);box-shadow:0 4px 20px rgba(0,0,0,.06);position:sticky;top:20px}
 .results-container.hidden{display:none}
 .result-item{background:#f7fafc;padding:14px;border-radius:10px;margin-bottom:12px;border-right:4px solid var(--primary-color)}
 .result-label{font-size:.85em;color:var(--text-muted);margin-bottom:4px}
@@ -129,17 +80,13 @@ button{
 .result-item.cost .result-value{color:var(--warning-color)}
 .result-item.total{border-right-color:var(--success-color);background:#f0fff4}
 .result-item.total .result-value{color:#276749;font-size:1.9em}
-.calculation-note,.warning-note{
-    padding:12px;border-radius:8px;margin-top:12px;font-size:.85em;line-height:1.7
-}
+.calculation-note,.warning-note{padding:12px;border-radius:8px;margin-top:12px;font-size:.85em;line-height:1.7}
 .calculation-note{background:#ebf8ff;border-right:4px solid var(--primary-color);color:#2c5282}
 .warning-note{background:#fffaf0;border-right:4px solid var(--warning-color);color:#744210}
-.notification{
-    position:fixed;top:20px;left:20px;right:20px;max-width:430px;margin:auto;
-    background:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);
-    border-right:5px solid var(--success-color);display:none;align-items:center;gap:10px;
-    z-index:3000;animation:slideIn .25s ease
-}
+.rtable{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92em}
+.rtable th,.rtable td{padding:9px;border-bottom:1px solid var(--border-color);text-align:center}
+.rtable th{background:#f1f7ff;color:#245b91}
+.notification{position:fixed;top:20px;left:20px;right:20px;max-width:430px;margin:auto;background:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);border-right:5px solid var(--success-color);display:none;align-items:center;gap:10px;z-index:3000;animation:slideIn .25s ease}
 .notification.show{display:flex}
 .notification-icon{font-size:1.25em;font-weight:bold}
 .notification.success{border-right-color:var(--success-color)}
@@ -147,24 +94,12 @@ button{
 .notification.warning{border-right-color:var(--warning-color)}
 .notification.info{border-right-color:var(--primary-color)}
 @keyframes slideIn{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
-.modal{
-    display:none;position:fixed;z-index:2500;inset:0;background:rgba(15,23,42,.52);
-    backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:15px
-}
+.modal{display:none;position:fixed;z-index:2500;inset:0;background:rgba(15,23,42,.52);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:15px}
 .modal.show{display:flex}
-.modal-content{
-    background:#fff;padding:25px;border-radius:18px;max-width:550px;width:100%;
-    max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)
-}
-.modal-header{
-    display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;
-    padding-bottom:10px;border-bottom:2px solid #edf2f7
-}
+.modal-content{background:#fff;padding:25px;border-radius:18px;max-width:550px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:10px;border-bottom:2px solid #edf2f7}
 .close-btn{background:none;border:none;font-size:1.5em;cursor:pointer;color:var(--text-muted);padding:5px}
-.project-item{
-    background:#f7fafc;padding:12px 15px;border-radius:10px;margin-bottom:10px;
-    display:flex;justify-content:space-between;align-items:center;gap:10px
-}
+.project-item{background:#f7fafc;padding:12px 15px;border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .project-actions{display:flex;gap:7px;flex-wrap:wrap}
 .project-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;margin:0 2px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font-size:.85em;line-height:1;font-weight:800;vertical-align:middle}
 .message-modal-content{max-width:430px;text-align:center;padding:28px 24px}
@@ -180,11 +115,7 @@ button{
 .confirm-message{text-align:center;line-height:1.7;color:var(--text-main);margin-bottom:18px}
 .confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .footer{text-align:center;color:var(--text-muted);margin-top:30px;font-size:.85em}
-#pdfReport{
-    position:fixed;left:-100000px;top:0;width:794px;background:#fff;
-    color:#1f2937;padding:40px;font-family:"Segoe UI",Tahoma,Arial,sans-serif;
-    direction:rtl;z-index:-1
-}
+#pdfReport{position:fixed;left:-100000px;top:0;width:794px;background:#fff;color:#1f2937;padding:40px;font-family:"Segoe UI",Tahoma,Arial,sans-serif;direction:rtl;z-index:-1}
 .pdf-title{text-align:center;border-bottom:3px solid #1a73e8;padding-bottom:16px;margin-bottom:22px}
 .pdf-title h1{font-size:28px;margin-bottom:7px;color:#1a202c}
 .pdf-title p{color:#718096;font-size:14px}
@@ -201,7 +132,7 @@ button{
 .pdf-footer{text-align:center;color:#718096;font-size:10px;margin-top:20px}
 @media print{
     body{background:#fff;padding:0}
-    .header,.button-group,.notification,.modal,#emptyState,.btn-danger,.card,.footer,#pdfReport{display:none!important}
+    .header,.tabs,.button-group,.notification,.modal,#emptyState,.btn-danger,.card,.footer,#pdfReport,#roofPage{display:none!important}
     .main-grid{display:block}
     .results-container{border:1px solid #ccc;box-shadow:none;position:static}
 }
@@ -254,6 +185,14 @@ button{
 
 <div class="container">
 
+    <div class="tabs">
+        <button type="button" class="tab-btn active" data-page="bricks" onclick="showPage('bricks')">🧱 حاسبة الطوب</button>
+        <button type="button" class="tab-btn" data-page="roof" onclick="showPage('roof')">🏠 السقف</button>
+    </div>
+
+<!-- ===================== صفحة الطوب ===================== -->
+<div id="bricksPage">
+
     <div class="header">
         <h1>🧱 حاسبة الطوب للمباني</h1>
         <p>حساب كمية الطوب اعتمادًا على أبعاد المبنى، سمك الجدار، طريقة الرص، المونة والفتحات.</p>
@@ -279,6 +218,18 @@ button{
                     <div class="brick-dimensions-title">أبعاد الطوبة المحددة</div>
                     <div class="brick-dimensions-value" id="brickDimensionsDisplay">40 × 20 × 20 سم</div>
                     <button type="button" class="edit-dimensions-btn" onclick="toggleDimensions()">⚙️ تعديل الأبعاد</button>
+                </div>
+
+                <div class="form-group hidden-field" id="greenMethodGroup" style="margin-top:15px">
+                    <label for="greenMethod">طريقة البناء:</label>
+                    <select id="greenMethod" onchange="updateBrickOptionsUI();updateCalculatedThickness()">
+                        <option value="only">طوب أخضر 1 فقط</option>
+                        <option value="nail">مسمار (طوبة حمراء 5×10 سم بين كل طوبتين)</option>
+                    </select>
+                    <div id="redPriceGroup" class="hidden-field" style="margin-top:10px">
+                        <label for="redPrice">سعر الطوبة الحمراء (المسمار)</label>
+                        <input type="number" id="redPrice" value="0" min="0" step="0.01">
+                    </div>
                 </div>
 
                 <div class="hidden-dimensions" id="dimensionsBlock">
@@ -362,6 +313,7 @@ button{
                 <div style="font-size:.9em;color:var(--primary-color);margin-top:5px;font-weight:600;">
                     سمك الجدار المحسوب: <span id="calculatedWallThickness">20</span> سم
                 </div>
+                <div class="calculation-note hidden-field" id="jointNote">البلوك الأسمنتي: الخلوص بين الطوبة والطوبة = 0، لذلك لا يؤثر سمك المونة في الحساب.</div>
                 <div class="calculation-note">يتم حساب عدد الطوب حجميًا باستخدام حجم وحدة البناء الاعتبارية مع فواصل المونة. تغيير طريقة الرص يغيّر سماكة الجدار، وبالتالي يغيّر كمية الطوب.</div>
             </div>
 
@@ -383,6 +335,33 @@ button{
                         <label for="brickPrice">سعر الطوبة الواحدة</label>
                         <input type="number" id="brickPrice" value="0" min="0" step="0.01">
                     </div>
+                    <div class="form-group">
+                        <label for="buildPricePerM2">سعر متر البناء (للمتر المربع)</label>
+                        <input type="number" id="buildPricePerM2" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🏠 حساب الزنك (اختياري)</h2>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:1em">
+                    <input type="checkbox" id="zincEnable" style="width:20px;height:20px" onchange="updateZincUI()">
+                    تفعيل حساب ألواح الزنك مع الطوب
+                </label>
+                <div id="zincOptions" class="hidden-field" style="margin-top:15px">
+                    <div class="form-row">
+                        <div class="form-group"><label for="z_type">نوع السقف</label>
+                            <select id="z_type"><option value="single">ميل واحد</option><option value="gable">جملون (ميلين)</option></select></div>
+                        <div class="form-group"><label for="z_dir">اتجاه الألواح</label>
+                            <select id="z_dir"><option value="length">باتجاه الطول</option><option value="width">باتجاه العرض</option></select></div>
+                        <div class="form-group"><label for="z_rise">ارتفاع الميل — فرق الارتفاع (م)</label><input type="number" id="z_rise" min="0" step="0.01" value="0"></div>
+                        <div class="form-group"><label for="z_ov">بروز الزنك (سم)</label>
+                            <select id="z_ov"><option value="25">25 سم</option><option value="30">30 سم</option></select></div>
+                        <div class="form-group"><label for="z_emb">ركوب اللوح في الحائط الجانبي (سم)</label>
+                            <select id="z_emb"><option value="15">15 سم</option><option value="20">20 سم</option></select></div>
+                        <div class="form-group"><label for="z_lap">تراكب الطول عند وصل لوحين (سم)</label><input type="number" id="z_lap" min="0" max="199" step="1" value="20"></div>
+                    </div>
+                    <div class="calculation-note">يستخدم أبعاد المبنى وسمك الجدار المحسوب أعلاه، ويعمل مع «المبنى بالكامل» فقط. عرض اللوح 80 سم والتراكب الجانبي 15 سم.</div>
                 </div>
             </div>
 
@@ -407,7 +386,7 @@ button{
         <div>
             <div class="results-container hidden" id="resultsContainer">
                 <div class="result-item">
-                    <div class="result-label">مساحة الجدران الصافية</div>
+                    <div class="result-label">مساحة البناء (الجدران الصافية)</div>
                     <div class="result-value"><span id="netWallArea">0</span> م²</div>
                 </div>
 
@@ -416,14 +395,19 @@ button{
                     <div class="result-value"><span id="bricksWithWaste">0</span></div>
                 </div>
 
-                <div class="result-item">
-                    <div class="result-label">استهلاك الطوب التقريبي لكل متر مربع</div>
-                    <div class="result-value" style="font-size:1.2em"><span id="bricksPerM2">0</span> طوبة/م²</div>
+                <div class="result-item cost" id="costResult" style="display:none">
+                    <div class="result-label">تكلفة الطوب التقديرية</div>
+                    <div class="result-value"><span id="totalCost">0</span></div>
                 </div>
 
-                <div class="result-item cost" id="costResult" style="display:none">
-                    <div class="result-label">التكلفة الإجمالية التقديرية</div>
-                    <div class="result-value"><span id="totalCost">0</span></div>
+                <div class="result-item cost" id="buildCostResult" style="display:none">
+                    <div class="result-label">سعر بناء المبنى (المساحة × سعر المتر)</div>
+                    <div class="result-value"><span id="buildCost">0</span></div>
+                </div>
+
+                <div class="result-item total hidden-field" id="zincResult">
+                    <div class="result-label">ألواح الزنك</div>
+                    <div id="zincBody"></div>
                 </div>
 
                 <div class="warning-note"><strong>تنبيه هندسي:</strong> كمية الطوب الناتجة تقديرية وتعتمد على الحجم الاعتباري لوحدة البناء مع المونة. العدد الفعلي في الموقع قد يتغير بسبب طريقة الربط، القص، الزوايا، تفاصيل الفتحات ونسبة الهالك الفعلية.</div>
@@ -437,19 +421,71 @@ button{
             </div>
         </div>
     </div>
+</div>
 
-    <div class="footer">
-        <p>حاسبة الطوب الهندسية المتقدمة - تعتمد على حجم الجدار، سمك الجدار، أبعاد الطوبة، المونة والفتحات.</p>
+<!-- ===================== صفحة السقف ===================== -->
+<div id="roofPage" style="display:none">
+
+    <div class="header">
+        <h1>🏠 حاسبة السقف</h1>
+        <p>حساب المواسير وألواح الزنك حسب أبعاد المبنى.</p>
+    </div>
+
+    <div style="max-width:900px;margin:auto">
+        <div class="card">
+            <h2>📐 أبعاد المبنى والسقف</h2>
+            <div class="form-row">
+                <div class="form-group"><label for="r_type">نوع السقف</label>
+                    <select id="r_type"><option value="single">ميل واحد</option><option value="gable">جملون (ميلين)</option></select></div>
+                <div class="form-group"><label for="r_L">طول المبنى الخارجي (م)</label><input type="number" id="r_L" min="0.01" step="0.01"></div>
+                <div class="form-group"><label for="r_W">عرض المبنى الخارجي (م)</label><input type="number" id="r_W" min="0.01" step="0.01"></div>
+                <div class="form-group"><label for="r_wt">سمك الجدار (سم)</label><input type="number" id="r_wt" min="0" step="0.5" value="20"></div>
+                <div class="form-group"><label for="r_rise">ارتفاع الميل — فرق الارتفاع (م)</label><input type="number" id="r_rise" min="0" step="0.01" value="0"></div>
+                <div class="form-group"><label for="r_dir">اتجاه الألواح</label>
+                    <select id="r_dir"><option value="length">الألواح باتجاه الطول</option><option value="width">الألواح باتجاه العرض</option></select></div>
+            </div>
+            <div class="calculation-note">أدخل الأبعاد الخارجية وسمك الجدار. حساب الزنك على الأبعاد الخارجية، وعرض التغطية = البعد الداخلي + ركوب اللوح في الحائطين. في الجملون يُقسم البعد باتجاه الألواح نصفين.</div>
+        </div>
+
+        <div class="card">
+            <h2>🔩 المسافة بين المواسير (اختياري)</h2>
+            <div class="form-row">
+                <div class="form-group"><label for="r_cnt">عدد المواسير المطلوب (في كل ميل)</label><input type="number" id="r_cnt" min="2" step="1" placeholder="اتركه فارغًا لتخطي الحساب"></div>
+            </div>
+            <div class="calculation-note">أدخل عدد المواسير التي تريدها فيُحسب الفراغ بينها على المسافة الداخلية للمبنى (بعد طرح سمك الجدار)، مع وضع ماسورة عند كل جدار. إذا تركت الخانة فارغة لا يُحسب شيء للمواسير.</div>
+        </div>
+
+        <div class="card">
+            <h2>🧱 ألواح الزنك</h2>
+            <div class="form-row">
+                <div class="form-group"><label for="r_ov">بروز الزنك (سم)</label>
+                    <select id="r_ov"><option value="25">25 سم</option><option value="30">30 سم</option></select></div>
+                <div class="form-group"><label for="r_emb">ركوب اللوح في الحائط الجانبي (سم)</label>
+                    <select id="r_emb"><option value="15">15 سم</option><option value="20">20 سم</option></select></div>
+                <div class="form-group"><label for="r_lap">تراكب الطول عند وصل لوحين (سم)</label><input type="number" id="r_lap" min="0" max="199" step="1" value="20"></div>
+            </div>
+            <div class="calculation-note">عرض اللوح 80 سم، التراكب الجانبي 15 سم، فالعرض الفعّال 65 سم. أطوال الألواح المتاحة: 14 و16 و20 قدم. يُختار أقرب طول يغطي الميل + البروز، وإذا زاد عن 20 قدم يُوصل لوحان.</div>
+        </div>
+
+        <div class="button-group">
+            <button type="button" class="btn-primary" onclick="roofCalc()">📊 احسب السقف</button>
+            <button type="button" class="btn-secondary" onclick="roofReset()">↻ إعادة تعيين</button>
+        </div>
+
+        <div class="card" id="r_res" style="display:none;margin-top:20px;border-right:5px solid var(--success-color)"></div>
     </div>
 </div>
 
-<!-- قالب التقرير: لا يحتوي على الحقول التي طلب المستخدم حذفها -->
+    <div class="footer">
+        <p>حاسبة البناء - الطوب والسقف.</p>
+    </div>
+</div>
+
 <div id="pdfReport">
     <div class="pdf-title">
         <h1>🧱 تقرير حصر الطوب</h1>
         <p id="pdfProjectTitle">حاسبة الطوب للمباني</p>
     </div>
-
     <div class="pdf-section">
         <h2>📁 بيانات المشروع</h2>
         <div class="pdf-grid">
@@ -457,7 +493,6 @@ button{
             <div class="pdf-field"><div class="pdf-label">التاريخ</div><div class="pdf-value" id="pdfDate">—</div></div>
         </div>
     </div>
-
     <div class="pdf-section">
         <h2>📐 نطاق وأبعاد الحساب</h2>
         <div class="pdf-grid">
@@ -468,7 +503,6 @@ button{
             <div class="pdf-field" id="pdfDimensionTypeField"><div class="pdf-label">نوع الأبعاد</div><div class="pdf-value" id="pdfDimensionType">—</div></div>
         </div>
     </div>
-
     <div class="pdf-section">
         <h2>🧱 بيانات البناء</h2>
         <div class="pdf-grid">
@@ -478,20 +512,18 @@ button{
             <div class="pdf-field"><div class="pdf-label">سمك المونة</div><div class="pdf-value" id="pdfJoint">—</div></div>
         </div>
     </div>
-
     <div class="pdf-section">
         <h2>📊 النتيجة النهائية</h2>
         <div class="pdf-grid">
             <div class="pdf-field"><div class="pdf-label">مساحة الجدران الصافية</div><div class="pdf-value" id="pdfNetArea">—</div></div>
-            <div class="pdf-field"><div class="pdf-label">التكلفة الإجمالية</div><div class="pdf-value" id="pdfTotalCost">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">تكلفة الطوب</div><div class="pdf-value" id="pdfTotalCost">—</div></div>
+            <div class="pdf-field"><div class="pdf-label">سعر بناء المبنى</div><div class="pdf-value" id="pdfBuildCost">—</div></div>
         </div>
     </div>
-
     <div class="pdf-total">
         <div class="label">إجمالي الطوب المطلوب مع الهدر</div>
         <div class="value" id="pdfBricks">—</div>
     </div>
-
     <div class="pdf-footer">هذا التقرير تقديري لأغراض الحصر، وقد يختلف العدد الفعلي حسب التنفيذ بالموقع.</div>
 </div>
 
@@ -507,24 +539,9 @@ const presets = {
     green2:{l:30,w:20,h:10}
 };
 
-const presetNames = {
-    cement:"بلوك أسمنتي",
-    red:"طوب أحمر",
-    green1:"طوب أخضر 1",
-    green2:"طوب أخضر 2",
-    custom:"طوب مخصص"
-};
-
-const layoutNames = {
-    stretcher:"طولي (نصف طوبة)",
-    header:"عرضي (طوبة كاملة)",
-    combined:"عرضي وطولي معاً (طوبة ونصف)"
-};
-
-const dimensionNames = {
-    external:"أبعاد خارجية للمبنى",
-    internal:"أبعاد داخلية للمبنى"
-};
+const presetNames = {cement:"بلوك أسمنتي",red:"طوب أحمر",green1:"طوب أخضر 1",green2:"طوب أخضر 2",custom:"طوب مخصص"};
+const layoutNames = {stretcher:"طولي (نصف طوبة)",header:"عرضي (طوبة كاملة)",combined:"عرضي وطولي معاً (طوبة ونصف)"};
+const dimensionNames = {external:"أبعاد خارجية للمبنى",internal:"أبعاد داخلية للمبنى"};
 
 const openingPresets = {
     door_100:{name:"باب",icon:"🚪",w:1.0,h:2.2},
@@ -534,6 +551,67 @@ const openingPresets = {
     win_150:{name:"شباك",icon:"🪟",w:1.5,h:1.2},
     custom:{name:"مخصص",icon:"⚙️",w:0,h:0}
 };
+
+/* ---------- التبديل بين الصفحات ---------- */
+function showPage(page){
+    document.getElementById("bricksPage").style.display=page==="bricks"?"block":"none";
+    document.getElementById("roofPage").style.display=page==="roof"?"block":"none";
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+    window.scrollTo(0,0);
+}
+
+/* ---------- الخلوص وطريقة المسمار ---------- */
+function updateZincUI(){
+    const on=document.getElementById("zincEnable").checked;
+    document.getElementById("zincOptions").classList.toggle("hidden-field",!on);
+}
+function getZincInputs(){
+    const v=id=>document.getElementById(id).value;
+    return {enable:document.getElementById("zincEnable").checked,type:v("z_type"),dir:v("z_dir"),rise:v("z_rise"),ov:v("z_ov"),emb:v("z_emb"),lap:v("z_lap")};
+}
+function setZincInputs(o){
+    o=o||{};
+    const s=(id,val)=>{document.getElementById(id).value=val;};
+    document.getElementById("zincEnable").checked=!!o.enable;
+    s("z_type",o.type||"single");s("z_dir",o.dir||"length");s("z_rise",o.rise??"0");
+    s("z_ov",o.ov||"25");s("z_emb",o.emb||"15");s("z_lap",o.lap??"20");
+    updateZincUI();
+}
+function calcZincForBuilding(Lext,Wext,t){
+    const g=id=>document.getElementById(id);
+    const type=g("z_type").value, dir=g("z_dir").value;
+    const rise=Math.max(0,parseFloat(g("z_rise").value)||0);
+    const ov=parseFloat(g("z_ov").value), emb=parseFloat(g("z_emb").value)/100;
+    const lap=Math.max(0,Math.min(199,parseFloat(g("z_lap").value)||0));
+    if(emb>t+1e-9)return {error:"ركوب اللوح في الحائط أكبر من سمك الجدار، لذلك لم يُحسب الزنك."};
+    const A=dir==="length"?Lext:Wext, B=dir==="length"?Wext:Lext;
+    const slopes=type==="gable"?2:1;
+    const Bin=B-2*t;
+    if(Bin<=0)return {error:"سمك الجدار كبير بالنسبة لأبعاد المبنى، لذلك لم يُحسب الزنك."};
+    const slopeLenOut=Math.sqrt(Math.pow(A/slopes,2)+rise*rise);
+    const z=window.zincSheets(slopeLenOut,Bin+2*emb,slopes,ov,lap);
+    z.slopes=slopes;
+    return z;
+}
+
+const NAIL_RED_W=5; // عرض الطوبة الحمراء (سم)
+
+function getEffectiveJoint(){
+    // بلوك أسمنتي: لا خلوص. باقي الأنواع: الخلوص = سمك المونة.
+    if(document.getElementById("brickPreset").value==="cement")return 0;
+    return parseFloat(document.getElementById("jointThickness").value)||0;
+}
+function isNailMethod(){
+    return document.getElementById("brickPreset").value==="green1"
+        && document.getElementById("greenMethod").value==="nail";
+}
+function updateBrickOptionsUI(){
+    const p=document.getElementById("brickPreset").value;
+    document.getElementById("greenMethodGroup").classList.toggle("hidden-field",p!=="green1");
+    document.getElementById("redPriceGroup").classList.toggle("hidden-field",!isNailMethod());
+    document.getElementById("jointThickness").disabled=(p==="cement");
+    document.getElementById("jointNote").classList.toggle("hidden-field",p!=="cement");
+}
 
 document.addEventListener("DOMContentLoaded",()=>{
     loadProjects();
@@ -563,7 +641,7 @@ function updateCalculationMode(){
     const heightLabel=document.getElementById("buildingHeightLabel");
     const badge=document.getElementById("calculationModeBadge");
 
-    if(mode==="wall") {
+    if(mode==="wall"){
         widthGroup.classList.add("hidden-field");
         dimensionTypeGroup.classList.add("hidden-field");
         buildingNote.style.display="none";
@@ -571,7 +649,7 @@ function updateCalculationMode(){
         lengthLabel.textContent="طول الجدار (م)";
         heightLabel.textContent="ارتفاع الجدار (م)";
         badge.textContent="🧱 حساب جدار واحد";
-    } else {
+    }else{
         widthGroup.classList.remove("hidden-field");
         dimensionTypeGroup.classList.remove("hidden-field");
         buildingNote.style.display="block";
@@ -580,6 +658,8 @@ function updateCalculationMode(){
         heightLabel.textContent="الارتفاع (م)";
         badge.textContent="🏠 حساب كامل جدران المبنى";
     }
+    const ze=document.getElementById("zincEnable");
+    if(ze){ze.disabled=(mode==="wall");if(mode==="wall")ze.checked=false;updateZincUI();}
 }
 
 function updateBrickDimensionsDisplay(){
@@ -601,6 +681,7 @@ function applyBrickPreset(){
         document.getElementById("brickWidth").value=presets[val].w;
         document.getElementById("brickHeight").value=presets[val].h;
     }
+    updateBrickOptionsUI();
     updateBrickDimensionsDisplay();
     updateCalculatedThickness();
 }
@@ -608,7 +689,7 @@ function applyBrickPreset(){
 function updateCalculatedThickness(){
     const bL=parseFloat(document.getElementById("brickLength").value)||0;
     const bW=parseFloat(document.getElementById("brickWidth").value)||0;
-    const joint=parseFloat(document.getElementById("jointThickness").value)||0;
+    const joint=getEffectiveJoint();
     const layout=document.getElementById("wallLayout").value;
     let thick=bW;
     if(layout==="header") thick=bL;
@@ -684,8 +765,7 @@ function selectOpening(rowId,presetType){
     const menu=document.getElementById(`opening-menu-${rowId}`);
     if(menu)menu.classList.remove("show");
 
-    row.querySelector(".opening-name-btn").innerHTML=`
-        <span>${preset.icon} ${preset.name}</span><span>⌄</span>`;
+    row.querySelector(".opening-name-btn").innerHTML=`<span>${preset.icon} ${preset.name}</span><span>⌄</span>`;
 
     const widthInput=row.querySelector(".op-width");
     const heightInput=row.querySelector(".op-height");
@@ -844,7 +924,7 @@ function calculateCore(){
     const bL=parseFloat(document.getElementById("brickLength").value);
     const bW=parseFloat(document.getElementById("brickWidth").value);
     const bH=parseFloat(document.getElementById("brickHeight").value);
-    const jointCM=parseFloat(document.getElementById("jointThickness").value)||0;
+    const jointCM=getEffectiveJoint();
     const lengthM=parseFloat(document.getElementById("buildingLength").value);
     const widthM=parseFloat(document.getElementById("buildingWidth").value);
     const heightM=parseFloat(document.getElementById("buildingHeight").value);
@@ -857,8 +937,7 @@ function calculateCore(){
 
     let geometry;
 
-    if(calculationMode==="wall") {
-        // جدار واحد: الطول × الارتفاع × سماكة الجدار.
+    if(calculationMode==="wall"){
         const grossWallArea=lengthM*heightM;
         if(grossWallArea<=0)throw new Error("أبعاد الجدار غير صحيحة.");
         geometry={
@@ -868,7 +947,7 @@ function calculateCore(){
             grossWallVolume:grossWallArea*wallThicknessM,
             grossWallArea
         };
-    } else {
+    }else{
         geometry=calculateWallGeometry(lengthM,widthM,heightM,wallThicknessM,dimensionType);
     }
 
@@ -881,7 +960,12 @@ function calculateCore(){
     const openingsVolume=openingsArea*wallThicknessM;
     const netWallArea=Math.max(0,geometry.grossWallArea-openingsArea);
     const netWallVolume=Math.max(0,geometry.grossWallVolume-openingsVolume);
-    const module=calculateBrickModuleVolume(bL,bW,bH,jointCM);
+
+    // طريقة المسمار: الوحدة = أخضر + مونة + أحمر (5 سم) + مونة بالطول
+    const nail=isNailMethod();
+    const module=nail
+        ? calculateBrickModuleVolume(bL+NAIL_RED_W+jointCM,bW,bH,jointCM)
+        : calculateBrickModuleVolume(bL,bW,bH,jointCM);
 
     if(module.volume<=0)throw new Error("تعذر حساب حجم وحدة البناء.");
 
@@ -890,11 +974,19 @@ function calculateCore(){
     const waste=parseFloat(document.getElementById("wastePercentage").value)||0;
     const bricksWithWaste=Math.ceil(bricksNeeded*(1+waste/100));
     const price=parseFloat(document.getElementById("brickPrice").value)||0;
-    const totalCost=bricksWithWaste*price;
+    const redWithWaste=nail?bricksWithWaste:0;
+    const redPrice=parseFloat(document.getElementById("redPrice").value)||0;
+    const totalCost=bricksWithWaste*price+redWithWaste*redPrice;
     const bricksPerM2=netWallArea>0?rawBricks/netWallArea:0;
+    const buildPricePerM2=Math.max(0,parseFloat(document.getElementById("buildPricePerM2").value)||0);
+    const buildCost=netWallArea*buildPricePerM2;
+    let zinc=null;
+    if(calculationMode==="building"&&document.getElementById("zincEnable").checked){
+        zinc=calcZincForBuilding(geometry.externalLength,geometry.externalWidth,wallThicknessM);
+    }
 
     return {
-        calculationMode,
+        calculationMode,nail,redWithWaste,buildPricePerM2,buildCost,zinc,
         bL,bW,bH,jointCM,layout,dimensionType,wallThicknessM,
         wallThicknessCM:wallThicknessM*100,
         grossWallArea:geometry.grossWallArea,
@@ -925,7 +1017,10 @@ function displayResults(){
 
     document.getElementById("netWallArea").textContent=r.netWallArea.toFixed(2);
     document.getElementById("bricksWithWaste").textContent=r.bricksWithWaste.toLocaleString("en-US");
-    document.getElementById("bricksPerM2").textContent=r.bricksPerM2.toFixed(2);
+    
+
+    
+    
 
     const costContainer=document.getElementById("costResult");
     if(r.totalCost>0){
@@ -933,6 +1028,30 @@ function displayResults(){
         costContainer.style.display="block";
     }else{
         costContainer.style.display="none";
+    }
+
+    const zBox=document.getElementById("zincResult");
+    if(r.zinc){
+        zBox.classList.remove("hidden-field");
+        const body=document.getElementById("zincBody");
+        if(r.zinc.error){
+            body.innerHTML=`<div class="calculation-note" style="margin-top:0">${escapeHtml(r.zinc.error)}</div>`;
+        }else{
+            const z=r.zinc;
+            body.innerHTML=`<div class="result-value">${z.totalSheets} لوح</div>
+                <div class="result-label" style="margin-top:6px">عدد الألواح في الصف الواحد: ${z.across}${z.slopes===2?" × 2 ميل":""}</div>
+                ${window.zincTable(z.counts)}`;
+        }
+    }else{
+        zBox.classList.add("hidden-field");
+    }
+
+    const buildBox=document.getElementById("buildCostResult");
+    if(r.buildCost>0){
+        document.getElementById("buildCost").textContent=r.buildCost.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+        buildBox.style.display="block";
+    }else{
+        buildBox.style.display="none";
     }
 
     document.getElementById("resultsContainer").classList.remove("hidden");
@@ -955,6 +1074,8 @@ function showNotification(message,type="success",icon="✓"){
 
 function resetForm(){
     document.getElementById("brickPreset").value="cement";
+    document.getElementById("greenMethod").value="only";
+    document.getElementById("redPrice").value="0";
     applyBrickPreset();
 
     document.getElementById("calculationMode").value="building";
@@ -964,6 +1085,8 @@ function resetForm(){
     document.getElementById("jointThickness").value="1";
     document.getElementById("wastePercentage").value="10";
     document.getElementById("brickPrice").value="0";
+    document.getElementById("buildPricePerM2").value="0";
+    setZincInputs({});
     document.getElementById("projectName").value="";
     document.getElementById("openingsContainer").innerHTML="";
 
@@ -1006,6 +1129,8 @@ function saveProject(){
         date:new Date().toLocaleDateString("ar-SA"),
         inputs:{
             preset:document.getElementById("brickPreset").value,
+            greenMethod:document.getElementById("greenMethod").value,
+            redPrice:document.getElementById("redPrice").value,
             bL:document.getElementById("brickLength").value,
             bW:document.getElementById("brickWidth").value,
             bH:document.getElementById("brickHeight").value,
@@ -1018,6 +1143,8 @@ function saveProject(){
             waste:document.getElementById("wastePercentage").value,
             joint:document.getElementById("jointThickness").value,
             price:document.getElementById("brickPrice").value,
+            buildPrice:document.getElementById("buildPricePerM2").value,
+            zinc:getZincInputs(),
             openings:getOpeningsData()
         }
     };
@@ -1058,10 +1185,7 @@ function escapeHtml(value){
         .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
         .replace(/'/g,"&#039;");
 }
-
-function escapeAttr(value){
-    return escapeHtml(value);
-}
+function escapeAttr(value){return escapeHtml(value);}
 
 function openProjectsModal(){
     const list=document.getElementById("projectsList");
@@ -1095,6 +1219,8 @@ function loadProjectData(id){
 
     const inputs=p.inputs||{};
     document.getElementById("brickPreset").value=inputs.preset||"custom";
+    document.getElementById("greenMethod").value=inputs.greenMethod||"only";
+    document.getElementById("redPrice").value=inputs.redPrice??"0";
     document.getElementById("brickLength").value=inputs.bL??"";
     document.getElementById("brickWidth").value=inputs.bW??"";
     document.getElementById("brickHeight").value=inputs.bH??"";
@@ -1107,7 +1233,10 @@ function loadProjectData(id){
     document.getElementById("jointThickness").value=inputs.joint??"1";
     document.getElementById("wastePercentage").value=inputs.waste??"10";
     document.getElementById("brickPrice").value=inputs.price??"0";
+    document.getElementById("buildPricePerM2").value=inputs.buildPrice??"0";
+    setZincInputs(inputs.zinc);
 
+    updateBrickOptionsUI();
     updateBrickDimensionsDisplay();
     updateCalculatedThickness();
     updateCalculationMode();
@@ -1117,12 +1246,7 @@ function loadProjectData(id){
 
     if(Array.isArray(inputs.openings)&&inputs.openings.length){
         inputs.openings.forEach(opening=>{
-            addOpeningRow(
-                opening.preset||"custom",
-                Number(opening.count)||0,
-                opening.width??"",
-                opening.height??""
-            );
+            addOpeningRow(opening.preset||"custom",Number(opening.count)||0,opening.width??"",opening.height??"");
         });
     }else{
         addOpeningRow("door_100",0);
@@ -1161,7 +1285,6 @@ function confirmDeleteProject(id){
     );
 }
 
-let messageTimer=null;
 function showMessage(message,type="info",title=null,icon=null){
     const titles={info:"تنبيه",success:"تمت العملية",warning:"تنبيه",error:"حدث خطأ"};
     const icons={info:"ℹ️",success:"✓",warning:"⚠️",error:"✕"};
@@ -1211,22 +1334,21 @@ function fillPDFReport(){
     document.getElementById("pdfLength").textContent=`${formatNumber(parseFloat(document.getElementById("buildingLength").value))} م`;
     document.getElementById("pdfHeight").textContent=`${formatNumber(parseFloat(document.getElementById("buildingHeight").value))} م`;
 
-    const widthField=document.getElementById("pdfWidthField");
-    const dimensionField=document.getElementById("pdfDimensionTypeField");
-    widthField.style.display=isWall?"none":"block";
-    dimensionField.style.display=isWall?"none":"block";
+    document.getElementById("pdfWidthField").style.display=isWall?"none":"block";
+    document.getElementById("pdfDimensionTypeField").style.display=isWall?"none":"block";
 
     if(!isWall){
         document.getElementById("pdfWidth").textContent=`${formatNumber(parseFloat(document.getElementById("buildingWidth").value))} م`;
         document.getElementById("pdfDimensionType").textContent=dimensionNames[r.dimensionType]||r.dimensionType;
     }
 
-    document.getElementById("pdfBrickType").textContent=presetNames[brickType]||"طوب مخصص";
+    document.getElementById("pdfBrickType").textContent=(presetNames[brickType]||"طوب مخصص")+(r.nail?" — طريقة المسمار":"");
     document.getElementById("pdfLayout").textContent=layoutNames[r.layout]||r.layout;
     document.getElementById("pdfWallThickness").textContent=`${r.wallThicknessCM.toFixed(1)} سم`;
     document.getElementById("pdfJoint").textContent=`${r.jointCM.toFixed(1)} سم`;
     document.getElementById("pdfNetArea").textContent=`${r.netWallArea.toFixed(2)} م²`;
-    document.getElementById("pdfBricks").textContent=r.bricksWithWaste.toLocaleString("en-US")+" طوبة";
+    document.getElementById("pdfBricks").textContent=r.bricksWithWaste.toLocaleString("en-US")+" طوبة"+(r.nail?` + ${r.redWithWaste.toLocaleString("en-US")} حمراء`:"");
+    document.getElementById("pdfBuildCost").textContent=r.buildCost>0?r.buildCost.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}):"غير محدد";
     document.getElementById("pdfTotalCost").textContent=r.totalCost>0?r.totalCost.toLocaleString("en-US",{minimumFractionDigits:2}):"غير محددة";
 }
 
@@ -1253,15 +1375,8 @@ async function generateDirectPDF(){
     await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
 
     const report=document.getElementById("pdfReport");
-    const old={
-        left:report.style.left,
-        top:report.style.top,
-        zIndex:report.style.zIndex,
-        visibility:report.style.visibility,
-        position:report.style.position
-    };
+    const old={left:report.style.left,top:report.style.top,zIndex:report.style.zIndex,visibility:report.style.visibility,position:report.style.position};
 
-    // نجعل التقرير داخل مجال التصوير مؤقتًا حتى يعمل html2canvas بشكل موثوق داخل WebView.
     report.style.position="fixed";
     report.style.left="0";
     report.style.top="0";
@@ -1269,14 +1384,7 @@ async function generateDirectPDF(){
     report.style.visibility="visible";
 
     try{
-        const canvas=await window.html2canvas(report,{
-            scale:2,
-            backgroundColor:"#ffffff",
-            useCORS:true,
-            logging:false,
-            width:794,
-            windowWidth:794
-        });
+        const canvas=await window.html2canvas(report,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false,width:794,windowWidth:794});
 
         const imgData=canvas.toDataURL("image/jpeg",.95);
         const {jsPDF}=window.jspdf;
@@ -1312,8 +1420,7 @@ async function generateDirectPDF(){
             }
         }
 
-        const safeName=(document.getElementById("projectName").value.trim()||"تقرير_حصر_الطوب")
-            .replace(/[\\/:*?"<>|]/g,"_");
+        const safeName=(document.getElementById("projectName").value.trim()||"تقرير_حصر_الطوب").replace(/[\\/:*?"<>|]/g,"_");
         pdf.save(`${safeName}.pdf`);
     }finally{
         report.style.left=old.left;
@@ -1343,17 +1450,9 @@ async function exportPDF(){
     }catch(error){
         console.error(error);
         if(isAndroidWebView()){
-            showMessage(
-                "تعذر إنشاء ملف PDF داخل التطبيق. تأكد من تفعيل JavaScript وInternet Permission في إعدادات WebIntoApp ثم أعد المحاولة.",
-                "error",
-                "تعذر إنشاء PDF"
-            );
+            showMessage("تعذر إنشاء ملف PDF داخل التطبيق. تأكد من تفعيل JavaScript وInternet Permission في إعدادات WebIntoApp ثم أعد المحاولة.","error","تعذر إنشاء PDF");
         }else{
-            showMessage(
-                "تعذر إنشاء PDF مباشرة. يمكنك استخدام نافذة الطباعة كخيار احتياطي.",
-                "warning",
-                "تعذر إنشاء PDF"
-            );
+            showMessage("تعذر إنشاء PDF مباشرة. يمكنك استخدام نافذة الطباعة كخيار احتياطي.","warning","تعذر إنشاء PDF");
             setTimeout(()=>window.print(),400);
         }
     }
@@ -1367,6 +1466,100 @@ document.addEventListener("click",event=>{
     if(event.target===document.getElementById("messageModal"))closeMessage();
     if(event.target===document.getElementById("confirmModal"))closeConfirm();
 });
+
+/* ===================== حاسبة السقف ===================== */
+(function(){
+    const FT=30.48, LENS=[14,16,20], EFF=65, SHEET_W=80, PIPE_W=4; // عرض الماسورة (سم) ثابت
+    const g=id=>document.getElementById(id);
+    const fmt=x=>x.toLocaleString("en-US",{maximumFractionDigits:2});
+
+    function planRow(need,overlap){
+        const max=LENS[LENS.length-1]*FT, pieces=[];
+        let rem=need;
+        while(rem>max+1e-9){pieces.push(20);rem-=(max-overlap);}
+        pieces.push(LENS.find(f=>f*FT>=rem-1e-9)||20);
+        return pieces;
+    }
+
+    function zincSheets(slopeLenOutM,coverWidthM,slopes,ov,lap){
+        const needCM=slopeLenOutM*100+ov;
+        const Bcm=coverWidthM*100;
+        const across=Bcm<=SHEET_W?1:Math.ceil((Bcm-SHEET_W)/EFF-1e-9)+1;
+        const rows=across*slopes;
+        const pieces=planRow(needCM,lap);
+        const counts={14:0,16:0,20:0};
+        pieces.forEach(f=>counts[f]+=rows);
+        return {needCM,across,rows,pieces,counts,totalSheets:pieces.length*rows};
+    }
+    function zincTable(counts){
+        let tbl='<table class="rtable"><tr><th>طول اللوح</th><th>العدد</th></tr>';
+        LENS.forEach(f=>{if(counts[f]>0)tbl+=`<tr><td>${f} قدم (${fmt(f*FT)} سم)</td><td><b>${counts[f]}</b></td></tr>`;});
+        return tbl+"</table>";
+    }
+    window.zincSheets=zincSheets;
+    window.zincTable=zincTable;
+
+    function roofErr(msg){
+        showMessage(msg,"error","قيمة غير صحيحة");
+        g("r_res").style.display="none";
+    }
+
+    window.roofCalc=function(){
+        const type=g("r_type").value, dir=g("r_dir").value;
+        const L=parseFloat(g("r_L").value), W=parseFloat(g("r_W").value);
+        const rise=parseFloat(g("r_rise").value)||0;
+        const t=(parseFloat(g("r_wt").value)||0)/100;
+        const pw=PIPE_W/100;
+        const cntRaw=g("r_cnt").value.trim();
+        const cnt=parseInt(cntRaw,10);
+        const emb=parseFloat(g("r_emb").value)/100;
+        const ov=parseFloat(g("r_ov").value), lap=parseFloat(g("r_lap").value)||0;
+
+        if(!(L>0)||!(W>0)||rise<0||t<0||lap<0||lap>=200){
+            return roofErr("تأكد من إدخال الطول والعرض وسمك الجدار بقيم صحيحة.");
+        }
+        // A = البعد الذي تسير عليه الألواح (الميل)، B = البعد الآخر
+        const A=dir==="length"?L:W, B=dir==="length"?W:L;
+        const Ain=A-2*t, Bin=B-2*t;
+        if(Ain<=0||Bin<=0)return roofErr("سمك الجدار كبير بالنسبة لأبعاد المبنى.");
+        if(emb>t+1e-9)return roofErr("ركوب اللوح في الحائط أكبر من سمك الجدار. زد سمك الجدار أو قلّل الركوب.");
+
+        const slopes=type==="gable"?2:1;
+
+        // ---- الزنك ----
+        const slopeLenOut=Math.sqrt(Math.pow(A/slopes,2)+rise*rise);
+        const z=zincSheets(slopeLenOut,Bin+2*emb,slopes,ov,lap);
+        const across=z.across, totalSheets=z.totalSheets;
+        const tbl=zincTable(z.counts);
+
+        // ---- المسافة بين المواسير (اختياري) ----
+        let pipeHtml="";
+        if(cntRaw!==""){
+            if(!(cnt>=2))return roofErr("عدد المواسير يجب أن يكون 2 على الأقل.");
+            const slopeLenIn=Math.sqrt(Math.pow(Ain/slopes,2)+rise*rise);
+            const gap=(slopeLenIn-cnt*pw)/(cnt-1);
+            if(gap<0)return roofErr("عدد المواسير كبير جدًا؛ لا تتسع على المسافة الداخلية بعرض الماسورة المحدد.");
+            pipeHtml=`
+            <div class="result-item total"><div class="result-label">المسافة الصافية بين الماسورة والأخرى (${cnt} مواسير${slopes===2?" في كل ميل":""})</div><div class="result-value">${fmt(gap*100)} سم</div>
+                <div class="result-label" style="margin-top:4px">من المنتصف إلى المنتصف: ${fmt((gap+pw)*100)} سم</div></div>`;
+        }
+
+        g("r_res").innerHTML=`
+            <h2>📋 نتائج السقف</h2>
+            <div class="result-item"><div class="result-label">عدد الألواح في الصف الواحد</div><div class="result-value">${across}${slopes===2?" × 2 ميل":""}</div></div>
+            <div class="result-item total"><div class="result-label">إجمالي ألواح الزنك</div><div class="result-value">${totalSheets} لوح</div>${tbl}</div>
+            ${pipeHtml}`;
+        g("r_res").style.display="block";
+        g("r_res").scrollIntoView({behavior:"smooth"});
+    };
+
+    window.roofReset=function(){
+        ["r_L","r_W","r_cnt"].forEach(i=>g(i).value="");
+        g("r_rise").value="0";g("r_wt").value="20";g("r_lap").value="20";
+        g("r_type").value="single";g("r_dir").value="length";g("r_ov").value="25";g("r_emb").value="15";
+        g("r_res").style.display="none";
+    };
+})();
 </script>
 
 </body>
