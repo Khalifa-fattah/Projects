@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>قائمتي | تطبيق إدارة المهام الذكي</title>
+  <!-- Google Fonts: Cairo & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <i data-lucide="check-circle-2"></i>
+        </div>
+        <div class="brand-text">
+          <h1>مهامي <span>Today</span></h1>
+          <p id="current-date" class="date-text"></p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Sound Toggle -->
+        <button id="sound-toggle-btn" class="icon-btn" title="تبديل المؤثرات الصوتية">
+          <i data-lucide="volume-2" id="sound-icon"></i>
+        </button>
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" class="icon-btn" title="تبديل النمط النهاري / الليلي">
+          <i data-lucide="sun" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Progress Overview Card -->
+    <section class="overview-card">
+      <div class="overview-info">
+        <div class="progress-details">
+          <h2>مستوى الإنجاز اليومي</h2>
+          <p id="progress-summary">أنجزت 0 من إجمالي 0 مهام</p>
+        </div>
+        <div class="progress-badge" id="progress-percent">0%</div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-pill"><span id="stat-total">0</span> إجمالي</div>
+        <div class="stat-pill pending"><span id="stat-pending">0</span> قيد التنفيذ</div>
+        <div class="stat-pill done"><span id="stat-completed">0</span> مكتملة</div>
+      </div>
+    </section>
+
+    <!-- Task Input Section -->
+    <section class="add-task-card">
+      <form id="todo-form">
+        <div class="input-main-row">
+          <input 
+            type="text" 
+            id="task-title" 
+            placeholder="ما الذي تود إنجازه اليوم؟ (مثال: إنهاء التقرير، ممارسة الرياضة...)" 
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="primary-btn" id="submit-btn">
+            <i data-lucide="plus"></i>
+            <span>إضافة</span>
+          </button>
+        </div>
+
+        <!-- Optional Task Meta Expandable -->
+        <div class="input-meta-row">
+          <!-- Priority Selector -->
+          <div class="meta-field">
+            <label for="task-priority">الأولوية:</label>
+            <select id="task-priority">
+              <option value="medium" selected>متوسطة 🟡</option>
+              <option value="high">عالية 🔴</option>
+              <option value="low">منخفضة 🟢</option>
+            </select>
+          </div>
+
+          <!-- Category Selector -->
+          <div class="meta-field">
+            <label for="task-category">القسم:</label>
+            <select id="task-category">
+              <option value="general">عام 📌</option>
+              <option value="work">العمل 💼</option>
+              <option value="study">الدراسة 📚</option>
+              <option value="personal">شخصي 👤</option>
+              <option value="shopping">مشتريات 🛒</option>
+            </select>
+          </div>
+
+          <!-- Due Date -->
+          <div class="meta-field">
+            <label for="task-due-date">الموعد:</label>
+            <input type="date" id="task-due-date" />
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Controls Bar (Search, Filters, Sort) -->
+    <section class="controls-bar">
+      <!-- Search Input -->
+      <div class="search-box">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="search-input" placeholder="بحث في المهام..." />
+      </div>
+
+      <!-- Filters Tabs -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">الكل</button>
+        <button class="filter-btn" data-filter="active">قيد التنفيذ</button>
+        <button class="filter-btn" data-filter="completed">المكتملة</button>
+      </div>
+
+      <!-- Category Filter Dropdown -->
+      <div class="select-wrapper">
+        <select id="category-filter">
+          <option value="all">جميع الأقسام</option>
+          <option value="work">العمل</option>
+          <option value="study">الدراسة</option>
+          <option value="personal">شخصي</option>
+          <option value="shopping">مشتريات</option>
+          <option value="general">عام</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Task List -->
+    <main class="tasks-container">
+      <ul id="task-list" class="task-list">
+        <!-- Rendered dynamically -->
+      </ul>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon-wrap">
+          <i data-lucide="clipboard-list"></i>
+        </div>
+        <h3>لا توجد مهام حالياً</h3>
+        <p>أضف مهمتك الأولى بالأعلى واستمتع بيوم منظم ومنجز!</p>
+      </div>
+    </main>
+
+    <!-- Bottom Actions & Tools -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <button id="clear-completed-btn" class="text-danger-btn">
+          <i data-lucide="trash-2"></i>
+          حذف المكتملة
+        </button>
+      </div>
+      <div class="footer-right">
+        <button id="export-btn" class="secondary-btn" title="تصدير نسخة احتياطية من المهام">
+          <i data-lucide="download"></i>
+          تصدير
+        </button>
+        <button id="import-btn" class="secondary-btn" title="استيراد مهام من ملف">
+          <i data-lucide="upload"></i>
+          استيراد
+        </button>
+        <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+      </div>
+    </footer>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>تعديل المهمة</h3>
+        <button class="close-modal-btn" id="close-modal-btn">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="edit-form">
+        <input type="hidden" id="edit-task-id" />
+        <div class="modal-field">
+          <label for="edit-task-title">عنوان المهمة</label>
+          <input type="text" id="edit-task-title" required />
+        </div>
+        <div class="modal-field-grid">
+          <div class="modal-field">
+            <label for="edit-task-priority">الأولوية</label>
+            <select id="edit-task-priority">
+              <option value="high">عالية 🔴</option>
+              <option value="medium">متوسطة 🟡</option>
+              <option value="low">منخفضة 🟢</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label for="edit-task-category">القسم</label>
+            <select id="edit-task-category">
+              <option value="general">عام 📌</option>
+              <option value="work">العمل 💼</option>
+              <option value="study">الدراسة 📚</option>
+              <option value="personal">شخصي 👤</option>
+              <option value="shopping">مشتريات 🛒</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label for="edit-task-due-date">تاريخ الاستحقاق</label>
+            <input type="date" id="edit-task-due-date" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" id="cancel-edit-btn">إلغاء</button>
+          <button type="submit" class="primary-btn">حفظ التعديلات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

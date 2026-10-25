@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>تطبيق دفتر الحسابات والمصروفات (CashBook)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #05070d;
+            color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            overscroll-behavior-y: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #app {
+            height: 100%;
+            height: 100dvh;
+        }
+        @media (min-width: 640px) {
+            #app {
+                height: 92vh;
+            }
+        }
+
+        .overflow-y-auto,
+        #transactionsContainer,
+        #booksListContainer,
+        #allBooksContainer {
+            overscroll-behavior: contain;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* كلاسات مساعدة */
+        .dir-ltr {
+            direction: ltr;
+            unicode-bidi: embed;
+        }
+        .no-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.6;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="h-full w-full flex justify-center items-center bg-[#05070d] p-0 sm:p-4 overflow-hidden">
+
+    <!-- Main App Frame -->
+    <div id="app" class="w-full max-w-md h-full sm:h-[92vh] sm:rounded-3xl bg-[#0b0f19] text-white flex flex-col shadow-2xl overflow-hidden relative border border-[#172033]">
+
+        <!-- Top Header -->
+        <header class="bg-[#0b0f19] px-3 py-3 flex items-center justify-between gap-1.5 border-b border-[#172033] z-10">
+            <div class="flex items-center gap-1 shrink-0">
+                <button onclick="toggleOptionsMenu()" class="text-gray-400 hover:text-white p-1.5">
+                    <i class="fa-solid fa-ellipsis-vertical text-base"></i>
+                </button>
+                <button onclick="openGlobalReportModal()" class="text-gray-400 hover:text-white p-1.5" title="تقرير شامل لجميع الدفاتر">
+                    <i class="fa-solid fa-file-lines text-base text-blue-400 hover:text-blue-300"></i>
+                </button>
+                <button onclick="openDateFilter()" class="text-gray-400 hover:text-white p-1.5" title="تصفية بتاريخ">
+                    <i class="fa-regular fa-calendar text-base"></i>
+                </button>
+                <button onclick="toggleSearchBar()" class="text-gray-400 hover:text-white p-1.5" title="بحث">
+                    <i class="fa-solid fa-magnifying-glass text-base"></i>
+                </button>
+            </div>
+
+            <!-- اسم المستخدم وتعديله (بجانب أيقونة البحث وقبل اسم الدفتر) -->
+            <div class="flex-1 min-w-0 flex items-center justify-center gap-1">
+                <span id="headerUserName" class="text-xs font-bold text-gray-200 truncate">مستخدم جديد</span>
+                <button onclick="openEditProfileModal()" class="text-gray-500 hover:text-blue-400 p-1 shrink-0" title="تعديل اسم المستخدم">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                </button>
+            </div>
+
+            <!-- Notebook Switcher -->
+            <div class="relative shrink-0">
+                <button onclick="toggleBooksModal()" class="flex items-center gap-1.5 text-sm font-bold bg-[#131b2e] px-3 py-1.5 rounded-full border border-[#1f293d] hover:bg-[#1b263e] transition">
+                    <span id="activeBookName" class="max-w-[72px] truncate">الدفتر</span>
+                    <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Search Bar -->
+        <div id="searchBar" class="hidden bg-[#0b0f19] px-4 py-2 border-b border-[#172033]">
+            <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl px-3 py-2 flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass text-gray-500 text-xs"></i>
+                <input type="text" id="searchInput" oninput="onSearchInput(this.value)" placeholder="ابحث بالاسم أو الفئة أو الملاحظة أو المبلغ" class="bg-transparent text-xs text-white w-full outline-none text-right">
+                <button type="button" onclick="clearSearch()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Date filter hidden input -->
+        <input type="date" id="dateFilterInput" onchange="onDateFilterChanged(this.value)" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:60px;right:60px;">
+
+        <!-- Filter Pills Bar -->
+        <div class="bg-[#0b0f19] px-4 py-2.5 flex items-center gap-2 overflow-x-auto border-b border-[#172033] no-scrollbar">
+            <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#3b82f6] text-white whitespace-nowrap shadow-sm">الجميع</button>
+            <button onclick="setFilter('daily')" id="filter-daily" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#131b2e] text-gray-300 whitespace-nowrap border border-[#1f293d] hover:bg-[#1b263e]">يومياً</button>
+            <button onclick="setFilter('weekly')" id="filter-weekly" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#131b2e] text-gray-300 whitespace-nowrap border border-[#1f293d] hover:bg-[#1b263e]">أسبوعياً</button>
+            <button onclick="setFilter('monthly')" id="filter-monthly" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#131b2e] text-gray-300 whitespace-nowrap border border-[#1f293d] hover:bg-[#1b263e]">شهرياً</button>
+            <button onclick="toggleLoansMenu()" class="px-3 py-1.5 rounded-full text-xs bg-[#131b2e] text-amber-400 hover:text-amber-300 border border-[#1f293d] hover:bg-[#1b263e] flex items-center gap-1.5 transition whitespace-nowrap shadow-sm" title="إدارة السلفيات والديون">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                <span class="text-xs font-bold">سلفية</span>
+            </button>
+        </div>
+
+        <!-- Date filter chip -->
+        <div id="dateFilterChip" class="hidden bg-[#0e1424] px-4 py-2 border-b border-[#172033] flex items-center justify-between text-xs">
+            <span class="text-gray-300">تصفية بتاريخ: <span id="dateFilterLabel" class="font-bold text-blue-400"></span></span>
+            <button type="button" onclick="clearDateFilter()" class="text-gray-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Bank Fee Counter -->
+        <div id="bankFeeStrip" class="bg-[#0e1424] border-b border-[#172033] px-4 py-2 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5 leading-none">
+                        <span class="text-gray-300 font-semibold text-[11px]">رسوم المصروفات:</span>
+                        <span id="bankFeeCountText" class="font-bold text-amber-400 dir-ltr text-xs">0 / 10</span>
+                    </div>
+                    <div id="bankFeeRemainingText" class="text-[9px] text-gray-500 mt-0.5 leading-none">متبقي 10 مصروفات لخصم 1,000 ج.س</div>
+                </div>
+            </div>
+            <div class="w-24 bg-[#141b2c] h-2 rounded-full overflow-hidden border border-[#1f293d] p-0.5">
+                <div id="bankFeeProgressBar" class="bg-gradient-to-r from-blue-500 to-amber-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Transactions Container -->
+        <div id="transactionsContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+        </div>
+
+        <!-- Bottom Action Buttons & Summary Bar -->
+        <div class="bg-[#0b0f19] border-t border-[#172033] p-3 space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="openTransactionModal('expense')" class="bg-[#ef4444] hover:bg-[#dc2626] text-white py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 transition active:scale-95">
+                    <span>- المصروفات</span>
+                </button>
+                <button onclick="openTransactionModal('income')" class="bg-[#10b981] hover:bg-[#059669] text-white py-2.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>دخل</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 bg-[#101726] p-2.5 rounded-xl border border-[#1a2338] text-center">
+                <div>
+                    <div class="text-[10px] text-gray-400 mb-0.5">دخل</div>
+                    <div id="summaryIncome" class="text-xs font-bold text-emerald-400 dir-ltr">0 ج.س</div>
+                </div>
+                <div class="border-x border-[#1f293d]">
+                    <div class="text-[10px] text-gray-400 mb-0.5">نفقات</div>
+                    <div id="summaryExpense" class="text-xs font-bold text-red-400 dir-ltr">0 ج.س</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-gray-400 mb-0.5">المجموع</div>
+                    <div id="summaryTotal" class="text-xs font-bold text-gray-200 dir-ltr">0 ج.س</div>
+                </div>
+            </div>
+
+            <!-- Lender Strip -->
+            <div id="lenderStrip" class="hidden bg-[#131b2e] border border-[#1f293d] p-2.5 rounded-xl flex items-center justify-between gap-2 text-xs transition-all">
+                <div class="flex flex-col gap-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+                        <span class="text-amber-300 font-medium text-[11px]">سلفيات لدى دفاتر أخرى:</span>
+                        <span id="lenderLentAmount" class="font-bold text-amber-400 dir-ltr text-xs">0 ج.س</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+                        <span class="text-gray-300 text-[11px]">الرصيد الكامل (شامل السلفيات):</span>
+                        <span id="lenderFullBalance" class="font-bold text-emerald-400 dir-ltr text-xs">0 ج.س</span>
+                    </div>
+                </div>
+                <button type="button" onclick="openDebtorsListModal()" class="text-[11px] bg-[#1a253c] hover:bg-[#22304e] text-blue-400 px-2.5 py-1 rounded-lg border border-[#2b3a56] flex items-center gap-1.5 transition shrink-0">
+                    <i class="fa-solid fa-users text-xs"></i>
+                    <span>الدفاتر المدينة (<span id="debtorsCount">0</span>)</span>
+                </button>
+            </div>
+
+            <!-- Borrower Strip -->
+            <div id="borrowerStrip" class="hidden bg-red-950/30 border border-red-500/30 p-2.5 rounded-xl flex items-center justify-between text-xs transition-all">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400 shrink-0"></i>
+                    <div class="text-red-300 text-[11px] truncate">
+                        دين مستحق لدفتر <span id="borrowerLenderName" class="font-bold text-white"></span>:
+                        <span id="borrowerDebtAmount" class="font-bold text-red-400 dir-ltr mr-1">0 ج.س</span>
+                    </div>
+                </div>
+                <button type="button" onclick="openManualRepayModal()" class="text-[11px] bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg font-bold shadow transition shrink-0 mr-1">
+                    تسديد
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= MODALS & DRAWERS ================= -->
+
+        <!-- 1. Books Modal -->
+        <div id="booksModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden">
+            <div class="bg-[#0e1422] w-full max-w-md rounded-t-3xl sm:rounded-2xl border border-[#1f293d] p-5 max-h-[85vh] flex flex-col shadow-2xl">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2 text-sm text-gray-300 min-w-0">
+                        <i class="fa-solid fa-user-circle text-lg text-blue-400"></i>
+                        <span id="modalOwnerName" class="font-bold truncate max-w-[120px]">مستخدم جديد</span>
+                        <button onclick="openEditProfileModal()" class="text-xs text-blue-400 hover:underline mr-1 shrink-0">(تعديل)</button>
+                    </div>
+                    <h3 class="text-base font-bold text-white">الدفاتر</h3>
+                    <button onclick="toggleBooksModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="booksListContainer" class="flex-1 overflow-y-auto py-3 space-y-2.5">
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d] flex flex-col gap-2">
+                    <button onclick="openAddBookModal()" class="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>أضف دفتراً</span>
+                    </button>
+                    <button onclick="toggleAllBooksView()" class="w-full bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-blue-400"></i>
+                        <span>جميع الدفاتر</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. All Books View -->
+        <div id="allBooksModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-md rounded-2xl border border-[#1f293d] p-5 max-h-[80vh] flex flex-col shadow-2xl">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-blue-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">جميع الدفاتر المسجلة</h3>
+                    </div>
+                    <button onclick="toggleAllBooksView()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="allBooksContainer" class="flex-1 overflow-y-auto py-4 space-y-3">
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d]">
+                    <button onclick="toggleAllBooksView()" class="w-full bg-[#131b2e] text-gray-300 hover:bg-[#1b263e] border border-[#1f293d] py-2.5 rounded-xl text-xs font-bold transition">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Add New Book Modal -->
+        <div id="addBookModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl">
+                <h3 class="text-base font-bold text-white mb-3">إضافة دفتر جديد</h3>
+                <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 mb-4">
+                    <input type="text" id="newBookNameInput" placeholder="اسم الدفتر (مثال: الحساب التجاري)" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="confirmAddBook()" class="flex-1 bg-[#3b82f6] hover:bg-[#2563eb] text-white py-2.5 rounded-xl font-bold text-xs transition">إضافة وتفعيل</button>
+                    <button onclick="closeAddBookModal()" class="px-4 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] rounded-xl text-xs font-medium">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3b. Rename Book Modal -->
+        <div id="renameBookModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl">
+                <h3 class="text-base font-bold text-white mb-3">تعديل اسم الدفتر</h3>
+                <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 mb-4">
+                    <input type="text" id="renameBookInput" placeholder="الاسم الجديد للدفتر" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="confirmRenameBook()" class="flex-1 bg-[#3b82f6] hover:bg-[#2563eb] text-white py-2.5 rounded-xl font-bold text-xs transition">حفظ الاسم</button>
+                    <button onclick="closeRenameBookModal()" class="px-4 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] rounded-xl text-xs font-medium">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Book Confirmation -->
+        <div id="deleteBookConfirmModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden" onclick="if(event.target === this) closeDeleteBookModal()">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-red-500/30 p-5 shadow-2xl text-center">
+                <div class="w-14 h-14 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">تأكيد حذف الدفتر</h3>
+                <p class="text-xs text-gray-300 mb-2 leading-relaxed">
+                    هل أنت متأكد من رغبتك في حذف <span id="deleteBookTargetName" class="font-bold text-red-400"></span>؟
+                </p>
+                <p class="text-[11px] text-gray-400 mb-5 leading-relaxed bg-[#131b2e] p-2.5 rounded-xl border border-[#1f293d]">
+                    <span class="text-amber-400 font-semibold">تنبيه:</span> رصيد هذا الدفتر صفر ولا توجد عليه ديون. سيتم حذف سجل معاملاته نهائياً ولا يمكن التراجع عن هذا الإجراء.
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="confirmExecuteDeleteBook()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-red-900/30 transition">
+                        نعم، احذف الدفتر
+                    </button>
+                    <button onclick="closeDeleteBookModal()" class="flex-1 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] py-2.5 rounded-xl font-medium text-xs transition">
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Edit Profile Modal -->
+        <div id="editProfileModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[56] flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl">
+                <h3 class="text-base font-bold text-white mb-1">تعديل اسم المستخدم</h3>
+                <p class="text-[11px] text-gray-400 mb-3 leading-relaxed">هذا الاسم هو نفسه اسم الدفتر الافتراضي المثبّت في أعلى قائمة الدفاتر.</p>
+                <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 mb-4">
+                    <input type="text" id="profileNameInput" placeholder="أدخل اسمك" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveProfileName()" class="flex-1 bg-[#3b82f6] hover:bg-[#2563eb] text-white py-2.5 rounded-xl font-bold text-xs transition">حفظ</button>
+                    <button onclick="closeEditProfileModal()" class="px-4 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] rounded-xl text-xs font-medium">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Add/Edit Transaction Modal -->
+        <div id="transactionModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden">
+            <div class="bg-[#0e1422] w-full max-w-md rounded-t-3xl sm:rounded-2xl border border-[#1f293d] p-5 flex flex-col shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-3">
+                        <button onclick="deleteCurrentTransaction()" id="deleteTxBtn" class="text-gray-400 hover:text-red-400 hidden">
+                            <i class="fa-solid fa-trash-can text-lg"></i>
+                        </button>
+                    </div>
+                    <h3 id="modalTitle" class="text-base font-bold text-white">سجل التحرير</h3>
+                    <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-arrow-right text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="flex bg-[#131b2e] p-1 rounded-xl my-4 border border-[#1f293d]">
+                    <button type="button" id="typeExpenseBtn" onclick="setModalType('expense')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-[#ef4444] text-white transition">المصروفات</button>
+                    <button type="button" id="typeIncomeBtn" onclick="setModalType('income')" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition">دخل</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-2.5 flex items-center justify-between">
+                        <input type="date" id="txDate" class="bg-transparent text-xs text-gray-200 w-full outline-none font-sans">
+                    </div>
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-2.5 flex items-center justify-between">
+                        <input type="time" id="txTime" class="bg-transparent text-xs text-gray-200 w-full outline-none font-sans">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between">
+                        <input type="number" inputmode="decimal" id="txAmount" placeholder="المبلغ (مثال: 50000)" class="bg-transparent text-lg font-bold text-white w-full outline-none text-right dir-ltr">
+                        <i class="fa-solid fa-calculator text-gray-400 mr-2"></i>
+                    </div>
+
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between">
+                        <input type="text" id="txName" placeholder="الاسم أو البيان (-)" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                        <i class="fa-solid fa-pen text-gray-400 mr-2"></i>
+                    </div>
+
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between">
+                        <input type="text" id="txCategory" placeholder="الفئة (-)" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                        <i class="fa-solid fa-tag text-gray-400 mr-2"></i>
+                    </div>
+
+                    <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between">
+                        <input type="text" id="txNote" placeholder="ملاحظة" class="bg-transparent text-sm text-white w-full outline-none text-right">
+                        <i class="fa-solid fa-paperclip text-gray-400 mr-2"></i>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button onclick="saveTransaction()" class="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition">
+                        حفظ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Options Menu Drawer -->
+        <div id="optionsMenu" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-start justify-start pt-14 px-3" onclick="toggleOptionsMenu()">
+            <div class="bg-[#0e1422] w-72 rounded-2xl border border-[#1f293d] p-2 shadow-2xl space-y-1 text-sm" onclick="event.stopPropagation()">
+                <button onclick="toggleSort(); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-arrow-down-up-across-line text-gray-400 w-5"></i>
+                    <span>فرز (الأحدث / الأقدم)</span>
+                </button>
+                <button onclick="openToast('حقول العرض: قريباً'); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-list-check text-gray-400 w-5"></i>
+                    <span>حقول العرض</span>
+                </button>
+                <button onclick="openToast('تعيين العرض الافتراضي: قريباً'); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-display text-gray-400 w-5"></i>
+                    <span>تعيين العرض الافتراضي</span>
+                </button>
+                <button onclick="openGlobalReportModal(); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-file-pen text-gray-400 w-5"></i>
+                    <span>إنشاء تقرير</span>
+                </button>
+                <button onclick="window.print()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-print text-gray-400 w-5"></i>
+                    <span>تقرير مطبوع</span>
+                </button>
+                <button onclick="exportBackup(); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right border-t border-[#1f293d] mt-1 pt-2">
+                    <i class="fa-solid fa-file-export text-gray-400 w-5"></i>
+                    <span>نسخ احتياطي (تصدير)</span>
+                </button>
+                <button onclick="triggerImport(); toggleOptionsMenu();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#182238] text-gray-200 text-right">
+                    <i class="fa-solid fa-file-import text-gray-400 w-5"></i>
+                    <span>استعادة نسخة (استيراد)</span>
+                </button>
+            </div>
+        </div>
+
+        <input type="file" id="importFileInput" accept="application/json,.json" class="hidden" onchange="handleImportFile(event)">
+
+        <!-- 7. Global Report Modal -->
+        <div id="globalReportModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-md rounded-2xl border border-[#1f293d] p-5 max-h-[85vh] flex flex-col shadow-2xl">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-blue-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">التقرير المالي الشامل</h3>
+                    </div>
+                    <button onclick="closeGlobalReportModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="py-4 overflow-y-auto space-y-4 flex-1">
+                    <div class="grid grid-cols-3 gap-2 bg-[#131b2e] p-3 rounded-2xl border border-[#1f293d] text-center">
+                        <div>
+                            <div class="text-[10px] text-gray-400 mb-1">إجمالي الدخل</div>
+                            <div id="repTotalIncome" class="text-xs font-bold text-emerald-400 dir-ltr">0 ج.س</div>
+                        </div>
+                        <div class="border-x border-[#1f293d]">
+                            <div class="text-[10px] text-gray-400 mb-1">إجمالي المنصرفات</div>
+                            <div id="repTotalExpense" class="text-xs font-bold text-red-400 dir-ltr">0 ج.س</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-gray-400 mb-1">الرصيد الإجمالي</div>
+                            <div id="repTotalBalance" class="text-xs font-bold text-white dir-ltr">0 ج.س</div>
+                        </div>
+                    </div>
+
+                    <div id="repActiveLoansStrip" class="hidden bg-[#101726] border border-amber-500/30 p-2.5 rounded-xl flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-hand-holding-dollar text-amber-400"></i>
+                            <span class="text-gray-300 text-[11px]">إجمالي السلفيات القائمة بين الدفاتر:</span>
+                        </div>
+                        <span id="repTotalActiveLoans" class="font-bold text-amber-400 dir-ltr">0 ج.س</span>
+                    </div>
+
+                    <div class="text-xs font-bold text-gray-300 pt-1">
+                        تفاصيل الحسابات حسب الدفاتر (<span id="repBooksCount">0</span> دفاتر):
+                    </div>
+
+                    <div id="repBooksList" class="space-y-2.5">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d] flex gap-2">
+                    <button onclick="window.print()" class="flex-1 bg-[#3b82f6] hover:bg-[#2563eb] text-white py-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة التقرير</span>
+                    </button>
+                    <button onclick="closeGlobalReportModal()" class="px-4 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] rounded-xl text-xs font-medium">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Loans Menu Modal -->
+        <div id="loansMenuModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" onclick="if(event.target === this) toggleLoansMenu()">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-amber-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">إدارة السلفيات والديون</h3>
+                    </div>
+                    <button onclick="toggleLoansMenu()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <button onclick="toggleLoansMenu(); openBorrowModal();" class="w-full bg-[#131b2e] hover:bg-[#1a253c] border border-[#1f293d] p-3 rounded-xl flex items-center gap-3 text-right transition">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-base shrink-0">
+                            <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-center"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">استلاف مال من دفتر آخر</div>
+                            <div class="text-[10px] text-gray-400">تغطية عجز هذا الدفتر بالاقتراض من دفاتر أخرى بها رصيد</div>
+                        </div>
+                    </button>
+
+                    <button onclick="toggleLoansMenu(); openManualRepayModal();" class="w-full bg-[#131b2e] hover:bg-[#1a253c] border border-[#1f293d] p-3 rounded-xl flex items-center gap-3 text-right transition">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-base shrink-0">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">تسديد سلفة يدوياً</div>
+                            <div class="text-[10px] text-gray-400">إرجاع الدين أو جزء منه للدفتر المُسلِف في أي وقت</div>
+                        </div>
+                    </button>
+
+                    <button onclick="toggleLoansMenu(); openDebtorsListModal();" class="w-full bg-[#131b2e] hover:bg-[#1a253c] border border-[#1f293d] p-3 rounded-xl flex items-center gap-3 text-right transition">
+                        <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-base shrink-0">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">الدفاتر المدينة المسلفة</div>
+                            <div class="text-[10px] text-gray-400">عرض المبالغ التي استلفتها الدفاتر الأخرى من هذا الدفتر</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Borrow Modal -->
+        <div id="borrowModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[52] flex items-center justify-center p-4 hidden" onclick="if(event.target === this) closeBorrowModal()">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl flex flex-col max-h-[85vh]">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-blue-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">استلاف مال للدفتر</h3>
+                    </div>
+                    <button onclick="closeBorrowModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="py-3 space-y-3 overflow-y-auto flex-1">
+                    <div id="borrowPendingNote" class="hidden text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 leading-relaxed">
+                        بعد تأكيد الاستلاف سيتم تسجيل المصروف المعلّق تلقائياً.
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 mb-1 block">المبلغ المراد استلافه</label>
+                        <div class="bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between">
+                            <input type="number" inputmode="decimal" id="borrowAmountInput" oninput="onBorrowAmountChanged()" placeholder="أدخل المبلغ (مثال: 50000)" class="bg-transparent text-base font-bold text-white w-full outline-none text-right dir-ltr">
+                            <span class="text-xs text-gray-400 mr-2 font-bold">ج.س</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] text-gray-400 mb-1 block">اختر الدفتر المُسلِف (المتوفر به رصيد كافٍ)</label>
+                        <div id="eligibleLendersContainer" class="space-y-2">
+                            <div class="text-center text-gray-500 py-4 text-xs">أدخل المبلغ المطلوب أولاً لعرض الدفاتر المتاحة</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d] flex gap-2">
+                    <button id="confirmBorrowBtn" onclick="confirmBorrow()" disabled class="flex-1 bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-900/30 transition">
+                        تأكيد الاستلاف
+                    </button>
+                    <button onclick="closeBorrowModal()" class="px-4 bg-[#131b2e] hover:bg-[#1b263e] text-gray-300 border border-[#1f293d] rounded-xl text-xs font-medium">
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. Smart Repay Modal -->
+        <div id="smartRepayModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[65] flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-amber-500/30 p-5 shadow-2xl text-center">
+                <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-handshake"></i>
+                </div>
+                <h3 class="text-base font-bold text-white mb-1.5">تسديد الدين المستحق</h3>
+                <p class="text-xs text-gray-300 mb-3 leading-relaxed">
+                    تم تسجيل دخل جديد! يوجد دين مستحق على هذا الدفتر لصالح دفتر <span id="smartRepayLenderName" class="font-bold text-amber-300"></span> بمبلغ <span id="smartRepayTotalDebt" class="font-bold text-red-400 dir-ltr"></span> ج.س.
+                </p>
+
+                <div class="bg-[#131b2e] border border-[#1f293d] p-3 rounded-xl mb-3 text-right">
+                    <label class="text-[10px] text-gray-400 mb-1 block">مبلغ السداد المقترح:</label>
+                    <div class="flex items-center justify-between">
+                        <input type="number" inputmode="decimal" id="smartRepayCustomAmount" class="bg-transparent text-sm font-bold text-white w-full outline-none text-right dir-ltr" placeholder="المبلغ المراد إرجاعه">
+                        <span class="text-xs text-gray-400 mr-2">ج.س</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button onclick="executeSmartRepay('full')" id="smartRepayFullBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-emerald-900/30 transition">
+                        إرجاع الدين بالكامل
+                    </button>
+                    <button onclick="executeSmartRepay('partial')" class="w-full bg-[#1e2a44] hover:bg-[#27375a] text-blue-400 border border-[#2b3a56] py-2.5 rounded-xl font-bold text-xs transition">
+                        إرجاع جزء من الدين (المبلغ المحدد أعلاه)
+                    </button>
+                    <button onclick="closeSmartRepayModal()" class="w-full bg-[#131b2e] hover:bg-[#1b263e] text-gray-400 border border-[#1f293d] py-2 rounded-xl text-xs transition">
+                        الترك فيما بعد (تأجيل السداد)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Manual Repay Modal -->
+        <div id="manualRepayModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" onclick="if(event.target === this) closeManualRepayModal()">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl flex flex-col max-h-[85vh]">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-handshake text-emerald-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">تسديد سلفة يدوياً</h3>
+                    </div>
+                    <button onclick="closeManualRepayModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="manualRepayContent" class="py-3 space-y-3 overflow-y-auto flex-1">
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d]">
+                    <button onclick="closeManualRepayModal()" class="w-full bg-[#131b2e] text-gray-300 hover:bg-[#1b263e] border border-[#1f293d] py-2.5 rounded-xl text-xs font-bold transition">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. Debtors List Modal -->
+        <div id="debtorsListModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden" onclick="if(event.target === this) closeDebtorsListModal()">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-[#1f293d] p-5 shadow-2xl flex flex-col max-h-[85vh]">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f293d]">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-users text-blue-400 text-lg"></i>
+                        <h3 class="text-base font-bold text-white">الدفاتر المدينة لهذا الدفتر</h3>
+                    </div>
+                    <button onclick="closeDebtorsListModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="debtorsListContainer" class="py-3 space-y-2.5 overflow-y-auto flex-1">
+                </div>
+
+                <div class="pt-3 border-t border-[#1f293d]">
+                    <button onclick="closeDebtorsListModal()" class="w-full bg-[#131b2e] text-gray-300 hover:bg-[#1b263e] border border-[#1f293d] py-2.5 rounded-xl text-xs font-bold transition">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. Insufficient Balance Warning Modal -->
+        <div id="insufficientBalanceModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] flex items-center justify-center p-4 hidden">
+            <div class="bg-[#0e1422] w-full max-w-sm rounded-2xl border border-amber-500/30 p-5 shadow-2xl text-center">
+                <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-base font-bold text-white mb-1.5">الرصيد المتاح لا يكفي!</h3>
+                <p class="text-xs text-gray-300 mb-2 leading-relaxed">
+                    المصروف المراد تسجيله (<span id="insufficientExpAmount" class="font-bold text-red-400 dir-ltr"></span> ج.س) يتجاوز الرصيد المتاح للصرف (<span id="insufficientAvailAmount" class="font-bold text-white dir-ltr"></span> ج.س).
+                </p>
+                <div class="text-[11px] text-amber-400 font-semibold mb-4 bg-[#131b2e] p-2.5 rounded-xl border border-[#1f293d]">
+                    المبلغ الناقص لتغطية المصروف: <span id="insufficientDeficitAmount" class="font-bold dir-ltr"></span> ج.س
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button onclick="proceedToBorrowDeficit()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-900/30 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span>استلاف المبلغ الناقص واختيار الدفتر</span>
+                    </button>
+                    <button onclick="saveTransactionForced()" class="w-full bg-[#1b263e] hover:bg-[#23314f] text-gray-300 border border-[#2b3a56] py-2 rounded-xl text-xs font-medium transition">
+                        تسجيل المصروف على أي حال (رصيد سالب)
+                    </button>
+                    <button onclick="cancelInsufficientBalance()" class="w-full bg-transparent hover:bg-white/5 text-gray-400 py-1.5 rounded-xl text-xs transition">
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast" class="absolute bottom-20 left-1/2 -translate-x-1/2 bg-[#1b263e] text-white px-4 py-2 rounded-xl text-xs shadow-xl border border-[#2a3956] hidden transition-all z-[100] w-max max-w-[90%] text-center leading-relaxed">
+            تمت العملية بنجاح
+        </div>
+
+    </div>
+
+    <script>
+        // ================= منع السحب للتحديث (Pull-to-Refresh) =================
+        (function() {
+            let touchStartY = 0;
+            let touchStartX = 0;
+
+            function findScrollable(el) {
+                while (el && el !== document.body && el.nodeType === 1) {
+                    const s = window.getComputedStyle(el);
+                    if ((s.overflowY === 'auto' || s.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                        return el;
+                    }
+                    el = el.parentElement;
+                }
+                return null;
+            }
+
+            window.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartX = e.touches[0].clientX;
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', function(e) {
+                if (e.touches.length !== 1) return;
+                const deltaY = e.touches[0].clientY - touchStartY;
+                const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+
+                if (deltaX > Math.abs(deltaY)) return;
+                if (e.target.closest && e.target.closest('input, textarea, select')) return;
+                if (deltaY <= 0) return;
+
+                const scrollable = findScrollable(e.target);
+                if (!scrollable || scrollable.scrollTop <= 0) {
+                    if (e.cancelable) e.preventDefault();
+                }
+            }, { passive: false });
+        })();
+
+        // ================= الثوابت والحالة =================
+        const DEFAULT_BOOK_ID = 'default-book';
+        const DEFAULT_USER_NAME = 'مستخدم جديد';
+        const BANK_FEE_AMOUNT = 1000;
+        const BANK_FEE_EVERY = 10;
+        const EDITABLE_TYPES = ['income', 'expense'];
+
+        let appState = {
+            dataVersion: 2,
+            userName: DEFAULT_USER_NAME,
+            activeBookId: DEFAULT_BOOK_ID,
+            filter: 'all',
+            books: [
+                { id: DEFAULT_BOOK_ID, name: DEFAULT_USER_NAME, isDefault: true, createdAt: new Date().toISOString() }
+            ],
+            transactions: [],
+            loans: []
+        };
+
+        let uiState = { search: '', dateFilter: '', sortDesc: true };
+
+        let editingTxId = null;
+        let currentModalType = 'expense';
+        let pendingExpenseData = null;
+        let selectedLenderBookId = null;
+        let activeSmartLoan = null;
+        let bookIdPendingDeletion = null;
+        let bookIdPendingRename = null;
+        let toastTimer = null;
+
+        // ================= دوال مساعدة =================
+        let lastTs = 0;
+        function nextTs() {
+            const n = Date.now();
+            lastTs = n > lastTs ? n : lastTs + 1;
+            return lastTs;
+        }
+        function uid(prefix) {
+            return prefix + '_' + nextTs();
+        }
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function localDateStr(d) {
+            d = d || new Date();
+            return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        }
+        function localTimeStr(d) {
+            d = d || new Date();
+            return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        }
+        function round2(n) {
+            return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+        }
+        function escapeHtml(str) {
+            return String(str === null || str === undefined ? '' : str).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+        function numberFormat(num) {
+            let n = Number(num) || 0;
+            if (Math.abs(n) < 0.005) n = 0;
+            return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        }
+        function getBookName(bookId, fallback) {
+            const b = appState.books.find(x => x.id === bookId);
+            return b ? b.name : (fallback || 'دفتر آخر');
+        }
+        function compareTxAsc(a, b) {
+            if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+            if ((a.time || '') !== (b.time || '')) return (a.time || '') < (b.time || '') ? -1 : 1;
+            return (a.ts || 0) - (b.ts || 0);
+        }
+
+        function formatDateArabic(dateStr) {
+            if (!dateStr) return '';
+            const p = dateStr.split('-').map(Number);
+            if (p.length !== 3 || p.some(isNaN)) return dateStr;
+            const d = new Date(p[0], p[1] - 1, p[2]);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatTime12Hour(timeStr) {
+            if (!timeStr) return '';
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return timeStr;
+            let hours = parseInt(parts[0], 10);
+            const minutes = parts[1];
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+        }
+
+        function openToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.remove('hidden');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ================= التحميل والحفظ =================
+        function loadData() {
+            const saved = localStorage.getItem('cashbook_clean_app_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.books) && parsed.books.length) {
+                        appState = parsed;
+                    }
+                } catch (e) {
+                    console.error('Error loading data', e);
+                }
+            }
+            normalizeState();
+        }
+
+        function saveData() {
+            localStorage.setItem('cashbook_clean_app_state', JSON.stringify(appState));
+        }
+
+        // الدفتر الافتراضي: اسمه هو اسم المستخدم، مثبّت أولاً، ولا يُحذف
+        function ensureDefaultBook() {
+            let def = appState.books.find(b => b.id === DEFAULT_BOOK_ID);
+            if (!def) {
+                def = { id: DEFAULT_BOOK_ID, name: appState.userName, createdAt: new Date().toISOString() };
+            }
+            def.isDefault = true;
+            def.name = appState.userName;
+
+            const others = appState.books.filter(b => b !== def);
+            others.forEach(b => {
+                if (b.name.trim().toLowerCase() === def.name.trim().toLowerCase()) {
+                    b.name = b.name + ' (2)';
+                }
+                b.isDefault = false;
+            });
+            appState.books = [def, ...others];
+        }
+
+        function normalizeState() {
+            if (!appState.userName || !String(appState.userName).trim()) appState.userName = DEFAULT_USER_NAME;
+            if (!Array.isArray(appState.books)) appState.books = [];
+            if (!Array.isArray(appState.transactions)) appState.transactions = [];
+            if (!Array.isArray(appState.loans)) appState.loans = [];
+            if (!appState.filter) appState.filter = 'all';
+
+            ensureDefaultBook();
+
+            if (!appState.books.some(b => b.id === appState.activeBookId)) {
+                appState.activeBookId = DEFAULT_BOOK_ID;
+            }
+            appState.transactions.forEach((t, i) => {
+                if (!t.ts) {
+                    const m = String(t.id || '').match(/\d{12,}/);
+                    t.ts = m ? Number(m[0]) : i;
+                }
+            });
+            migrateLoansToV2();
+        }
+
+        // ترحيل البيانات القديمة: السلفة تُخصم فعلياً من الدفتر المُسلِف
+        function migrateLoansToV2() {
+            if ((appState.dataVersion || 1) >= 2) return;
+
+            [...appState.loans].forEach(loan => {
+                if (!appState.books.some(b => b.id === loan.fromBookId)) return;
+                const hasLent = appState.transactions.some(t => t.loanId === loan.id && t.type === 'lent');
+                if (!hasLent) {
+                    appState.transactions.push({
+                        id: uid('t_lent'),
+                        ts: nextTs(),
+                        bookId: loan.fromBookId,
+                        type: 'lent',
+                        amount: loan.amount,
+                        date: loan.date || localDateStr(),
+                        time: loan.time || '00:00',
+                        name: `سلفة إلى ${getBookName(loan.toBookId)}`,
+                        category: 'سلفة',
+                        note: '',
+                        loanId: loan.id
+                    });
+                }
+            });
+
+            [...appState.transactions].filter(t => t.type === 'repay' && t.loanId).forEach(rep => {
+                const loan = appState.loans.find(l => l.id === rep.loanId);
+                if (!loan || !appState.books.some(b => b.id === loan.fromBookId)) return;
+                const hasCollect = appState.transactions.some(t => t.type === 'collect' && t.repayOf === rep.id);
+                if (!hasCollect) {
+                    appState.transactions.push({
+                        id: uid('t_col'),
+                        ts: nextTs(),
+                        bookId: loan.fromBookId,
+                        type: 'collect',
+                        amount: rep.amount,
+                        date: rep.date,
+                        time: rep.time,
+                        name: `استرداد سلفة من ${getBookName(loan.toBookId)}`,
+                        category: 'استرداد سلفة',
+                        note: '',
+                        loanId: loan.id,
+                        repayOf: rep.id
+                    });
+                }
+            });
+
+            appState.dataVersion = 2;
+            saveData();
+        }
+
+        // ================= الحسابات المالية =================
+        function getBookStats(bookId) {
+            let income = 0, expense = 0, loanIn = 0, loanOut = 0, count = 0;
+            appState.transactions.forEach(t => {
+                if (t.bookId !== bookId) return;
+                count++;
+                const a = Number(t.amount) || 0;
+                switch (t.type) {
+                    case 'income': income += a; break;
+                    case 'advance':
+                    case 'collect': loanIn += a; break;
+                    case 'lent':
+                    case 'repay': loanOut += a; break;
+                    default: expense += a;
+                }
+            });
+            const lentOut = appState.loans
+                .filter(l => l.fromBookId === bookId && l.remainingAmount > 0)
+                .reduce((s, l) => s + l.remainingAmount, 0);
+            const borrowed = appState.loans
+                .filter(l => l.toBookId === bookId && l.remainingAmount > 0)
+                .reduce((s, l) => s + l.remainingAmount, 0);
+            const balance = round2(income + loanIn - expense - loanOut);
+            return {
+                income: round2(income),
+                expense: round2(expense),
+                loanIn: round2(loanIn),
+                loanOut: round2(loanOut),
+                balance: balance,
+                lentOut: round2(lentOut),
+                borrowed: round2(borrowed),
+                full: round2(balance + lentOut),
+                count: count
+            };
+        }
+
+        // الرصيد الحالي (بعد خصم ما تم إقراضه) = المتاح للصرف
+        function getBookAvailableAmount(bookId) {
+            return getBookStats(bookId).balance;
+        }
+
+        // ================= رسوم البنك =================
+        function getRegularExpenseCount(bookId) {
+            return appState.transactions.filter(t => t.bookId === bookId && t.type === 'expense' && !t.isAutoBankFee).length;
+        }
+
+        function updateBankFeeCounter() {
+            const count = getRegularExpenseCount(appState.activeBookId);
+            const currentCount = count % BANK_FEE_EVERY;
+            const remaining = BANK_FEE_EVERY - currentCount;
+            const percentage = (currentCount / BANK_FEE_EVERY) * 100;
+
+            document.getElementById('bankFeeCountText').innerText = `${currentCount} / ${BANK_FEE_EVERY}`;
+            document.getElementById('bankFeeRemainingText').innerText = `متبقي ${remaining} مصروفات لخصم ${numberFormat(BANK_FEE_AMOUNT)} ج.س`;
+            document.getElementById('bankFeeProgressBar').style.width = `${percentage}%`;
+        }
+
+        // مزامنة الرسوم مع عدد المصروفات: رسم واحد لكل 10 مصروفات (يعمل مع الإضافة والتعديل والحذف)
+        function reconcileBankFees(bookId) {
+            const owed = Math.floor(getRegularExpenseCount(bookId) / BANK_FEE_EVERY);
+            const fees = appState.transactions
+                .filter(t => t.bookId === bookId && t.isAutoBankFee)
+                .sort(compareTxAsc);
+
+            if (fees.length === owed) return '';
+
+            if (fees.length < owed) {
+                const toAdd = owed - fees.length;
+                for (let i = 0; i < toAdd; i++) {
+                    appState.transactions.unshift({
+                        id: uid('t_bankfee'),
+                        ts: nextTs(),
+                        bookId: bookId,
+                        type: 'expense',
+                        amount: BANK_FEE_AMOUNT,
+                        date: localDateStr(),
+                        time: localTimeStr(),
+                        name: 'رسوم بنكية (عن 10 مصروفات)',
+                        category: 'رسوم بنكية',
+                        note: 'خصم تلقائي للرسوم البنكية بعد إتمام 10 مصروفات',
+                        isAutoBankFee: true
+                    });
+                }
+                let msg = `🏦 تم خصم ${numberFormat(toAdd * BANK_FEE_AMOUNT)} ج.س رسوم بنكية تلقائياً`;
+                if (getBookStats(bookId).balance < 0) msg += ' (الرصيد أصبح سالباً)';
+                return msg;
+            }
+
+            const toRemove = fees.length - owed;
+            const removeIds = new Set(fees.slice(-toRemove).map(f => f.id));
+            appState.transactions = appState.transactions.filter(t => !removeIds.has(t.id));
+            return `تم إلغاء رسوم بنكية بقيمة ${numberFormat(toRemove * BANK_FEE_AMOUNT)} ج.س لانخفاض عدد المصروفات`;
+        }
+
+        // ================= الرسم الرئيسي =================
+        function render() {
+            document.getElementById('modalOwnerName').innerText = appState.userName;
+            document.getElementById('headerUserName').innerText = appState.userName;
+
+            let activeBook = appState.books.find(b => b.id === appState.activeBookId);
+            if (!activeBook && appState.books.length > 0) {
+                appState.activeBookId = appState.books[0].id;
+                activeBook = appState.books[0];
+            }
+            if (activeBook) {
+                document.getElementById('activeBookName').innerText = activeBook.name;
+            }
+
+            updateFilterButtons();
+            renderTransactions();
+            updateSummary();
+            updateBankFeeCounter();
+            renderBooksList();
+            renderAllBooksView();
+        }
+
+        // ================= الفلاتر والبحث والفرز =================
+        function updateFilterButtons() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#131b2e] text-gray-300 whitespace-nowrap border border-[#1f293d] hover:bg-[#1b263e]";
+            });
+            const activeBtn = document.getElementById(`filter-${appState.filter}`);
+            if (activeBtn) {
+                activeBtn.className = "filter-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#3b82f6] text-white whitespace-nowrap shadow-sm";
+            }
+        }
+
+        function setFilter(filterType) {
+            appState.filter = filterType;
+            saveData();
+            updateFilterButtons();
+            renderTransactions();
+        }
+
+        function toggleSearchBar() {
+            const bar = document.getElementById('searchBar');
+            const willShow = bar.classList.contains('hidden');
+            bar.classList.toggle('hidden');
+            if (willShow) {
+                document.getElementById('searchInput').focus();
+            } else {
+                clearSearch();
+            }
+        }
+
+        function onSearchInput(value) {
+            uiState.search = (value || '').trim().toLowerCase();
+            renderTransactions();
+        }
+
+        function clearSearch() {
+            uiState.search = '';
+            document.getElementById('searchInput').value = '';
+            renderTransactions();
+        }
+
+        function openDateFilter() {
+            const el = document.getElementById('dateFilterInput');
+            el.value = uiState.dateFilter || '';
+            try {
+                if (el.showPicker) el.showPicker();
+                else { el.focus(); el.click(); }
+            } catch (e) {
+                el.focus();
+                el.click();
+            }
+        }
+
+        function onDateFilterChanged(value) {
+            uiState.dateFilter = value || '';
+            updateDateChip();
+            renderTransactions();
+        }
+
+        function clearDateFilter() {
+            uiState.dateFilter = '';
+            document.getElementById('dateFilterInput').value = '';
+            updateDateChip();
+            renderTransactions();
+        }
+
+        function updateDateChip() {
+            const chip = document.getElementById('dateFilterChip');
+            if (uiState.dateFilter) {
+                document.getElementById('dateFilterLabel').innerText = formatDateArabic(uiState.dateFilter);
+                chip.classList.remove('hidden');
+            } else {
+                chip.classList.add('hidden');
+            }
+        }
+
+        function toggleSort() {
+            uiState.sortDesc = !uiState.sortDesc;
+            renderTransactions();
+            openToast(uiState.sortDesc ? 'الترتيب: الأحدث أولاً' : 'الترتيب: الأقدم أولاً');
+        }
+
+        function getTxDisplayName(t) {
+            const loan = t.loanId ? appState.loans.find(l => l.id === t.loanId) : null;
+            if (loan) {
+                const lender = appState.books.find(b => b.id === loan.fromBookId);
+                const borrower = appState.books.find(b => b.id === loan.toBookId);
+                if (t.type === 'advance' && lender) return `سلفة من ${lender.name}`;
+                if (t.type === 'repay' && lender) return `سداد سلفة لـ ${lender.name}`;
+                if (t.type === 'lent' && borrower) return `سلفة إلى ${borrower.name}`;
+                if (t.type === 'collect' && borrower) return `استرداد سلفة من ${borrower.name}`;
+            }
+            return t.name || '-';
+        }
+
+        function getVisibleTransactions() {
+            let list = appState.transactions.filter(t => t.bookId === appState.activeBookId);
+
+            const today = new Date();
+            const todayStr = localDateStr(today);
+
+            if (appState.filter === 'daily') {
+                list = list.filter(t => t.date === todayStr);
+            } else if (appState.filter === 'weekly') {
+                const startStr = localDateStr(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6));
+                list = list.filter(t => t.date >= startStr && t.date <= todayStr);
+            } else if (appState.filter === 'monthly') {
+                const monthPrefix = todayStr.slice(0, 7);
+                list = list.filter(t => (t.date || '').slice(0, 7) === monthPrefix);
+            }
+
+            if (uiState.dateFilter) {
+                list = list.filter(t => t.date === uiState.dateFilter);
+            }
+
+            if (uiState.search) {
+                const q = uiState.search;
+                list = list.filter(t => {
+                    const hay = [getTxDisplayName(t), t.category, t.note, String(t.amount)].join(' ').toLowerCase();
+                    return hay.includes(q);
+                });
+            }
+
+            list.sort(compareTxAsc);
+            if (uiState.sortDesc) list.reverse();
+            return list;
+        }
+
+        const TX_STYLES = {
+            income:  { color: 'text-emerald-400', badge: 'دخل', sign: '+ ', badgeClass: 'text-gray-300' },
+            expense: { color: 'text-red-400', badge: 'مصروف', sign: '- ', badgeClass: 'text-gray-300' },
+            advance: { color: 'text-sky-400', badge: 'سلفة مستلمة', sign: '+ ', badgeClass: 'text-sky-400 font-bold' },
+            collect: { color: 'text-teal-400', badge: 'استرداد سلفة', sign: '+ ', badgeClass: 'text-teal-400 font-bold' },
+            repay:   { color: 'text-amber-400', badge: 'سداد سلفة', sign: '- ', badgeClass: 'text-amber-400 font-bold' },
+            lent:    { color: 'text-orange-400', badge: 'سلفة مُعطاة', sign: '- ', badgeClass: 'text-orange-400 font-bold' },
+            fee:     { color: 'text-amber-400', badge: '🏦 رسوم بنك', sign: '- ', badgeClass: 'text-amber-400 font-bold' }
+        };
+
+        function renderTransactions() {
+            const container = document.getElementById('transactionsContainer');
+            container.innerHTML = '';
+
+            const filtered = getVisibleTransactions();
+
+            if (filtered.length === 0) {
+                const hasAny = appState.transactions.some(t => t.bookId === appState.activeBookId);
+                const hasFilters = appState.filter !== 'all' || uiState.search || uiState.dateFilter;
+
+                if (hasAny && hasFilters) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-64 text-gray-500 text-center">
+                            <i class="fa-solid fa-filter-circle-xmark text-4xl mb-3 opacity-30"></i>
+                            <p class="text-xs font-medium text-gray-400">لا توجد نتائج مطابقة للتصفية الحالية</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const avail = getBookAvailableAmount(appState.activeBookId);
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-64 text-gray-500 text-center">
+                        <i class="fa-solid fa-receipt text-4xl mb-3 opacity-30"></i>
+                        <p class="text-xs font-medium text-gray-400">لا توجد سجلات في هذا الدفتر</p>
+                        <p class="text-[10px] text-gray-600 mt-1">إضغط على زر "+ دخل" أو "- المصروفات" لإضافة سجل جديد</p>
+                        ${avail <= 0 ? `
+                            <button id="emptyBorrowBtn" class="mt-4 text-xs font-bold bg-[#131b2e] hover:bg-[#1a253c] text-blue-400 px-3.5 py-2 rounded-xl border border-[#1f293d] flex items-center gap-2 shadow-sm transition">
+                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                                <span>استلاف رصيد من دفتر آخر</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                const btn = document.getElementById('emptyBorrowBtn');
+                if (btn) btn.addEventListener('click', () => openBorrowModal());
+                return;
+            }
+
+            const groups = [];
+            const groupIndex = {};
+            filtered.forEach(t => {
+                if (groupIndex[t.date] === undefined) {
+                    groupIndex[t.date] = groups.length;
+                    groups.push({ date: t.date, txs: [] });
+                }
+                groups[groupIndex[t.date]].txs.push(t);
+            });
+
+            groups.forEach(group => {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'text-xs font-medium text-gray-400 mb-2 mt-3';
+                dateHeader.innerText = formatDateArabic(group.date);
+                container.appendChild(dateHeader);
+
+                group.txs.forEach(t => {
+                    const style = t.isAutoBankFee ? TX_STYLES.fee : (TX_STYLES[t.type] || TX_STYLES.expense);
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-[#121926] hover:bg-[#161f31] border border-[#1a2338] rounded-2xl p-3.5 mb-2.5 transition cursor-pointer flex items-center justify-between';
+                    card.addEventListener('click', () => openEditTransactionModal(t.id));
+
+                    card.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-xs text-gray-400 mb-0.5">${escapeHtml(formatTime12Hour(t.time))}</span>
+                            <span class="text-[11px] font-medium ${style.badgeClass}">${style.badge}</span>
+                        </div>
+                        <div class="flex flex-col items-end min-w-0">
+                            <span class="text-sm font-bold ${style.color} dir-ltr">${style.sign}${numberFormat(t.amount)} ج.س</span>
+                            <span class="text-[11px] text-gray-400 mt-0.5 max-w-[190px] truncate">${escapeHtml(getTxDisplayName(t))}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        // ================= الملخص وشرائط السلفيات =================
+        function updateSummary() {
+            const st = getBookStats(appState.activeBookId);
+
+            document.getElementById('summaryIncome').innerText = numberFormat(st.income + st.loanIn) + ' ج.س';
+            document.getElementById('summaryExpense').innerText = numberFormat(st.expense + st.loanOut) + ' ج.س';
+            document.getElementById('summaryTotal').innerText = numberFormat(st.balance) + ' ج.س';
+
+            updateLoansStrips();
+        }
+
+        function updateLoansStrips() {
+            const currentBookId = appState.activeBookId;
+
+            const loansGiven = appState.loans.filter(l => l.fromBookId === currentBookId && l.remainingAmount > 0);
+            const lenderStrip = document.getElementById('lenderStrip');
+            if (loansGiven.length > 0) {
+                const st = getBookStats(currentBookId);
+                document.getElementById('lenderLentAmount').innerText = numberFormat(st.lentOut) + ' ج.س';
+                document.getElementById('lenderFullBalance').innerText = numberFormat(st.full) + ' ج.س';
+                document.getElementById('debtorsCount').innerText = loansGiven.length;
+                lenderStrip.classList.remove('hidden');
+            } else {
+                lenderStrip.classList.add('hidden');
+            }
+
+            const debtsOwed = appState.loans.filter(l => l.toBookId === currentBookId && l.remainingAmount > 0);
+            const borrowerStrip = document.getElementById('borrowerStrip');
+            if (debtsOwed.length > 0) {
+                const totalDebt = debtsOwed.reduce((s, l) => s + l.remainingAmount, 0);
+                const lenderNames = [...new Set(debtsOwed.map(l => getBookName(l.fromBookId)))].join(' و ');
+
+                document.getElementById('borrowerLenderName').innerText = lenderNames;
+                document.getElementById('borrowerDebtAmount').innerText = numberFormat(totalDebt) + ' ج.س';
+                borrowerStrip.classList.remove('hidden');
+            } else {
+                borrowerStrip.classList.add('hidden');
+            }
+        }
+
+        // ================= قائمة الدفاتر =================
+        function getBookDeleteCheck(bookId) {
+            if (bookId === DEFAULT_BOOK_ID) {
+                return { ok: false, reason: 'الدفتر الافتراضي مثبّت ولا يمكن حذفه' };
+            }
+            const st = getBookStats(bookId);
+            if (st.borrowed > 0) {
+                const names = [...new Set(appState.loans
+                    .filter(l => l.toBookId === bookId && l.remainingAmount > 0)
+                    .map(l => getBookName(l.fromBookId)))].join(' و ');
+                return { ok: false, reason: `على هذا الدفتر دين ${numberFormat(st.borrowed)} ج.س لدفتر ${names}، سدّده أولاً` };
+            }
+            if (st.lentOut > 0) {
+                return { ok: false, reason: `لهذا الدفتر سلفيات عند دفاتر أخرى (${numberFormat(st.lentOut)} ج.س)، استرجعها أولاً` };
+            }
+            if (Math.abs(st.balance) >= 0.005) {
+                return { ok: false, reason: `رصيد الدفتر ${numberFormat(st.balance)} ج.س، يجب أن يكون صفراً قبل الحذف` };
+            }
+            return { ok: true, reason: '' };
+        }
+
+        function buildBookActionButtons(book) {
+            if (book.id === DEFAULT_BOOK_ID) {
+                return `
+                    <button type="button" class="book-action rename-book-btn p-2 hover:bg-blue-500/20 rounded-xl text-blue-400 hover:text-blue-300 transition cursor-pointer" title="تعديل اسم المستخدم (هو اسم الدفتر الافتراضي)">
+                        <i class="fa-solid fa-pen text-sm pointer-events-none"></i>
+                    </button>
+                    <span class="p-2 text-amber-400" title="دفتر افتراضي مثبّت لا يُحذف">
+                        <i class="fa-solid fa-thumbtack text-sm"></i>
+                    </span>
+                `;
+            }
+            const del = getBookDeleteCheck(book.id);
+            return `
+                <button type="button" class="book-action rename-book-btn p-2 hover:bg-blue-500/20 rounded-xl text-blue-400 hover:text-blue-300 transition cursor-pointer" title="تعديل اسم الدفتر">
+                    <i class="fa-solid fa-pen text-sm pointer-events-none"></i>
+                </button>
+                <button type="button" class="book-action delete-book-btn p-2 hover:bg-red-500/20 rounded-xl text-red-500 hover:text-red-400 transition cursor-pointer ${del.ok ? '' : 'opacity-40'}" title="${del.ok ? 'حذف الدفتر' : escapeHtml(del.reason)}">
+                    <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                </button>
+            `;
+        }
+
+        function buildBalanceBlock(st) {
+            return `
+                <div class="text-left ml-1">
+                    <div class="text-xs font-bold ${st.balance >= 0 ? 'text-emerald-400' : 'text-red-400'} dir-ltr">${numberFormat(st.balance)} ج.س</div>
+                    ${st.lentOut > 0 ? `<div class="text-[10px] text-amber-400 dir-ltr mt-0.5">الرصيد الكامل: ${numberFormat(st.full)} ج.س</div>` : ''}
+                </div>
+            `;
+        }
+
+        function bindBookActions(root, book) {
+            const renameBtn = root.querySelector('.rename-book-btn');
+            const deleteBtn = root.querySelector('.delete-book-btn');
+            if (renameBtn) renameBtn.addEventListener('click', e => { e.stopPropagation(); openRenameBookModal(book.id); });
+            if (deleteBtn) deleteBtn.addEventListener('click', e => { e.stopPropagation(); promptDeleteBook(book.id); });
+        }
+
+        function renderBooksList() {
+            const listContainer = document.getElementById('booksListContainer');
+            listContainer.innerHTML = '';
+
+            appState.books.forEach(book => {
+                const st = getBookStats(book.id);
+                const isSelected = book.id === appState.activeBookId;
+                const isDefault = book.id === DEFAULT_BOOK_ID;
+
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-2xl border flex items-center justify-between gap-2 cursor-pointer transition ${isSelected ? 'bg-[#1b263e] border-[#3b82f6]' : 'bg-[#121926] border-[#1a2338] hover:bg-[#161f31]'}`;
+
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.book-action')) return;
+                    appState.activeBookId = book.id;
+                    saveData();
+                    toggleBooksModal();
+                    render();
+                });
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-[#1d2a44] flex items-center justify-center ${isDefault ? 'text-amber-400' : 'text-blue-400'} shrink-0">
+                            <i class="fa-solid ${isDefault ? 'fa-user' : 'fa-book'}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-bold text-white truncate">${escapeHtml(book.name)}</div>
+                            ${isDefault ? '<div class="text-[10px] text-amber-400 mt-0.5">الدفتر الافتراضي (مثبّت)</div>' : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        ${buildBalanceBlock(st)}
+                        ${buildBookActionButtons(book)}
+                        ${isSelected ? '<i class="fa-solid fa-circle-check text-blue-500 text-base mr-1"></i>' : ''}
+                    </div>
+                `;
+                bindBookActions(item, book);
+                listContainer.appendChild(item);
+            });
+        }
+
+        function renderAllBooksView() {
+            const container = document.getElementById('allBooksContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            appState.books.forEach(book => {
+                const st = getBookStats(book.id);
+                const isSelected = book.id === appState.activeBookId;
+                const isDefault = book.id === DEFAULT_BOOK_ID;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border flex items-center justify-between gap-2 ${isSelected ? 'bg-[#1b263e] border-[#3b82f6]' : 'bg-[#121926] border-[#1a2338]'}`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-[#1d2a44] flex items-center justify-center ${isDefault ? 'text-amber-400' : 'text-blue-400'} shrink-0">
+                            <i class="fa-solid ${isDefault ? 'fa-user' : 'fa-book-open'} text-base"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-bold text-white truncate">${escapeHtml(book.name)}</div>
+                            <div class="text-[10px] text-gray-400 mt-0.5">${st.count} معاملة مسجلة${isDefault ? ' • مثبّت' : ''}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        ${buildBalanceBlock(st)}
+                        ${buildBookActionButtons(book)}
+                        <button type="button" class="open-book-btn px-3 py-1.5 rounded-lg text-xs font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-[#1a2338] text-gray-300 hover:bg-[#222e4a]'}">
+                            ${isSelected ? 'مفعل' : 'فتح'}
+                        </button>
+                    </div>
+                `;
+                bindBookActions(card, book);
+                card.querySelector('.open-book-btn').addEventListener('click', () => selectBookFromAll(book.id));
+                container.appendChild(card);
+            });
+        }
+
+        function selectBookFromAll(bookId) {
+            appState.activeBookId = bookId;
+            saveData();
+            toggleAllBooksView();
+            render();
+        }
+
+        // ================= حذف الدفتر (بشروط) =================
+        function promptDeleteBook(bookId) {
+            const bookToDelete = appState.books.find(b => b.id === bookId);
+            if (!bookToDelete) return;
+
+            const check = getBookDeleteCheck(bookId);
+            if (!check.ok) {
+                openToast(check.reason);
+                return;
+            }
+
+            bookIdPendingDeletion = bookId;
+            document.getElementById('deleteBookTargetName').innerText = `"${bookToDelete.name}"`;
+            document.getElementById('deleteBookConfirmModal').classList.remove('hidden');
+        }
+
+        function closeDeleteBookModal() {
+            bookIdPendingDeletion = null;
+            document.getElementById('deleteBookConfirmModal').classList.add('hidden');
+        }
+
+        function confirmExecuteDeleteBook() {
+            if (!bookIdPendingDeletion) return;
+            const bookId = bookIdPendingDeletion;
+            const bookToDelete = appState.books.find(b => b.id === bookId);
+            const bookName = bookToDelete ? bookToDelete.name : '';
+
+            const check = getBookDeleteCheck(bookId);
+            if (!check.ok) {
+                closeDeleteBookModal();
+                openToast(check.reason);
+                return;
+            }
+
+            appState.books = appState.books.filter(b => b.id !== bookId);
+            appState.transactions = appState.transactions.filter(t => t.bookId !== bookId);
+            appState.loans = appState.loans.filter(l => l.fromBookId !== bookId && l.toBookId !== bookId);
+
+            if (appState.activeBookId === bookId) {
+                appState.activeBookId = DEFAULT_BOOK_ID;
+            }
+
+            saveData();
+            closeDeleteBookModal();
+            render();
+            openToast(`تم حذف الدفتر "${bookName}" بنجاح`);
+        }
+
+        // ================= إعادة تسمية الدفتر =================
+        function isBookNameTaken(name, exceptBookId) {
+            const n = name.trim().toLowerCase();
+            return appState.books.some(b => b.id !== exceptBookId && b.name.trim().toLowerCase() === n);
+        }
+
+        function openRenameBookModal(bookId) {
+            const book = appState.books.find(b => b.id === bookId);
+            if (!book) return;
+
+            // الدفتر الافتراضي اسمه هو اسم المستخدم
+            if (bookId === DEFAULT_BOOK_ID) {
+                openEditProfileModal();
+                return;
+            }
+
+            bookIdPendingRename = bookId;
+            const input = document.getElementById('renameBookInput');
+            input.value = book.name;
+            document.getElementById('renameBookModal').classList.remove('hidden');
+            input.focus();
+            input.select();
+        }
+
+        function closeRenameBookModal() {
+            bookIdPendingRename = null;
+            document.getElementById('renameBookModal').classList.add('hidden');
+        }
+
+        function confirmRenameBook() {
+            if (!bookIdPendingRename || bookIdPendingRename === DEFAULT_BOOK_ID) return;
+            const newName = document.getElementById('renameBookInput').value.trim();
+            if (!newName) {
+                openToast('الرجاء إدخال اسم الدفتر');
+                return;
+            }
+            if (isBookNameTaken(newName, bookIdPendingRename)) {
+                openToast('يوجد دفتر آخر بنفس الاسم');
+                return;
+            }
+            const book = appState.books.find(b => b.id === bookIdPendingRename);
+            if (!book) return;
+            book.name = newName;
+            saveData();
+            closeRenameBookModal();
+            render();
+            openToast('تم تعديل اسم الدفتر');
+        }
+
+        // ================= نوافذ الدفاتر =================
+        function toggleBooksModal() {
+            document.getElementById('booksModal').classList.toggle('hidden');
+        }
+
+        function toggleAllBooksView() {
+            const allBooksModal = document.getElementById('allBooksModal');
+            if (allBooksModal.classList.contains('hidden')) {
+                renderAllBooksView();
+                allBooksModal.classList.remove('hidden');
+            } else {
+                allBooksModal.classList.add('hidden');
+            }
+        }
+
+        function toggleOptionsMenu() {
+            document.getElementById('optionsMenu').classList.toggle('hidden');
+        }
+
+        function openAddBookModal() {
+            document.getElementById('newBookNameInput').value = '';
+            document.getElementById('addBookModal').classList.remove('hidden');
+            document.getElementById('newBookNameInput').focus();
+        }
+
+        function closeAddBookModal() {
+            document.getElementById('addBookModal').classList.add('hidden');
+        }
+
+        function confirmAddBook() {
+            const nameInput = document.getElementById('newBookNameInput').value.trim();
+            if (!nameInput) {
+                openToast('الرجاء إدخال اسم الدفتر');
+                return;
+            }
+            if (isBookNameTaken(nameInput, null)) {
+                openToast('يوجد دفتر بنفس الاسم');
+                return;
+            }
+
+            const newBook = {
+                id: uid('book'),
+                name: nameInput,
+                createdAt: new Date().toISOString()
+            };
+
+            appState.books.push(newBook);
+            appState.activeBookId = newBook.id;
+            saveData();
+
+            closeAddBookModal();
+            if (!document.getElementById('booksModal').classList.contains('hidden')) {
+                toggleBooksModal();
+            }
+            render();
+            openToast('تم إنشاء الدفتر وتفعيله بنجاح');
+        }
+
+        // ================= اسم المستخدم (= اسم الدفتر الافتراضي) =================
+        function openEditProfileModal() {
+            const input = document.getElementById('profileNameInput');
+            input.value = appState.userName === DEFAULT_USER_NAME ? '' : appState.userName;
+            document.getElementById('editProfileModal').classList.remove('hidden');
+            input.focus();
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').classList.add('hidden');
+        }
+
+        function saveProfileName() {
+            const newName = document.getElementById('profileNameInput').value.trim();
+            if (!newName) {
+                openToast('الرجاء إدخال الاسم');
+                return;
+            }
+            if (isBookNameTaken(newName, DEFAULT_BOOK_ID)) {
+                openToast('يوجد دفتر آخر بنفس هذا الاسم، اختر اسماً مختلفاً');
+                return;
+            }
+            appState.userName = newName;
+            const def = appState.books.find(b => b.id === DEFAULT_BOOK_ID);
+            if (def) def.name = newName;
+            saveData();
+            render();
+            closeEditProfileModal();
+            openToast('تم حفظ اسم المستخدم واسم الدفتر الافتراضي');
+        }
+
+        // ================= المعاملات (دخل / مصروف) =================
+        function openTransactionModal(type) {
+            editingTxId = null;
+            setModalType(type);
+            document.getElementById('modalTitle').innerText = type === 'income' ? 'إضافة دخل جديد' : 'إضافة مصروف جديد';
+            document.getElementById('deleteTxBtn').classList.add('hidden');
+
+            document.getElementById('txDate').value = localDateStr();
+            document.getElementById('txTime').value = localTimeStr();
+            document.getElementById('txAmount').value = '';
+            document.getElementById('txName').value = '';
+            document.getElementById('txCategory').value = '';
+            document.getElementById('txNote').value = '';
+
+            document.getElementById('transactionModal').classList.remove('hidden');
+        }
+
+        function openEditTransactionModal(id) {
+            const tx = appState.transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            if (tx.isAutoBankFee) {
+                openToast('الرسوم البنكية تلقائية وتتغير حسب عدد المصروفات');
+                return;
+            }
+            if (!EDITABLE_TYPES.includes(tx.type)) {
+                openToast('معاملات السلفيات لا تُعدَّل من هنا، استخدم قائمة "سلفية" للسداد');
+                return;
+            }
+
+            editingTxId = id;
+            setModalType(tx.type);
+            document.getElementById('modalTitle').innerText = 'تعديل المعاملة';
+            document.getElementById('deleteTxBtn').classList.remove('hidden');
+
+            document.getElementById('txDate').value = tx.date;
+            document.getElementById('txTime').value = tx.time;
+            document.getElementById('txAmount').value = tx.amount;
+            document.getElementById('txName').value = tx.name === '-' ? '' : tx.name;
+            document.getElementById('txCategory').value = tx.category === '-' ? '' : tx.category;
+            document.getElementById('txNote').value = tx.note || '';
+
+            document.getElementById('transactionModal').classList.remove('hidden');
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('transactionModal').classList.add('hidden');
+        }
+
+        function setModalType(type) {
+            currentModalType = type;
+            const expBtn = document.getElementById('typeExpenseBtn');
+            const incBtn = document.getElementById('typeIncomeBtn');
+            if (type === 'expense') {
+                expBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-[#ef4444] text-white transition";
+                incBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";
+            } else {
+                incBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-[#10b981] text-white transition";
+                expBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";
+            }
+        }
+
+        function readTransactionForm() {
+            const amount = round2(parseFloat(document.getElementById('txAmount').value));
+            if (!amount || isNaN(amount) || amount <= 0) {
+                openToast('الرجاء إدخال مبلغ صحيح');
+                return null;
+            }
+            return {
+                type: currentModalType,
+                amount: amount,
+                date: document.getElementById('txDate').value || localDateStr(),
+                time: document.getElementById('txTime').value || localTimeStr(),
+                name: document.getElementById('txName').value.trim() || '-',
+                category: document.getElementById('txCategory').value.trim() || '-',
+                note: document.getElementById('txNote').value.trim() || ''
+            };
+        }
+
+        function saveTransaction() {
+            const data = readTransactionForm();
+            if (!data) return;
+
+            if (!editingTxId && data.type === 'expense') {
+                const currentAvail = getBookAvailableAmount(appState.activeBookId);
+                if (data.amount > currentAvail) {
+                    const deficit = round2(data.amount - Math.max(0, currentAvail));
+                    document.getElementById('insufficientExpAmount').innerText = numberFormat(data.amount);
+                    document.getElementById('insufficientAvailAmount').innerText = numberFormat(currentAvail);
+                    document.getElementById('insufficientDeficitAmount').innerText = numberFormat(deficit);
+
+                    pendingExpenseData = data;
+                    document.getElementById('insufficientBalanceModal').classList.remove('hidden');
+                    return;
+                }
+            }
+
+            commitTransaction(data);
+        }
+
+        function hideInsufficientBalanceModal() {
+            document.getElementById('insufficientBalanceModal').classList.add('hidden');
+        }
+
+        function cancelInsufficientBalance() {
+            pendingExpenseData = null;
+            hideInsufficientBalanceModal();
+        }
+
+        // يُخفي نافذة التنبيه فقط ويُبقي المصروف المعلّق ليُسجَّل بعد الاستلاف
+        function proceedToBorrowDeficit() {
+            if (!pendingExpenseData) return;
+            const deficit = round2(pendingExpenseData.amount - Math.max(0, getBookAvailableAmount(appState.activeBookId)));
+            hideInsufficientBalanceModal();
+            openBorrowModal(deficit);
+        }
+
+        function saveTransactionForced() {
+            if (!pendingExpenseData) return;
+            const data = pendingExpenseData;
+            pendingExpenseData = null;
+            hideInsufficientBalanceModal();
+            commitTransaction(data, 'تم إضافة السجل بنجاح (رصيد سالب)');
+        }
+
+        function commitTransaction(data, successMsg) {
+            const bookId = appState.activeBookId;
+            let isNew = false;
+
+            if (editingTxId) {
+                const tx = appState.transactions.find(t => t.id === editingTxId);
+                if (!tx || tx.isAutoBankFee || !EDITABLE_TYPES.includes(tx.type)) {
+                    closeTransactionModal();
+                    return;
+                }
+                tx.type = data.type;
+                tx.amount = data.amount;
+                tx.date = data.date;
+                tx.time = data.time;
+                tx.name = data.name;
+                tx.category = data.category;
+                tx.note = data.note;
+                successMsg = successMsg || 'تم تحديث السجل بنجاح';
+            } else {
+                appState.transactions.unshift({
+                    id: uid('t'),
+                    ts: nextTs(),
+                    bookId: bookId,
+                    type: data.type,
+                    amount: data.amount,
+                    date: data.date,
+                    time: data.time,
+                    name: data.name,
+                    category: data.category,
+                    note: data.note
+                });
+                isNew = true;
+                successMsg = successMsg || 'تم إضافة السجل بنجاح';
+            }
+
+            const feeMsg = reconcileBankFees(bookId);
+            saveData();
+            closeTransactionModal();
+            render();
+            openToast(feeMsg || successMsg);
+
+            if (isNew && data.type === 'income') {
+                const activeDebts = appState.loans.filter(l => l.toBookId === bookId && l.remainingAmount > 0);
+                if (activeDebts.length > 0) {
+                    setTimeout(() => {
+                        openSmartRepayModal(activeDebts[0], data.amount);
+                    }, 350);
+                }
+            }
+        }
+
+        function deleteCurrentTransaction() {
+            if (!editingTxId) return;
+            const tx = appState.transactions.find(t => t.id === editingTxId);
+            if (!tx || tx.isAutoBankFee || !EDITABLE_TYPES.includes(tx.type)) return;
+
+            const bookId = tx.bookId;
+            appState.transactions = appState.transactions.filter(t => t.id !== editingTxId);
+            editingTxId = null;
+
+            const feeMsg = reconcileBankFees(bookId);
+            saveData();
+            closeTransactionModal();
+            render();
+            openToast(feeMsg || 'تم حذف السجل');
+        }
+
+        // ================= السلفيات والديون =================
+        function toggleLoansMenu() {
+            document.getElementById('loansMenuModal').classList.toggle('hidden');
+        }
+
+        function openBorrowModal(presetAmount) {
+            selectedLenderBookId = null;
+            const input = document.getElementById('borrowAmountInput');
+            input.value = (typeof presetAmount === 'number' && presetAmount > 0) ? presetAmount : '';
+            document.getElementById('confirmBorrowBtn').disabled = true;
+            document.getElementById('borrowPendingNote').classList.toggle('hidden', !pendingExpenseData);
+            onBorrowAmountChanged();
+            document.getElementById('borrowModal').classList.remove('hidden');
+        }
+
+        // clearPending=true: إلغاء من المستخدم (يبقى نموذج المصروف مفتوحاً ببياناته)
+        function closeBorrowModal(clearPending) {
+            if (clearPending === undefined) clearPending = true;
+            document.getElementById('borrowModal').classList.add('hidden');
+            if (clearPending) pendingExpenseData = null;
+        }
+
+        function onBorrowAmountChanged() {
+            const input = document.getElementById('borrowAmountInput');
+            const amount = parseFloat(input.value) || 0;
+            const container = document.getElementById('eligibleLendersContainer');
+            const confirmBtn = document.getElementById('confirmBorrowBtn');
+            container.innerHTML = '';
+            selectedLenderBookId = null;
+            confirmBtn.disabled = true;
+
+            if (amount <= 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-4 text-xs">أدخل المبلغ المطلوب أولاً لعرض الدفاتر المتاحة</div>`;
+                return;
+            }
+
+            const currentBookId = appState.activeBookId;
+            const eligibleBooks = appState.books.filter(b => {
+                if (b.id === currentBookId) return false;
+                return getBookAvailableAmount(b.id) >= amount;
+            });
+
+            if (eligibleBooks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-red-950/20 border border-red-500/20 rounded-xl p-3 text-center">
+                        <i class="fa-solid fa-circle-exclamation text-red-400 text-lg mb-1"></i>
+                        <p class="text-xs text-red-300 font-medium">لا يوجد أي دفتر يحتوي على رصيد متاح يكفي لهذا المبلغ (${numberFormat(amount)} ج.س)</p>
+                        <p class="text-[10px] text-gray-400 mt-1">جرب إدخال مبلغ أقل أو إضافة دخل في أحد الدفاتر</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const optClass = 'lender-option bg-[#131b2e] hover:bg-[#1a253c] border border-[#1f293d] p-3 rounded-xl flex items-center justify-between cursor-pointer transition';
+
+            eligibleBooks.forEach(b => {
+                const avail = getBookAvailableAmount(b.id);
+                const opt = document.createElement('div');
+                opt.className = optClass;
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.lender-option').forEach(el => { el.className = optClass; });
+                    opt.className = 'lender-option bg-[#1d2a44] border-2 border-blue-500 p-3 rounded-xl flex items-center justify-between cursor-pointer transition';
+                    selectedLenderBookId = b.id;
+                    confirmBtn.disabled = false;
+                });
+
+                opt.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm shrink-0">
+                            <i class="fa-solid ${b.id === DEFAULT_BOOK_ID ? 'fa-user' : 'fa-book'}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-white truncate">${escapeHtml(b.name)}</div>
+                            <div class="text-[10px] text-gray-400 mt-0.5">المتاح للصرف: ${numberFormat(avail)} ج.س</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-circle-check text-blue-400 text-base"></i>
+                `;
+                container.appendChild(opt);
+            });
+        }
+
+        // تأكيد الاستلاف: يُخصم المبلغ من الدفتر المُسلِف ويُضاف للمدين، ثم يُسجَّل المصروف المعلّق تلقائياً
+        function confirmBorrow() {
+            const input = document.getElementById('borrowAmountInput');
+            const amount = round2(parseFloat(input.value) || 0);
+            if (amount <= 0 || !selectedLenderBookId) {
+                openToast('الرجاء إدخال مبلغ صحيح واختيار الدفتر');
+                return;
+            }
+
+            const lenderBook = appState.books.find(b => b.id === selectedLenderBookId);
+            const borrowerBook = appState.books.find(b => b.id === appState.activeBookId);
+            if (!lenderBook || !borrowerBook) return;
+
+            if (getBookAvailableAmount(lenderBook.id) < amount) {
+                openToast('عذراً، الرصيد المتاح في الدفتر المُسلِف تغير ولا يكفي الآن');
+                onBorrowAmountChanged();
+                return;
+            }
+
+            const dateStr = localDateStr();
+            const timeStr = localTimeStr();
+            const loanId = uid('loan');
+
+            appState.loans.push({
+                id: loanId,
+                fromBookId: lenderBook.id,
+                toBookId: borrowerBook.id,
+                amount: amount,
+                remainingAmount: amount,
+                date: dateStr,
+                time: timeStr,
+                status: 'active'
+            });
+
+            // 1. خصم من الدفتر المُسلِف
+            appState.transactions.unshift({
+                id: uid('t_lent'),
+                ts: nextTs(),
+                bookId: lenderBook.id,
+                type: 'lent',
+                amount: amount,
+                date: dateStr,
+                time: timeStr,
+                name: `سلفة إلى ${borrowerBook.name}`,
+                category: 'سلفة',
+                note: `تم إقراض المبلغ لدفتر "${borrowerBook.name}"`,
+                loanId: loanId
+            });
+
+            // 2. إضافة للدفتر المستلِف
+            appState.transactions.unshift({
+                id: uid('t_adv'),
+                ts: nextTs(),
+                bookId: borrowerBook.id,
+                type: 'advance',
+                amount: amount,
+                date: dateStr,
+                time: timeStr,
+                name: `سلفة من ${lenderBook.name}`,
+                category: 'سلفة',
+                note: `تم استلاف المبلغ من دفتر "${lenderBook.name}"`,
+                loanId: loanId
+            });
+
+            // 3. تسجيل المصروف المعلّق تلقائياً
+            let expenseRecorded = false;
+            let feeMsg = '';
+            if (pendingExpenseData) {
+                const d = pendingExpenseData;
+                pendingExpenseData = null;
+                appState.transactions.unshift({
+                    id: uid('t'),
+                    ts: nextTs(),
+                    bookId: borrowerBook.id,
+                    type: 'expense',
+                    amount: d.amount,
+                    date: d.date,
+                    time: d.time,
+                    name: d.name,
+                    category: d.category,
+                    note: d.note
+                });
+                expenseRecorded = true;
+                feeMsg = reconcileBankFees(borrowerBook.id);
+                closeTransactionModal();
+            }
+
+            saveData();
+            closeBorrowModal(false);
+            render();
+
+            if (feeMsg) {
+                openToast(feeMsg);
+            } else if (expenseRecorded) {
+                openToast(`تم استلاف ${numberFormat(amount)} ج.س من "${lenderBook.name}" وتسجيل المصروف تلقائياً`);
+            } else {
+                openToast(`تم استلاف ${numberFormat(amount)} ج.س من "${lenderBook.name}" بنجاح`);
+            }
+        }
+
+        // ---------- السداد الذكي ----------
+        function openSmartRepayModal(loan, newIncomeAmount) {
+            activeSmartLoan = loan;
+            document.getElementById('smartRepayLenderName').innerText = getBookName(loan.fromBookId, 'الدفتر المُسلِف');
+            document.getElementById('smartRepayTotalDebt').innerText = numberFormat(loan.remainingAmount);
+
+            const suggested = Math.min(loan.remainingAmount, newIncomeAmount);
+            document.getElementById('smartRepayCustomAmount').value = suggested;
+
+            document.getElementById('smartRepayFullBtn').innerText = `إرجاع الدين بالكامل (${numberFormat(loan.remainingAmount)} ج.س)`;
+            document.getElementById('smartRepayModal').classList.remove('hidden');
+        }
+
+        function closeSmartRepayModal() {
+            activeSmartLoan = null;
+            document.getElementById('smartRepayModal').classList.add('hidden');
+        }
+
+        function executeSmartRepay(mode) {
+            if (!activeSmartLoan) return;
+            const loan = activeSmartLoan;
+            let repayAmount = 0;
+
+            if (mode === 'full') {
+                repayAmount = loan.remainingAmount;
+            } else {
+                repayAmount = round2(parseFloat(document.getElementById('smartRepayCustomAmount').value) || 0);
+            }
+
+            if (repayAmount <= 0) {
+                openToast('الرجاء إدخال مبلغ سداد صحيح');
+                return;
+            }
+            if (repayAmount > loan.remainingAmount) {
+                repayAmount = loan.remainingAmount;
+            }
+
+            const borrowerAvail = getBookAvailableAmount(loan.toBookId);
+            if (borrowerAvail < repayAmount) {
+                openToast(`الرصيد المتاح في الدفتر (${numberFormat(borrowerAvail)} ج.س) لا يكفي لسداد ${numberFormat(repayAmount)} ج.س`);
+                return;
+            }
+
+            processLoanRepayment(loan.id, repayAmount);
+            closeSmartRepayModal();
+        }
+
+        // السداد: يُخصم من الدفتر المدين ويرجع للدفتر المُسلِف
+        function processLoanRepayment(loanId, repayAmount) {
+            const loan = appState.loans.find(l => l.id === loanId);
+            if (!loan) return;
+
+            repayAmount = round2(repayAmount);
+            const lenderBook = appState.books.find(b => b.id === loan.fromBookId);
+            const borrowerBook = appState.books.find(b => b.id === loan.toBookId);
+            const lenderName = lenderBook ? lenderBook.name : 'الدفتر المُسلِف';
+            const borrowerName = borrowerBook ? borrowerBook.name : 'دفتر آخر';
+
+            loan.remainingAmount = round2(loan.remainingAmount - repayAmount);
+            if (loan.remainingAmount <= 0) {
+                loan.remainingAmount = 0;
+                loan.status = 'settled';
+            }
+
+            const dateStr = localDateStr();
+            const timeStr = localTimeStr();
+            const repayId = uid('t_rep');
+
+            appState.transactions.unshift({
+                id: repayId,
+                ts: nextTs(),
+                bookId: loan.toBookId,
+                type: 'repay',
+                amount: repayAmount,
+                date: dateStr,
+                time: timeStr,
+                name: `سداد سلفة لـ ${lenderName}`,
+                category: 'سداد سلفة',
+                note: `سداد دين لدفتر "${lenderName}"`,
+                loanId: loan.id
+            });
+
+            if (lenderBook) {
+                appState.transactions.unshift({
+                    id: uid('t_col'),
+                    ts: nextTs(),
+                    bookId: loan.fromBookId,
+                    type: 'collect',
+                    amount: repayAmount,
+                    date: dateStr,
+                    time: timeStr,
+                    name: `استرداد سلفة من ${borrowerName}`,
+                    category: 'استرداد سلفة',
+                    note: `استرداد من دفتر "${borrowerName}"`,
+                    loanId: loan.id,
+                    repayOf: repayId
+                });
+            }
+
+            saveData();
+            render();
+            openToast(`تم سداد ${numberFormat(repayAmount)} ج.س لدفتر "${lenderName}" بنجاح`);
+        }
+
+        // ---------- السداد اليدوي ----------
+        function openManualRepayModal() {
+            const currentBookId = appState.activeBookId;
+            const debts = appState.loans.filter(l => l.toBookId === currentBookId && l.remainingAmount > 0);
+            const container = document.getElementById('manualRepayContent');
+            container.innerHTML = '';
+
+            if (debts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-400 py-6 text-xs">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-2xl mb-2"></i>
+                        <p class="font-bold text-white">لا توجد ديون مستحقة على هذا الدفتر</p>
+                        <p class="text-[10px] text-gray-500 mt-1">جميع السلفيات تم تسديدها بالكامل</p>
+                    </div>
+                `;
+            } else {
+                const avail = getBookAvailableAmount(currentBookId);
+                const infoBanner = document.createElement('div');
+                infoBanner.className = 'bg-[#131b2e] border border-[#1f293d] p-2.5 rounded-xl text-xs mb-3 flex items-center justify-between';
+                infoBanner.innerHTML = `
+                    <span class="text-gray-400 text-[11px]">الرصيد المتاح في هذا الدفتر:</span>
+                    <span class="font-bold ${avail >= 0 ? 'text-emerald-400' : 'text-red-400'} dir-ltr">${numberFormat(avail)} ج.س</span>
+                `;
+                container.appendChild(infoBanner);
+
+                debts.forEach(loan => {
+                    const defaultRepay = Math.max(0, Math.min(avail, loan.remainingAmount));
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-[#131b2e] border border-[#1f293d] p-3 rounded-xl space-y-2';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between pb-2 border-b border-[#1f293d]">
+                            <div class="text-xs font-bold text-white truncate">مستحق لدفتر: ${escapeHtml(getBookName(loan.fromBookId))}</div>
+                            <div class="text-xs font-bold text-red-400 dir-ltr shrink-0">${numberFormat(loan.remainingAmount)} ج.س</div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="number" inputmode="decimal" class="manual-repay-input bg-[#0b0f19] border border-[#1f293d] rounded-lg p-2 text-xs font-bold text-white flex-1 outline-none text-right dir-ltr" value="${defaultRepay}" max="${loan.remainingAmount}" placeholder="مبلغ السداد">
+                            <button type="button" class="manual-repay-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition shrink-0">
+                                تسديد
+                            </button>
+                        </div>
+                    `;
+                    const inputEl = card.querySelector('.manual-repay-input');
+                    card.querySelector('.manual-repay-btn').addEventListener('click', () => confirmManualRepay(loan.id, inputEl));
+                    container.appendChild(card);
+                });
+            }
+
+            document.getElementById('manualRepayModal').classList.remove('hidden');
+        }
+
+        function closeManualRepayModal() {
+            document.getElementById('manualRepayModal').classList.add('hidden');
+        }
+
+        function confirmManualRepay(loanId, inputEl) {
+            const loan = appState.loans.find(l => l.id === loanId);
+            if (!loan || !inputEl) return;
+
+            let amount = round2(parseFloat(inputEl.value) || 0);
+            if (amount <= 0) {
+                openToast('الرجاء إدخال مبلغ سداد صحيح');
+                return;
+            }
+            if (amount > loan.remainingAmount) amount = loan.remainingAmount;
+
+            const avail = getBookAvailableAmount(loan.toBookId);
+            if (amount > avail) {
+                openToast(`الرصيد المتاح (${numberFormat(avail)} ج.س) لا يكفي لسداد ${numberFormat(amount)} ج.س`);
+                return;
+            }
+
+            processLoanRepayment(loanId, amount);
+            openManualRepayModal();
+        }
+
+        // ---------- قائمة الدفاتر المدينة ----------
+        function openDebtorsListModal() {
+            const currentBookId = appState.activeBookId;
+            const loansGiven = appState.loans.filter(l => l.fromBookId === currentBookId && l.remainingAmount > 0);
+            const container = document.getElementById('debtorsListContainer');
+            container.innerHTML = '';
+
+            if (loansGiven.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 py-6 text-xs">لا توجد دفاتر مدينة لهذا الدفتر حالياً</div>`;
+            } else {
+                loansGiven.forEach(l => {
+                    const item = document.createElement('div');
+                    item.className = 'bg-[#131b2e] border border-[#1f293d] rounded-xl p-3 flex items-center justify-between';
+                    item.innerHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm shrink-0">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-bold text-white truncate">${escapeHtml(getBookName(l.toBookId, 'دفتر غير معروف'))}</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">${escapeHtml(l.date)} ${escapeHtml(formatTime12Hour(l.time))}</div>
+                            </div>
+                        </div>
+                        <div class="text-left shrink-0">
+                            <div class="text-xs font-bold text-red-400 dir-ltr">${numberFormat(l.remainingAmount)} ج.س</div>
+                            <div class="text-[9px] text-gray-500 dir-ltr mt-0.5">من أصل ${numberFormat(l.amount)}</div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            document.getElementById('debtorsListModal').classList.remove('hidden');
+        }
+
+        function closeDebtorsListModal() {
+            document.getElementById('debtorsListModal').classList.add('hidden');
+        }
+
+        // ================= التقرير الشامل =================
+        function openGlobalReportModal() {
+            let grandIncome = 0;
+            let grandExpense = 0;
+            let grandBalance = 0;
+
+            const repBooksList = document.getElementById('repBooksList');
+            repBooksList.innerHTML = '';
+            document.getElementById('repBooksCount').innerText = appState.books.length;
+
+            appState.books.forEach(book => {
+                const st = getBookStats(book.id);
+                grandIncome += st.income;
+                grandExpense += st.expense;
+                grandBalance += st.balance;
+
+                const loanNet = round2(st.loanIn - st.loanOut);
+
+                const item = document.createElement('div');
+                item.className = 'bg-[#121926] border border-[#1a2338] rounded-xl p-3 flex items-center justify-between gap-2';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <i class="fa-solid ${book.id === DEFAULT_BOOK_ID ? 'fa-user text-amber-400' : 'fa-book text-blue-400'} text-sm"></i>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-white truncate">${escapeHtml(book.name)}</div>
+                            <div class="text-[10px] text-gray-400">${st.count} معاملة</div>
+                        </div>
+                    </div>
+                    <div class="text-left shrink-0">
+                        <div class="text-xs font-bold ${st.balance >= 0 ? 'text-emerald-400' : 'text-red-400'} dir-ltr">${numberFormat(st.balance)} ج.س</div>
+                        ${st.lentOut > 0 ? `<div class="text-[9px] text-amber-400 dir-ltr mt-0.5">الرصيد الكامل: ${numberFormat(st.full)}</div>` : ''}
+                        <div class="text-[9px] text-gray-400 dir-ltr mt-0.5">دخل: ${numberFormat(st.income)} | نفقات: ${numberFormat(st.expense)}</div>
+                        ${Math.abs(loanNet) >= 0.005 ? `<div class="text-[9px] text-gray-500 dir-ltr mt-0.5">صافي السلفيات: ${loanNet > 0 ? '+' : ''}${numberFormat(loanNet)}</div>` : ''}
+                    </div>
+                `;
+                repBooksList.appendChild(item);
+            });
+
+            document.getElementById('repTotalIncome').innerText = numberFormat(grandIncome) + ' ج.س';
+            document.getElementById('repTotalExpense').innerText = numberFormat(grandExpense) + ' ج.س';
+            document.getElementById('repTotalBalance').innerText = numberFormat(grandBalance) + ' ج.س';
+
+            document.getElementById('repTotalBalance').className =
+                `text-xs font-bold ${grandBalance >= 0 ? 'text-emerald-400' : 'text-red-400'} dir-ltr`;
+
+            const totalActiveLoans = appState.loans.reduce((s, l) => s + (l.remainingAmount > 0 ? l.remainingAmount : 0), 0);
+            const loansStrip = document.getElementById('repActiveLoansStrip');
+            if (totalActiveLoans > 0) {
+                document.getElementById('repTotalActiveLoans').innerText = numberFormat(totalActiveLoans) + ' ج.س';
+                loansStrip.classList.remove('hidden');
+            } else {
+                loansStrip.classList.add('hidden');
+            }
+
+            document.getElementById('globalReportModal').classList.remove('hidden');
+        }
+
+        function closeGlobalReportModal() {
+            document.getElementById('globalReportModal').classList.add('hidden');
+        }
+
+        // ================= النسخ الاحتياطي والاستعادة =================
+        function exportBackup() {
+            try {
+                const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cashbook-backup-${localDateStr()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                openToast('تم تصدير النسخة الاحتياطية');
+            } catch (e) {
+                openToast('تعذر تصدير النسخة الاحتياطية');
+            }
+        }
+
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function handleImportFile(ev) {
+            const input = ev.target;
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    if (!parsed || !Array.isArray(parsed.books) || !parsed.books.length || !Array.isArray(parsed.transactions)) {
+                        throw new Error('invalid');
+                    }
+                    if (!confirm('سيتم استبدال كل البيانات الحالية بالنسخة المستوردة. هل تريد المتابعة؟')) return;
+
+                    appState = parsed;
+                    normalizeState();
+                    saveData();
+                    render();
+                    openToast('تمت استعادة النسخة الاحتياطية بنجاح');
+                } catch (e) {
+                    openToast('الملف غير صالح كنسخة احتياطية');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        // ================= التشغيل =================
+        window.onload = function() {
+            loadData();
+            saveData();
+            render();
+
+            document.getElementById('newBookNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddBook(); });
+            document.getElementById('renameBookInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmRenameBook(); });
+            document.getElementById('profileNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveProfileName(); });
+        };
+    </script>
+
+    <!-- تسجيل Service Worker للعمل بدون إنترنت -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+        }
+    </script>
+</body>
+</html>

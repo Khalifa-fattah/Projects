@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدير الروابط والمواقع المصنفة | Link Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Top Header -->
+        <header class="app-header">
+            <div class="brand" id="brandHomeBtn" style="cursor: pointer;" title="العودة للصفحة الرئيسية">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <h1>مكتبة الروابط والمواقع</h1>
+                    <p class="subtitle">تنظيم هرمي ذكي لتصنيفاتك ومواقعك وروابطها</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button id="themeToggleBtn" class="btn btn-secondary icon-only" title="تغيير المظهر">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button id="exportBtn" class="btn btn-secondary" title="تصدير نسخة احتياطية">
+                    <i class="fa-solid fa-download"></i> تصدير
+                </button>
+                <label for="importInput" class="btn btn-secondary" title="استيراد روابط">
+                    <i class="fa-solid fa-upload"></i> استيراد
+                    <input type="file" id="importInput" accept=".json" style="display: none;">
+                </label>
+                <button id="openAddCategoryModalBtn" class="btn btn-secondary">
+                    <i class="fa-solid fa-folder-plus"></i> تصنيف جديد
+                </button>
+                <button id="openAddModalBtn" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> إضافة رابط / موقع
+                </button>
+            </div>
+        </header>
+
+        <!-- ===================================================
+             VIEW 1: HOME VIEW (التصنيفات والمواقع)
+             =================================================== -->
+        <section id="homeView" class="app-view">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <i class="fa-solid fa-folder-tree"></i>
+                    <span>التصنيفات: <strong id="totalCategoriesCount">0</strong></span>
+                </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>المواقع والخدمات: <strong id="totalServicesCount">0</strong></span>
+                </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-link"></i>
+                    <span>إجمالي الروابط: <strong id="totalLinksCount">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div class="controls-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="ابحث باسم التصنيف، اسم الموقع، عنوان الرابط، أو الـ URL...">
+                    <button id="clearSearchBtn" class="clear-btn" style="display: none;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <!-- Category Filter Chips -->
+                <div class="category-filters" id="categoryFilters">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+
+            <!-- Categories Grid (Cards of categories showing websites) -->
+            <main class="categories-grid" id="categoriesGrid">
+                <!-- Dynamically rendered -->
+            </main>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-folder-open"></i>
+                <h3>لا توجد مواقع مطابقة للبحث</h3>
+                <p>اضغط على "إضافة رابط / موقع" للبدء في تنظيم مواقعك وروابطك.</p>
+            </div>
+        </section>
+
+        <!-- ===================================================
+             VIEW 2: SERVICE DETAIL VIEW (صفحة روابط الموقع المعين)
+             =================================================== -->
+        <section id="serviceDetailView" class="app-view" style="display: none;">
+            <!-- Breadcrumb Navigation Bar -->
+            <div class="detail-top-bar">
+                <button id="backToHomeBtn" class="btn btn-secondary back-btn">
+                    <i class="fa-solid fa-arrow-right"></i> العودة للرئيسية
+                </button>
+                <div class="breadcrumb">
+                    <span id="detailCatName">التصنيف</span>
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span id="detailServiceName" class="active">اسم الموقع</span>
+                </div>
+            </div>
+
+            <!-- Service Hero Card -->
+            <div class="service-hero-card">
+                <div class="service-hero-meta">
+                    <div id="serviceHeroIconWrapper" class="service-hero-icon-wrapper">
+                        <!-- Dynamic icon -->
+                    </div>
+                    <div>
+                        <h2 id="serviceHeroTitle">اسم الموقع</h2>
+                        <div class="service-hero-tags">
+                            <span class="badge" id="serviceHeroCatBadge"><i class="fa-regular fa-folder"></i> التصنيف</span>
+                            <span class="badge" id="serviceHeroLinksCount"><i class="fa-solid fa-link"></i> 0 روابط</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="service-hero-actions">
+                    <button id="addLinkToCurrentServiceBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> إضافة رابط لهذا الموقع
+                    </button>
+                    <button id="deleteCurrentServiceBtn" class="btn btn-secondary delete-service-btn" title="حذف هذا الموقع بالكامل">
+                        <i class="fa-regular fa-trash-can"></i> حذف الموقع
+                    </button>
+                </div>
+            </div>
+
+            <!-- Service Links Header -->
+            <div class="service-links-header">
+                <h3><i class="fa-solid fa-list-ol"></i> قائمة روابط الموقع المعين</h3>
+                <div class="detail-search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="detailSearchInput" placeholder="بحث داخل روابط هذا الموقع...">
+                </div>
+            </div>
+
+            <!-- Ordered Links Container for Service Detail -->
+            <ol class="detail-ordered-links-list" id="detailLinksList">
+                <!-- Dynamically rendered -->
+            </ol>
+
+            <div id="detailEmptyState" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-link-slash"></i>
+                <h3>لا توجد روابط لهذا الموقع بعد</h3>
+                <p>اضغط على زر "إضافة رابط لهذا الموقع" لإضافة روابط وصفحات هذا الموقع.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- ===================================================
+         MODALS
+         =================================================== -->
+
+    <!-- Add / Edit Link Modal -->
+    <div class="modal-backdrop" id="linkModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">إضافة رابط لموقع</h2>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <form id="linkForm">
+                <input type="hidden" id="editCatId">
+                <input type="hidden" id="editServiceId">
+                <input type="hidden" id="editLinkId">
+                
+                <div class="form-group">
+                    <label for="categoryInput">التصنيف (مجلد التصنيف) *</label>
+                    <input type="text" id="categoryInput" required placeholder="مثال: الذكاء الاصطناعي، خدمات Google..." list="categorySuggestions">
+                    <datalist id="categorySuggestions"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="serviceInput">اسم الموقع أو الخدمة *</label>
+                    <input type="text" id="serviceInput" required placeholder="مثال: ChatGPT، YouTube، GitHub..." list="serviceSuggestions">
+                    <datalist id="serviceSuggestions"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="linkTitleInput">اسم أو وصف الرابط *</label>
+                    <input type="text" id="linkTitleInput" required placeholder="مثال: الصفحة الرئيسية، شرح ميزة X، لوحة التحكم...">
+                </div>
+
+                <div class="form-group">
+                    <label for="linkUrlInput">الرابط (URL) *</label>
+                    <input type="url" id="linkUrlInput" required placeholder="https://example.com أو رابط فيديو يوتيوب">
+                    <span id="youtubeDetectedHint" class="form-hint" style="display: none;">
+                        <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> تم التعرف على رابط يوتيوب! سيتم جلب الصورة المصغرة والمعلومات تلقائياً.
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="linkNotesInput">ملاحظات إضافية (اختياري)</label>
+                    <textarea id="linkNotesInput" rows="2" placeholder="ملاحظات سريعة، اسم الحساب، أو وصف للمحتوى..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelModalBtn">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" id="saveLinkBtn">
+                        <i class="fa-solid fa-check"></i> حفظ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-backdrop" id="categoryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>إضافة تصنيف جديد</h2>
+                <button class="close-btn" id="closeCategoryModalBtn">&times;</button>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="newCategoryName">اسم التصنيف الجديد *</label>
+                    <input type="text" id="newCategoryName" required placeholder="مثال: التسويق الرقمي، محركات البحث...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelCategoryModalBtn">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> إنشاء التصنيف
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Category Name Modal (Pencil Icon) -->
+    <div class="modal-backdrop" id="editCategoryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>تعديل اسم التصنيف</h2>
+                <button class="close-btn" id="closeEditCategoryModalBtn">&times;</button>
+            </div>
+            <form id="editCategoryForm">
+                <input type="hidden" id="editCategoryTargetId">
+                <div class="form-group">
+                    <label for="editCategoryNewName">الاسم الجديد للتصنيف *</label>
+                    <input type="text" id="editCategoryNewName" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelEditCategoryModalBtn">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-check"></i> تحديث الاسم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (رسالة تأكيد الحذف بتصميم متناسق) -->
+    <div class="modal-backdrop" id="confirmModal">
+        <div class="modal confirm-modal-card">
+            <div class="confirm-icon-wrapper">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirmTitle" class="confirm-title">تأكيد الإجراء</h3>
+            <p id="confirmMessage" class="confirm-message">هل أنت متأكد من رغبتك في حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="modal-actions confirm-actions">
+                <button type="button" class="btn btn-secondary" id="confirmCancelBtn">إلغاء</button>
+                <button type="button" class="btn btn-danger" id="confirmOkBtn">
+                    <i class="fa-regular fa-trash-can"></i> تأكيد الحذف
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMessage">تم بنجاح!</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
