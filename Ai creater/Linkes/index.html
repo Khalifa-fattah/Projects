@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SortableJS for Drag & Drop Reordering -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -23,6 +25,9 @@
             </div>
 
             <div class="header-actions">
+                <button id="undoBtn" class="btn btn-secondary icon-only" title="تراجع عن آخر إجراء (Ctrl+Z)" disabled>
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
                 <button id="themeToggleBtn" class="btn btn-secondary icon-only" title="تغيير المظهر">
                     <i class="fa-solid fa-moon"></i>
                 </button>
@@ -36,7 +41,7 @@
                 <button id="openAddCategoryModalBtn" class="btn btn-secondary">
                     <i class="fa-solid fa-folder-plus"></i> تصنيف جديد
                 </button>
-                <button id="openAddModalBtn" class="btn btn-primary">
+                <button id="openAddModalBtn" class="btn btn-primary" title="إضافة رابط جديد (Ctrl+N)">
                     <i class="fa-solid fa-plus"></i> إضافة رابط / موقع
                 </button>
             </div>
@@ -60,20 +65,44 @@
                     <i class="fa-solid fa-link"></i>
                     <span>إجمالي الروابط: <strong id="totalLinksCount">0</strong></span>
                 </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>آخر إضافة: <strong id="lastAddedStat">-</strong></span>
+                </div>
             </div>
 
             <!-- Filter & Search Bar -->
             <div class="controls-section">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="ابحث باسم التصنيف، اسم الموقع، عنوان الرابط، أو الـ URL...">
-                    <button id="clearSearchBtn" class="clear-btn" style="display: none;">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+                <div class="search-and-sort">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="ابحث باسم التصنيف، اسم الموقع، عنوان الرابط، الوسوم، أو الـ URL... (Ctrl+K)">
+                        <button id="clearSearchBtn" class="clear-btn" style="display: none;" title="مسح البحث">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <select id="sortSelect" class="sort-select" title="ترتيب العرض">
+                        <option value="default">الترتيب الافتراضي</option>
+                        <option value="name-asc">الاسم (أ - ي)</option>
+                        <option value="name-desc">الاسم (ي - أ)</option>
+                        <option value="links-desc">الأكثر روابطاً</option>
+                        <option value="links-asc">الأقل روابطاً</option>
+                        <option value="newest">الأحدث إضافةً</option>
+                    </select>
                 </div>
+
                 <!-- Category Filter Chips -->
                 <div class="category-filters" id="categoryFilters">
                     <!-- Dynamic -->
+                </div>
+
+                <!-- Tags Filter Row -->
+                <div class="tag-filter-row" id="tagFilterRow" style="display: none;">
+                    <span class="tag-filter-label"><i class="fa-solid fa-tags"></i> الوسوم:</span>
+                    <div id="activeTagChips" class="tag-chips-wrap"></div>
+                    <button id="clearTagsFilterBtn" class="filter-chip clear-tags-btn" style="display: none;">
+                        <i class="fa-solid fa-xmark"></i> مسح فلتر الوسوم
+                    </button>
                 </div>
             </div>
 
@@ -122,6 +151,12 @@
                 </div>
 
                 <div class="service-hero-actions">
+                    <button id="openAllLinksBtn" class="btn btn-secondary" title="فتح جميع روابط هذا الموقع في تبويبات جديدة">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الكل
+                    </button>
+                    <button id="moveCurrentServiceBtn" class="btn btn-secondary" title="نقل هذا الموقع إلى تصنيف آخر">
+                        <i class="fa-solid fa-right-left"></i> نقل التصنيف
+                    </button>
                     <button id="addLinkToCurrentServiceBtn" class="btn btn-primary">
                         <i class="fa-solid fa-plus"></i> إضافة رابط لهذا الموقع
                     </button>
@@ -192,6 +227,14 @@
                     <span id="youtubeDetectedHint" class="form-hint" style="display: none;">
                         <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> تم التعرف على رابط يوتيوب! سيتم جلب الصورة المصغرة والمعلومات تلقائياً.
                     </span>
+                    <span id="duplicateWarningHint" class="form-hint form-hint-warning" style="display: none;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <span id="duplicateWarningText">تنبيه: هذا الرابط مسجل مسبقاً!</span>
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="linkTagsInput">الوسوم / Tags (اختياري - مفصولة بفاصلة)</label>
+                    <input type="text" id="linkTagsInput" placeholder="مثال: مهم، شروحات، برمجة، قراءة...">
                 </div>
 
                 <div class="form-group">
@@ -203,6 +246,28 @@
                     <button type="button" class="btn btn-secondary" id="cancelModalBtn">إلغاء</button>
                     <button type="submit" class="btn btn-primary" id="saveLinkBtn">
                         <i class="fa-solid fa-check"></i> حفظ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Move Service Modal -->
+    <div class="modal-backdrop" id="moveServiceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>نقل الموقع إلى تصنيف آخر</h2>
+                <button class="close-btn" id="closeMoveServiceModalBtn">&times;</button>
+            </div>
+            <form id="moveServiceForm">
+                <div class="form-group">
+                    <label for="moveServiceSelect">اختر التصنيف الجديد للموقع *</label>
+                    <select id="moveServiceSelect" required class="form-select"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelMoveServiceModalBtn">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-right-left"></i> نقل الموقع
                     </button>
                 </div>
             </form>
@@ -271,10 +336,37 @@
         </div>
     </div>
 
+    <!-- Custom Context Menu -->
+    <div id="contextMenu" class="context-menu" style="display: none;">
+        <button class="context-menu-item" id="ctxOpen">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح في تبويب جديد
+        </button>
+        <button class="context-menu-item" id="ctxCopy">
+            <i class="fa-regular fa-copy"></i> نسخ الرابط
+        </button>
+        <button class="context-menu-item" id="ctxPin">
+            <i class="fa-solid fa-thumbtack"></i> <span id="ctxPinText">تثبيت / إلغاء التثبيت</span>
+        </button>
+        <div class="context-menu-divider"></div>
+        <button class="context-menu-item" id="ctxEdit">
+            <i class="fa-regular fa-pen-to-square"></i> تعديل
+        </button>
+        <button class="context-menu-item context-menu-item-danger" id="ctxDelete">
+            <i class="fa-regular fa-trash-can"></i> حذف
+        </button>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
-        <i class="fa-solid fa-circle-check"></i>
+        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
         <span id="toastMessage">تم بنجاح!</span>
+    </div>
+
+    <!-- Keyboard Shortcuts Hint -->
+    <div class="shortcuts-hint" title="اختصارات لوحة المفاتيح">
+        <span><kbd>Ctrl+K</kbd> بحث</span>
+        <span><kbd>Ctrl+N</kbd> رابط جديد</span>
+        <span><kbd>Ctrl+Z</kbd> تراجع</span>
     </div>
 
     <script src="app.js"></script>
