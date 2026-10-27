@@ -10,91 +10,307 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{color-scheme:dark;--bg:#0b1020;--panel:#111a2d;--text:#edf2ff;--muted:#98a7c3;--line:rgba(164,184,222,.13);--mint:#67e8c1;--shadow:0 18px 55px rgba(0,0,0,.24)}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% 0%,rgba(87,108,231,.16),transparent 38%),radial-gradient(ellipse at 5% 40%,rgba(43,178,151,.08),transparent 34%),var(--bg);color:var(--text);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;line-height:1.7}
-    a{color:inherit;text-decoration:none}.wrap{width:min(1120px,calc(100% - 40px));margin:auto}.topbar{height:78px;border-bottom:1px solid var(--line);display:flex;align-items:center}.nav{display:flex;align-items:center;justify-content:space-between;width:100%}.brand{display:flex;gap:12px;align-items:center;font-weight:700}.brand-mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#94a3ff,#6174e9);display:grid;place-items:center;color:#0c1230;box-shadow:0 7px 22px #6174e944}.brand-mark svg{width:21px}.repo-link{color:var(--muted);font-size:13px;border:1px solid var(--line);padding:7px 12px;border-radius:999px;transition:.2s}.repo-link:hover{color:var(--text);border-color:#6676db}
-    .hero{padding:66px 0 32px}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--mint);font-size:13px;font-weight:600;background:#67e8c110;border:1px solid #67e8c126;padding:5px 12px;border-radius:999px}.pulse{width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 12px var(--mint)}h1{font-size:clamp(32px,5vw,52px);line-height:1.25;letter-spacing:-1.2px;margin:20px 0 12px}.gradient{background:linear-gradient(90deg,#a6b3ff,#67e8c1);color:transparent;background-clip:text}.intro{font-size:16px;color:var(--muted);max-width:650px;margin:0}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:30px 0 18px}.section-title{font-size:18px;font-weight:600;margin:0}.counter{font-size:12px;color:var(--muted);margin-top:2px}.search{width:min(300px,48%);position:relative}.search svg{position:absolute;right:13px;top:50%;transform:translateY(-50%);width:17px;color:#8292b1}.search input{width:100%;border:1px solid var(--line);background:#111a2d99;color:var(--text);border-radius:12px;padding:11px 39px 11px 13px;font:inherit;font-size:13px;outline:none}.search input:focus{border-color:#8492ff;box-shadow:0 0 0 3px #8492ff1c}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-bottom:60px}.card{position:relative;overflow:hidden;min-height:192px;background:linear-gradient(155deg,#151f35,#10182a);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow);transition:transform .22s,border-color .22s,background .22s}.card:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#8292ff18,transparent 68%);top:-70px;left:-60px;pointer-events:none}.card:hover{transform:translateY(-4px);border-color:#8b9cff55;background:linear-gradient(155deg,#1a2640,#121c30)}.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.file-icon{width:44px;height:44px;border-radius:14px;background:#8292ff13;color:#a6b3ff;display:grid;place-items:center}.file-icon svg{width:22px}.number{font-size:11px;color:#8e9fbe;background:#ffffff08;border:1px solid var(--line);padding:3px 9px;border-radius:99px;direction:ltr}.card h3{font-size:17px;margin:16px 0 3px;overflow-wrap:anywhere}.card p{font-size:12px;color:var(--muted);margin:0 0 16px;overflow-wrap:anywhere;direction:ltr;text-align:right}.open{display:inline-flex;align-items:center;gap:8px;color:#b8c2ff;font-size:13px;font-weight:600}.open svg{width:16px;transition:transform .2s}.card:hover .open svg{transform:translateX(-3px)}.state{grid-column:1/-1;border:1px dashed var(--line);border-radius:16px;padding:32px 20px;text-align:center;color:var(--muted);background:#ffffff04}.state strong{display:block;color:var(--text);font-size:15px;margin-bottom:4px}.spinner{display:inline-block;width:20px;height:20px;border:2px solid #8292ff33;border-top-color:#a6b3ff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px}@keyframes spin{to{transform:rotate(360deg)}}.footer{border-top:1px solid var(--line);padding:18px 0 28px;color:#71809d;font-size:12px;display:flex;justify-content:space-between;gap:10px}.footer span:last-child{direction:ltr}
-    @media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding-top:52px}}@media(max-width:560px){.wrap{width:min(100% - 28px,1120px)}.topbar{height:66px}.brand{font-size:14px}.repo-link{font-size:11px;padding:6px 9px}.hero{padding:42px 0 20px}h1{font-size:34px}.intro{font-size:14px}.toolbar{align-items:flex-start;flex-direction:column;margin-top:24px}.search{width:100%}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:175px}.footer{flex-direction:column}}
+    :root{color-scheme:dark;--bg:#0b1020;--text:#edf2ff;--muted:#98a7c3;--line:rgba(164,184,222,.13);--mint:#67e8c1;--shadow:0 18px 55px rgba(0,0,0,.24)}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% 0%,rgba(87,108,231,.16),transparent 38%),radial-gradient(ellipse at 5% 40%,rgba(43,178,151,.08),transparent 34%),var(--bg);color:var(--text);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;line-height:1.7}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit;color:inherit}
+    .wrap{width:min(1120px,calc(100% - 40px));margin:auto}
+    .topbar{height:78px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+    .nav{display:flex;align-items:center;justify-content:space-between;width:100%}
+    .brand{display:flex;gap:12px;align-items:center;font-weight:700}
+    .brand-mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#94a3ff,#6174e9);display:grid;place-items:center;color:#0c1230;box-shadow:0 7px 22px #6174e944}
+    .brand-mark svg{width:21px}
+    .repo-link{color:var(--muted);font-size:13px;border:1px solid var(--line);padding:7px 12px;border-radius:999px;transition:.2s;direction:ltr}
+    .repo-link:hover{color:var(--text);border-color:#6676db}
+    .hero{padding:66px 0 32px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--mint);font-size:13px;font-weight:600;background:#67e8c110;border:1px solid #67e8c126;padding:5px 12px;border-radius:999px}
+    .pulse{width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 12px var(--mint)}
+    h1{font-size:clamp(32px,5vw,52px);line-height:1.25;letter-spacing:-1.2px;margin:20px 0 12px}
+    .gradient{background:linear-gradient(90deg,#a6b3ff,#67e8c1);color:transparent;background-clip:text;-webkit-background-clip:text}
+    .intro{font-size:16px;color:var(--muted);max-width:650px;margin:0}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:30px 0 18px}
+    .section-title{font-size:18px;font-weight:600;margin:0}
+    .counter{font-size:12px;color:var(--muted);margin-top:2px}
+    .search{width:min(300px,48%);position:relative}
+    .search svg{position:absolute;right:13px;top:50%;transform:translateY(-50%);width:17px;color:#8292b1}
+    .search input{width:100%;border:1px solid var(--line);background:#111a2d99;color:var(--text);border-radius:12px;padding:11px 39px 11px 13px;font:inherit;font-size:13px;outline:none}
+    .search input:focus{border-color:#8492ff;box-shadow:0 0 0 3px #8492ff1c}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-bottom:60px}
+    .card{position:relative;overflow:hidden;min-height:192px;background:linear-gradient(155deg,#151f35,#10182a);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow);transition:transform .22s,border-color .22s,background .22s;cursor:pointer;display:flex;flex-direction:column}
+    .card:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#8292ff18,transparent 68%);top:-70px;left:-60px;pointer-events:none}
+    .card:hover,.card:focus-visible{transform:translateY(-4px);border-color:#8b9cff55;background:linear-gradient(155deg,#1a2640,#121c30);outline:none}
+    .card.empty{cursor:default}
+    .card-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .folder-icon{width:44px;height:44px;border-radius:14px;background:#8292ff13;color:#a6b3ff;display:grid;place-items:center}
+    .folder-icon svg{width:22px}
+    .number{font-size:11px;color:#8e9fbe;background:#ffffff08;border:1px solid var(--line);padding:3px 9px;border-radius:99px;direction:ltr}
+    .card h3{font-size:18px;margin:16px 0 3px;overflow-wrap:anywhere}
+    .card p{font-size:13px;color:var(--muted);margin:0 0 16px}
+    .open{margin-top:auto;display:inline-flex;align-items:center;gap:8px;color:#b8c2ff;font-size:13px;font-weight:600;background:none;border:0;padding:0;cursor:pointer;align-self:flex-start}
+    .open svg{width:16px;transition:transform .2s}
+    .card:hover .open svg{transform:translateX(-3px)}
+    .state{grid-column:1/-1;border:1px dashed var(--line);border-radius:16px;padding:32px 20px;text-align:center;color:var(--muted);background:#ffffff04}
+    .state strong{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid #8292ff33;border-top-color:#a6b3ff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .footer{border-top:1px solid var(--line);padding:18px 0 28px;color:#71809d;font-size:12px;display:flex;justify-content:space-between;gap:10px}
+    .footer span:last-child{direction:ltr}
+
+    dialog{width:min(560px,calc(100% - 28px));max-height:min(80vh,640px);padding:0;border:1px solid #8b9cff44;border-radius:20px;background:linear-gradient(155deg,#17223a,#10182a);color:var(--text);box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}
+    dialog[open]{display:flex;flex-direction:column}
+    dialog::backdrop{background:rgba(5,8,18,.72);backdrop-filter:blur(4px)}
+    .dlg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid var(--line)}
+    .dlg-head h2{margin:0;font-size:18px;overflow-wrap:anywhere}
+    .dlg-head small{display:block;color:var(--muted);font-size:12px}
+    .close{flex:none;width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:#ffffff08;cursor:pointer;display:grid;place-items:center;font-size:18px;line-height:1}
+    .close:hover{border-color:#6676db}
+    .pages{list-style:none;margin:0;padding:12px;overflow:auto}
+    .pages a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:13px;border:1px solid transparent;transition:.18s}
+    .pages a:hover,.pages a:focus-visible{background:#8292ff12;border-color:#8b9cff44;outline:none}
+    .pages .file-icon{flex:none;width:38px;height:38px;border-radius:12px;background:#8292ff13;color:#a6b3ff;display:grid;place-items:center}
+    .pages .file-icon svg{width:19px}
+    .pages .info{min-width:0;flex:1}
+    .pages .name{display:block;font-weight:600;font-size:15px;overflow-wrap:anywhere}
+    .pages .path{display:block;font-size:12px;color:var(--muted);direction:ltr;text-align:right;overflow-wrap:anywhere}
+    .pages .go{flex:none;width:16px;color:#b8c2ff}
+    .gh-link{display:inline-flex;align-items:center;gap:6px;color:#b8c2ff;font-size:13px;font-weight:600}
+
+    @media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding-top:52px}}
+    @media(max-width:560px){.wrap{width:min(100% - 28px,1120px)}.topbar{height:66px}.brand{font-size:14px}.repo-link{font-size:11px;padding:6px 9px}.hero{padding:42px 0 20px}h1{font-size:34px}.intro{font-size:14px}.toolbar{align-items:flex-start;flex-direction:column;margin-top:24px}.search{width:100%}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:175px}.footer{flex-direction:column}}
   </style>
 </head>
 <body>
   <header class="topbar"><div class="wrap nav">
-    <a class="brand" href="./" aria-label="الصفحة الرئيسية"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v13.5a2.5 2.5 0 0 1-2.5 2.5H6a3 3 0 0 1-3-3V6.5Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 16.5A2.5 2.5 0 0 1 5.5 14H20M8 8h8M8 11h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>مساحة المشاريع</span></a>
+    <a class="brand" href="./" aria-label="الصفحة الرئيسية"><span class="brand-mark">◆</span><span>مساحة المشاريع</span></a>
     <a class="repo-link" href="https://github.com/Khalifa-fattah/Projects" target="_blank" rel="noopener noreferrer">Khalifa-fattah / Projects ↗</a>
   </div></header>
+
   <main class="wrap">
-    <section class="hero"><span class="eyebrow"><i class="pulse"></i> معرض المشاريع</span><h1>كل أفكارك،<br><span class="gradient">في مكان واحد.</span></h1><p class="intro">استكشف صفحات المعاينة الموجودة داخل مجلدات المستودع، حتى لو كانت متداخلة في مجلدات فرعية. تُحدّث القائمة تلقائيًا من GitHub.</p></section>
-    <section aria-labelledby="projects-heading"><div class="toolbar"><div><h2 class="section-title" id="projects-heading">صفحات المشاريع</h2><div class="counter" id="count">جارٍ الاتصال بـ GitHub…</div></div><label class="search"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="filter" type="search" placeholder="ابحث عن مشروع أو مجلد…" aria-label="ابحث عن مشروع أو مجلد" autocomplete="off"></label></div>
-      <div class="grid" id="projects" aria-live="polite"><div class="state"><span class="spinner" aria-hidden="true"></span><strong>نجهّز مساحة مشاريعك</strong>يتم اكتشاف صفحات المعاينة داخل المستودع…</div></div>
+    <section class="hero">
+      <span class="eyebrow"><i class="pulse"></i> معرض المشاريع</span>
+      <h1>كل أفكارك،<br><span class="gradient">في مكان واحد.</span></h1>
+      <p class="intro">استكشف مجلدات المستودع الرئيسية. اضغط على أي بطاقة لعرض الصفحات الموجودة داخلها وفي مجلداتها الفرعية. تتحدّث القائمة تلقائيًا من GitHub.</p>
+    </section>
+
+    <section aria-labelledby="projects-heading">
+      <div class="toolbar">
+        <div>
+          <h2 class="section-title" id="projects-heading">المشاريع</h2>
+          <div class="counter" id="count">جارٍ الاتصال بـ GitHub…</div>
+        </div>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input id="filter" type="search" placeholder="ابحث عن مجلد أو صفحة…" aria-label="ابحث عن مجلد أو صفحة" autocomplete="off">
+        </label>
+      </div>
+      <div class="grid" id="projects" aria-live="polite">
+        <div class="state"><span class="spinner" aria-hidden="true"></span><strong>نجهّز مساحة مشاريعك</strong>يتم جلب المجلدات والصفحات من GitHub…</div>
+      </div>
     </section>
   </main>
-  <footer class="wrap footer"><span>تُكتشف ملفات HTML تلقائيًا من جميع المجلدات الفرعية.</span><span>© Khalifa-fattah · GitHub Projects</span></footer>
+
+  <footer class="wrap footer">
+    <span>تُحدّث المشاريع تلقائيًا من محتوى المستودع.</span>
+    <span>© Khalifa-fattah · GitHub Projects</span>
+  </footer>
+
+  <dialog id="dlg" aria-labelledby="dlg-title">
+    <div class="dlg-head">
+      <div><h2 id="dlg-title"></h2><small id="dlg-sub"></small></div>
+      <button class="close" id="dlg-close" aria-label="إغلاق">✕</button>
+    </div>
+    <ul class="pages" id="dlg-list"></ul>
+  </dialog>
+
   <script>
     (() => {
       const OWNER = 'Khalifa-fattah';
       const REPO = 'Projects';
-      const BRANCH = 'main';
+      let BRANCH = 'main';
       const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+      const GH_TREE = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/`;
+
       const grid = document.getElementById('projects');
       const count = document.getElementById('count');
       const filter = document.getElementById('filter');
-      let pages = [];
-      const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      const icon = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.8V8h4M8 12h8M8 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+      const dlg = document.getElementById('dlg');
+      const dlgTitle = document.getElementById('dlg-title');
+      const dlgSub = document.getElementById('dlg-sub');
+      const dlgList = document.getElementById('dlg-list');
+
+      let groups = []; // [{name, pages:[{path,title,sub}]}]
+      let visible = [];
+
+      const escapeHtml = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const encodePath = p => p.split('/').map(encodeURIComponent).join('/');
+      const PAGES_BASE = `https://${OWNER.toLowerCase()}.github.io/${REPO}/`;
+      // على GitHub Pages الروابط نسبية. عند فتح الملف من الجهاز (file://) أو localhost نستخدم رابط Pages الكامل
+      const onPages = /\.github\.io$/i.test(location.hostname) || (location.protocol.startsWith('http') && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname));
+      const pageUrl = p => (onPages ? './' : PAGES_BASE) + encodePath(p);
+      const isHtml = n => /\.html?$/i.test(n);
+      const isHidden = n => n.startsWith('.');
+
+      const folderSvg = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 7A2.5 2.5 0 0 1 6 4.5h4l2 2H18A2.5 2.5 0 0 1 20.5 9v8A2.5 2.5 0 0 1 18 19.5H6A2.5 2.5 0 0 1 3.5 17V7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.8 9h16.4" stroke="currentColor" stroke-width="1.7"/></svg>';
+      const fileSvg = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.8V8h4M8 12h8M8 15.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
       const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      const pathUrl = path => './' + path.split('/').map(encodeURIComponent).join('/');
+
+      async function getJson(url) {
+        const r = await fetch(url, {headers: {'Accept': 'application/vnd.github+json'}});
+        if (!r.ok) { const err = new Error(`GitHub API: ${r.status}`); err.status = r.status; throw err; }
+        return r.json();
+      }
+
+      // يرجع {dirs: [أسماء المجلدات الرئيسية], paths: [مسارات ملفات HTML داخل مجلدات]}
+      async function getRepoData() {
+        let tree;
+        for (const b of [BRANCH, 'master']) {
+          try { tree = await getJson(`${API}/git/trees/${encodeURIComponent(b)}?recursive=1`); BRANCH = b; break; }
+          catch (e) { if (e.status !== 404 || b === 'master') throw e; }
+        }
+        if (!tree.truncated) {
+          const dirs = tree.tree.filter(i => i.type === 'tree' && !i.path.includes('/') && !isHidden(i.path)).map(i => i.path);
+          const paths = tree.tree.filter(i => i.type === 'blob' && isHtml(i.path) && i.path.includes('/')).map(i => i.path);
+          return {dirs, paths};
+        }
+        // الشجرة اتقطعت: نمشي مجلد مجلد عبر Contents API
+        const paths = [];
+        const walk = async (path = '') => {
+          const url = (path ? `${API}/contents/${encodePath(path)}` : `${API}/contents`) + `?ref=${encodeURIComponent(BRANCH)}`;
+          const items = await getJson(url);
+          await Promise.all(items.map(async i => {
+            if (i.type === 'dir' && !isHidden(i.name)) await walk(i.path);
+            else if (i.type === 'file' && isHtml(i.name) && i.path.includes('/')) paths.push(i.path);
+          }));
+        };
+        const root = await getJson(`${API}/contents?ref=${encodeURIComponent(BRANCH)}`);
+        const dirs = root.filter(i => i.type === 'dir' && !isHidden(i.name)).map(i => i.name);
+        await Promise.all(dirs.map(d => walk(d)));
+        return {dirs, paths};
+      }
+
+      function buildGroups({dirs, paths}) {
+        const unique = [...new Set(paths)];
+        return dirs
+          .slice()
+          .sort((a, b) => a.localeCompare(b, 'ar'))
+          .map(name => {
+            const pages = unique
+              .filter(p => p.startsWith(name + '/'))
+              .map(path => {
+                const parts = path.split('/');
+                const file = parts.pop();
+                const parent = parts.at(-1);
+                const title = /^index\.html?$/i.test(file) ? parent : file.replace(/\.html?$/i, '');
+                return {path, title, sub: path.slice(name.length + 1)};
+              })
+              .sort((a, b) => a.title.localeCompare(b.title, 'ar') || a.path.localeCompare(b.path, 'ar'));
+            return {name, pages};
+          });
+      }
+
       function render() {
-        const query = filter.value.trim().toLocaleLowerCase();
-        const visible = pages.filter(page => `${page.title} ${page.path}`.toLocaleLowerCase().includes(query));
-        count.textContent = `${visible.length} ${visible.length === 1 ? 'صفحة معاينة' : 'صفحة معاينة' + ' متاحة'}`;
+        const q = filter.value.trim().toLocaleLowerCase();
+        visible = groups.filter(g =>
+          !q || g.name.toLocaleLowerCase().includes(q) ||
+          g.pages.some(p => `${p.title} ${p.path}`.toLocaleLowerCase().includes(q))
+        );
+        const total = visible.reduce((s, g) => s + g.pages.length, 0);
+        count.textContent = `${visible.length} مجلدات · ${total} صفحة معاينة`;
+
         if (!visible.length) {
-          grid.innerHTML = `<div class="state"><strong>${query ? 'لا توجد نتائج مطابقة' : 'لم يتم العثور على صفحات معاينة'}</strong>${query ? 'جرّب كلمة بحث أخرى.' : 'أضف ملف index.html أو صفحة HTML إلى أحد مجلدات المستودع.'}</div>`;
+          grid.innerHTML = '<div class="state"><strong>لا توجد نتائج</strong>جرّب كلمة بحث أخرى.</div>';
           return;
         }
-        grid.innerHTML = visible.map((page, index) => `<article class="card"><div class="card-head"><span class="file-icon">${icon}</span><span class="number">${String(index + 1).padStart(2, '0')}</span></div><h3>${escapeHtml(page.title)}</h3><p>${escapeHtml(page.path)}</p><a class="open" href="${pathUrl(page.path)}" target="_blank" rel="noopener noreferrer" aria-label="معاينة ${escapeHtml(page.title)}">معاينة الصفحة ${arrowSvg}</a></article>`).join('');
+
+        grid.innerHTML = visible.map((g, i) => {
+          const n = g.pages.length;
+          const label = n === 0 ? 'لا توجد صفحات معاينة' : n === 1 ? 'صفحة معاينة واحدة' : `${n} صفحات معاينة`;
+          const action = n === 0
+            ? `<a class="gh-link" href="${GH_TREE}${encodePath(g.name)}" target="_blank" rel="noopener noreferrer">فتح المجلد في GitHub ↗</a>`
+            : `<button class="open" type="button" tabindex="-1">عرض الصفحات ${arrowSvg}</button>`;
+          return `
+            <article class="card${n === 0 ? ' empty' : ''}" data-index="${i}" ${n ? 'tabindex="0" role="button"' : ''} aria-label="${escapeHtml(g.name)} — ${label}">
+              <div class="card-head">
+                <span class="folder-icon">${folderSvg}</span>
+                <span class="number">${String(i + 1).padStart(2, '0')}</span>
+              </div>
+              <h3>${escapeHtml(g.name)}</h3>
+              <p>${label}</p>
+              ${action}
+            </article>`;
+        }).join('');
       }
-      async function getJson(url) {
-        const response = await fetch(url, {headers: {'Accept':'application/vnd.github+json'}});
-        if (!response.ok) throw new Error(`GitHub API: ${response.status}`);
-        return response.json();
+
+      function openGroup(g) {
+        const q = filter.value.trim().toLocaleLowerCase();
+        // لو في بحث والمجلد نفسه ما طابق، نعرض الصفحات المطابقة بس
+        const pages = (q && !g.name.toLocaleLowerCase().includes(q))
+          ? g.pages.filter(p => `${p.title} ${p.path}`.toLocaleLowerCase().includes(q))
+          : g.pages;
+        dlgTitle.textContent = g.name;
+        dlgSub.textContent = pages.length === 1 ? 'صفحة واحدة' : `${pages.length} صفحات`;
+        dlgList.innerHTML = pages.map(p => `
+          <li><a href="${pageUrl(p.path)}" target="_blank" rel="noopener noreferrer">
+            <span class="file-icon">${fileSvg}</span>
+            <span class="info"><span class="name">${escapeHtml(p.title)}</span><span class="path">${escapeHtml(p.sub)}</span></span>
+            <span class="go">${arrowSvg}</span>
+          </a></li>`).join('');
+        dlg.showModal();
       }
-      async function getAllHtmlPaths() {
-        const branch = await getJson(`${API}/branches/${encodeURIComponent(BRANCH)}`);
-        const tree = await getJson(`${API}/git/trees/${branch.commit.sha}?recursive=1`);
-        if (!tree.truncated) return tree.tree.filter(item => item.type === 'blob' && /\.html?$/i.test(item.path) && item.path.includes('/')).map(item => item.path);
-        // عند كبر المستودع وحدوث اقتطاع من Git Tree API، نبحث مجلدًا مجلدًا عبر Contents API.
-        const found = [];
-        async function walk(path = '') {
-          const url = path ? `${API}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(BRANCH)}` : `${API}/contents?ref=${encodeURIComponent(BRANCH)}`;
-          const items = await getJson(url);
-          await Promise.all(items.map(async item => {
-            if (item.type === 'dir') await walk(item.path);
-            else if (item.type === 'file' && /\.html?$/i.test(item.name) && item.path.includes('/')) found.push(item.path);
-          }));
+
+      grid.addEventListener('click', e => {
+        if (e.target.closest('a')) return;
+        const card = e.target.closest('.card');
+        if (!card || card.classList.contains('empty')) return;
+        openGroup(visible[Number(card.dataset.index)]);
+      });
+      grid.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest('.card');
+        if (!card || card.classList.contains('empty') || e.target.closest('a')) return;
+        e.preventDefault();
+        openGroup(visible[Number(card.dataset.index)]);
+      });
+      document.getElementById('dlg-close').addEventListener('click', () => dlg.close());
+      dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+      const CACHE_KEY = 'projects-cache-v1';
+      const readCache = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; } };
+      const writeCache = data => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({t: Date.now(), data})); } catch {} };
+
+      async function load() {
+        const cached = readCache();
+        if (cached && Date.now() - cached.t < 10 * 60 * 1000) {
+          groups = buildGroups(cached.data);
+          render();
+          return;
         }
-        await walk();
-        return found;
-      }
-      async function loadPages() {
         try {
-          const paths = await getAllHtmlPaths();
-          pages = [...new Set(paths)].map(path => {
-            const parts = path.split('/');
-            const filename = parts.pop();
-            const parent = parts.at(-1) || '';
-            const title = /^index\.html?$/i.test(filename) ? (parent || filename) : filename.replace(/\.html?$/i, '');
-            return {path, title};
-          }).sort((a,b) => a.title.localeCompare(b.title, 'ar') || a.path.localeCompare(b.path, 'ar'));
+          const data = await getRepoData();
+          writeCache(data);
+          groups = buildGroups(data);
           render();
         } catch (error) {
-          console.error('تعذّر تحميل صفحات المعاينة:', error);
-          count.textContent = 'تعذّر الاتصال بـ GitHub';
-          grid.innerHTML = '<div class="state"><strong>لم نتمكن من تحميل صفحات المشاريع</strong>تحقّق من اتصال الإنترنت أو أعد تحميل الصفحة بعد قليل.</div>';
+          console.error('تعذّر تحميل المشاريع:', error);
+          if (cached) { // نعرض آخر نسخة محفوظة بدل الفشل
+            groups = buildGroups(cached.data);
+            render();
+            count.textContent += ' · (نسخة محفوظة، تعذّر التحديث)';
+            return;
+          }
+          const s = error.status;
+          const hint = (s === 403 || s === 429) ? 'تجاوزت حدّ طلبات GitHub المسموح به مؤقتًا. انتظر قرابة ساعة ثم أعد المحاولة.'
+            : s === 404 ? 'لم يُعثر على المستودع أو الفرع. تأكد أن المستودع عام (Public).'
+            : 'تحقّق من اتصال الإنترنت أو أعد تحميل الصفحة بعد قليل.';
+          count.textContent = 'تعذّر الاتصال بـ GitHub' + (s ? ` (${s})` : '');
+          grid.innerHTML = `<div class="state"><strong>لم نتمكن من تحميل المشاريع</strong>${hint}</div>`;
         }
       }
+
       filter.addEventListener('input', render);
-      loadPages();
+      load();
     })();
- </script>
+  </script>
 </body>
 </html>
