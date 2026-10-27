@@ -1,0 +1,233 @@
+ <!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسمك | موقعي الشخصي</title>
+<meta name="description" content="موقعي الشخصي: من أنا، وماذا أعمل، وكيف تتواصل معي.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F5F3;        /* ورق أخضر فاتح */
+    --ink:#0E2F2E;       /* أخضر داكن للنص */
+    --teal:#0F4C4A;      /* اللون الأساسي */
+    --saffron:#E3A23B;   /* لون التمييز الوحيد */
+    --mute:#5B7170;
+    --line:#CBD6D3;
+    --display:"Reem Kufi","IBM Plex Sans Arabic",sans-serif;
+    --body:"IBM Plex Sans Arabic","Tahoma",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--body);font-size:18px;line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  :focus-visible{outline:3px solid var(--saffron);outline-offset:3px;border-radius:4px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+  /* الشريط العلوي */
+  header.top{position:sticky;top:0;z-index:5;background:rgba(242,245,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-family:var(--display);font-weight:700;font-size:22px;text-decoration:none;color:var(--teal)}
+  nav{display:flex;gap:24px}
+  nav a{text-decoration:none;font-size:16px;color:var(--mute);padding:4px 0;border-bottom:2px solid transparent}
+  nav a:hover{color:var(--teal);border-color:var(--saffron)}
+
+  /* الواجهة: الاسم بخط كوفي كبير فوق نقش هندسي */
+  .hero{position:relative;overflow:hidden;background:var(--teal);color:#EAF2F0}
+  .hero svg.pattern{position:absolute;inset:0;width:100%;height:100%;opacity:.16}
+  .hero .wrap{position:relative;padding-top:96px;padding-bottom:104px}
+  .hero h1{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(56px,13vw,148px);line-height:1.05;letter-spacing:0;
+    animation:rise .9s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .hero p.role{font-size:clamp(20px,3vw,28px);margin-top:20px;max-width:30ch;color:#CFE0DC}
+  .hero .cta{display:inline-block;margin-top:40px;background:var(--saffron);color:#2A1D05;font-weight:600;
+    padding:14px 28px;border-radius:999px;text-decoration:none;transition:transform .15s}
+  .hero .cta:hover{transform:translateY(-2px)}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  section{padding:88px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:0}
+  h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.3;color:var(--teal);margin-bottom:32px}
+
+  /* من أنا */
+  .about{display:grid;grid-template-columns:1fr 2fr;gap:48px;align-items:start}
+  .about p{max-width:62ch}
+  .about p + p{margin-top:16px}
+  .facts{list-style:none;border-top:2px solid var(--teal)}
+  .facts li{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+  .facts span:first-child{color:var(--mute)}
+  .facts span:last-child{font-weight:600}
+
+  /* ماذا أعمل */
+  .skills{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:2px solid var(--teal)}
+  .skills li{padding:24px 0 24px 24px;border-bottom:1px solid var(--line)}
+  .skills h3{font-family:var(--display);font-size:24px;color:var(--teal);margin-bottom:6px}
+  .skills p{font-size:16px;color:var(--mute);line-height:1.8}
+
+  /* مشاريعي */
+  .projects{list-style:none}
+  .projects li{border-bottom:1px solid var(--line)}
+  .projects a{display:grid;grid-template-columns:140px 1fr auto;gap:24px;align-items:baseline;padding:24px 0;text-decoration:none}
+  .projects .year{color:var(--mute);font-size:16px}
+  .projects h3{font-family:var(--display);font-size:26px;color:var(--teal)}
+  .projects p{font-size:16px;color:var(--mute)}
+  .projects .go{font-size:15px;color:var(--teal);border-bottom:2px solid var(--saffron)}
+  .projects a:hover h3{text-decoration:underline;text-decoration-color:var(--saffron);text-decoration-thickness:3px;text-underline-offset:6px}
+
+  /* تواصل */
+  .contact{background:var(--ink);color:#DCE8E5;border-bottom:0}
+  .contact h2{color:#fff}
+  .contact p{max-width:48ch;margin-bottom:28px}
+  .contact .mail{font-family:var(--display);font-size:clamp(22px,4.5vw,40px);color:var(--saffron);text-decoration:none;border-bottom:2px solid currentColor;word-break:break-all}
+  .links{display:flex;gap:24px;margin-top:36px;flex-wrap:wrap;font-size:16px}
+  .links a{color:#DCE8E5}
+  footer{background:var(--ink);color:#8FA9A5;font-size:14px;padding:24px 0 40px;border-top:1px solid #1D4543}
+
+  @media (max-width:760px){
+    nav{gap:16px}
+    nav a{font-size:15px}
+    .about{grid-template-columns:1fr;gap:32px}
+    .skills{grid-template-columns:1fr}
+    .skills li{padding-left:0}
+    .projects a{grid-template-columns:1fr;gap:4px}
+    .hero .wrap{padding-top:64px;padding-bottom:72px}
+    section{padding:64px 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .hero h1{animation:none}
+    .hero .cta{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top">اسمك</a>
+    <nav aria-label="التنقل الرئيسي">
+      <a href="#about">من أنا</a>
+      <a href="#work">أعمل</a>
+      <a href="#projects">مشاريعي</a>
+      <a href="#contact">تواصل</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <!-- نقش هندسي مستوحى من الخط الكوفي: مربعات متداخلة -->
+    <svg class="pattern" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <pattern id="kufi" width="64" height="64" patternUnits="userSpaceOnUse">
+          <path d="M0 0h32v32H0zM32 32h32v32H32z" fill="none" stroke="#fff" stroke-width="2"/>
+          <path d="M8 8h16v16H8zM40 40h16v16H40z" fill="none" stroke="#E3A23B" stroke-width="2"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#kufi)"/>
+    </svg>
+    <div class="wrap">
+      <h1>اسمك<br>الكامل</h1>
+      <p class="role">مطوّر ومصمم، أبني أدوات بسيطة تحل مشاكل حقيقية.</p>
+      <a class="cta" href="#projects">شاهد أعمالي</a>
+    </div>
+  </div>
+
+  <section id="about">
+    <div class="wrap about">
+      <ul class="facts" aria-label="معلومات سريعة">
+        <li><span>المجال</span><span>البرمجة والتصميم</span></li>
+        <li><span>الخبرة</span><span>٥ سنوات</span></li>
+        <li><span>اللغات</span><span>العربية، الإنجليزية</span></li>
+        <li><span>الحالة</span><span>متاح لمشاريع جديدة</span></li>
+      </ul>
+      <div>
+        <h2>من أنا</h2>
+        <p>أنا [اسمك]، أعمل في [مجالك]. بدأت رحلتي مع [ما الذي بدأ به اهتمامك]، واليوم أركز على بناء أشياء واضحة وسهلة الاستخدام.</p>
+        <p>اكتب هنا فقرة قصيرة عن نفسك: ما الذي تحب فعله، وما الذي يميز طريقتك في العمل، ولماذا قد يتواصل معك الناس.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <h2>ماذا أعمل</h2>
+      <ul class="skills">
+        <li>
+          <h3>تطوير المواقع</h3>
+          <p>صفحات وتطبيقات ويب سريعة تعمل على الجوال والحاسوب.</p>
+        </li>
+        <li>
+          <h3>تصميم الواجهات</h3>
+          <p>واجهات عربية واضحة، بخطوط مقروءة وترتيب يسهّل الاستخدام.</p>
+        </li>
+        <li>
+          <h3>أدوات مخصصة</h3>
+          <p>برامج صغيرة لحساب أو تنظيم أو أتمتة شغل يتكرر كل يوم.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="projects">
+    <div class="wrap">
+      <h2>مشاريعي</h2>
+      <ul class="projects">
+        <li>
+          <a href="#">
+            <span class="year">٢٠٢٦</span>
+            <span><h3>اسم المشروع الأول</h3><p>جملة واحدة تشرح ما يفعله المشروع ولمن هو.</p></span>
+            <span class="go">افتح المشروع</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <span class="year">٢٠٢٥</span>
+            <span><h3>اسم المشروع الثاني</h3><p>جملة واحدة تشرح ما يفعله المشروع ولمن هو.</p></span>
+            <span class="go">افتح المشروع</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <span class="year">٢٠٢٤</span>
+            <span><h3>اسم المشروع الثالث</h3><p>جملة واحدة تشرح ما يفعله المشروع ولمن هو.</p></span>
+            <span class="go">افتح المشروع</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="contact" class="contact">
+    <div class="wrap">
+      <h2>تواصل معي</h2>
+      <p>عندك فكرة أو مشروع؟ راسلني وسأرد عليك في أقرب وقت.</p>
+      <a class="mail" href="mailto:you@example.com">you@example.com</a>
+      <div class="links">
+        <a href="#">واتساب</a>
+        <a href="#">تويتر</a>
+        <a href="#">لينكدإن</a>
+        <a href="#">جيت هب</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© <span id="y">٢٠٢٦</span> اسمك. جميع الحقوق محفوظة.</div>
+</footer>
+
+<script>
+  // تحديث سنة الحقوق تلقائيًا
+  document.getElementById('y').textContent = new Date().getFullYear().toLocaleString('ar-EG',{useGrouping:false});
+</script>
+</body>
+</html>
