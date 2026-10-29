@@ -1,0 +1,9 @@
+{
+  "available": false,
+  "source": "Al Quran Cloud API",
+  "sourceUrl": "https://api.alquran.cloud/v1/quran/quran-uthmani",
+  "edition": "quran-uthmani",
+  "surahs": 114,
+  "ayahs": 6236,
+  "note": "No Quran text is bundled. The development environment could not reach the trusted source. The app supports a verified local dataset when this manifest is completed with available=true and a matching SHA-256 data file."
+}
