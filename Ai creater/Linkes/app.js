@@ -1,2140 +1,1269 @@
 /**
- * Link Hub - Advanced Hierarchical Link & Website Manager
- * Enhanced Version with Drag & Drop, Tags, Pinning, Sorting, Undo, and Context Menu
+ * Link Hub — مكتبة الروابط والمواقع المصنّفة
+ * تصنيف ← موقع ← روابط. جوال أولاً، مزامنة عبر Google Drive، وعمل بدون إنترنت (PWA).
+ *
+ * ملاحظات تقنية:
+ *  - كل العناصر لها u (وقت آخر تعديل) والحذف يُسجَّل في tombstones لتعمل المزامنة بالدمج (انظر sync.js).
+ *  - لا يوجد onclick داخل HTML: كل الأحداث عبر event delegation وdata-action (أأمن وأسهل صيانة).
+ *  - الترتيب بالسحب: اضغط مطوّلاً على البطاقة ثم اسحب.
  */
+(() => {
+    'use strict';
 
-const STORAGE_KEY = 'user_structured_links_v2';
-const THEME_KEY = 'user_theme_preference';
-const FAVICON_CACHE_KEY = 'cached_favicons_v2';
+    /* =====================================================================
+       ثوابت وحالة
+       ===================================================================== */
+    const STORE_KEY = 'link_hub_v3';
+    const OLD_KEY = 'user_structured_links_v2';
+    const THEME_KEY = 'user_theme_preference';
+    const UI_KEY = 'lh_ui_v1';
+    const SORTABLE_LOCAL = 'vendor/Sortable.min.js';
+    const SORTABLE_CDN = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js';
+    const DETAIL_SEARCH_MIN = 6;   // يظهر البحث داخل الموقع عندما تزيد الروابط عن هذا العدد
+    const UNDO_LIMIT = 20;
 
-// Initial sample data showing the 3-level structure with YouTube preview & tags
-const INITIAL_DATA = [
-    {
-        id: 'cat-media',
-        name: 'شروحات ومقاطع فيديو',
-        services: [
-            {
-                id: 'srv-youtube',
-                name: 'YouTube',
-                isPinned: true,
-                links: [
-                    {
-                        id: 'lnk-yt-1',
-                        title: 'كورس تعلم JavaScript للمبتدئين في ساعة واحدة',
-                        url: 'https://www.youtube.com/watch?v=W6NZfCO5SIk',
-                        notes: 'مرجع سريع للأساسيات ودوال اللغة الحديثة',
-                        tags: ['برمجة', 'شروحات', 'مهم'],
-                        isPinned: true,
-                        createdAt: Date.now() - 86400000 * 2,
-                        isYouTube: true,
-                        ytVideoId: 'W6NZfCO5SIk',
-                        ytThumbnail: 'https://img.youtube.com/vi/W6NZfCO5SIk/hqdefault.jpg'
-                    },
-                    {
-                        id: 'lnk-yt-2',
-                        title: 'طريقة بناء موقع كامل باستخدام HTML و CSS',
-                        url: 'https://www.youtube.com/watch?v=FazgJVnrVuY',
-                        notes: 'تطبيق عملي خطوة بخطوة',
-                        tags: ['تصميم', 'شروحات'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 4,
-                        isYouTube: true,
-                        ytVideoId: 'FazgJVnrVuY',
-                        ytThumbnail: 'https://img.youtube.com/vi/FazgJVnrVuY/hqdefault.jpg'
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'cat-ai',
-        name: 'أدوات الذكاء الاصطناعي',
-        services: [
-            {
-                id: 'srv-chatgpt',
-                name: 'ChatGPT',
-                isPinned: true,
-                links: [
-                    {
-                        id: 'lnk-1',
-                        title: 'المحادثة الرئيسية',
-                        url: 'https://chatgpt.com',
-                        notes: 'المساعد اليومي للبرمجة وكتابة النصوص',
-                        tags: ['ذكاء اصطناعي', 'مهم'],
-                        isPinned: true,
-                        createdAt: Date.now() - 86400000 * 3
-                    },
-                    {
-                        id: 'lnk-2',
-                        title: 'منصة المطورين (OpenAI API)',
-                        url: 'https://platform.openai.com',
-                        notes: 'مفاتيح الـ API والرصيد',
-                        tags: ['برمجة', 'API'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 5
-                    }
-                ]
-            },
-            {
-                id: 'srv-claude',
-                name: 'Claude AI',
-                isPinned: true,
-                links: [
-                    {
-                        id: 'lnk-3',
-                        title: 'منصة المحادثة',
-                        url: 'https://claude.ai',
-                        notes: 'للمشاريع الطويلة ومراجعة الكود',
-                        tags: ['ذكاء اصطناعي', 'برمجة'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 6
-                    }
-                ]
-            },
-            {
-                id: 'srv-gemini',
-                name: 'Google Gemini',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-gemini',
-                        title: 'مساعد جوجل الذكي',
-                        url: 'https://gemini.google.com',
-                        notes: 'محرك جوجل المتعدد الوسائط',
-                        tags: ['ذكاء اصطناعي'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 7
-                    }
-                ]
-            },
-            {
-                id: 'srv-v0',
-                name: 'v0.dev',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-v0',
-                        title: 'توليد واجهات المستخدم React',
-                        url: 'https://v0.dev',
-                        notes: 'إنشاء مكونات UI بالذكاء الاصطناعي',
-                        tags: ['برمجة', 'تصميم'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 8
-                    }
-                ]
-            },
-            {
-                id: 'srv-huggingface',
-                name: 'Hugging Face',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-hf',
-                        title: 'منصة النماذج مفتوحة المصدر',
-                        url: 'https://huggingface.co',
-                        notes: 'نماذج ومساحات تجارب مجانية',
-                        tags: ['ذكاء اصطناعي', 'نماذج'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 9
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'cat-google',
-        name: 'خدمات وتطبيقات Google',
-        services: [
-            {
-                id: 'srv-gdrive',
-                name: 'Google Drive',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-5',
-                        title: 'التخزين السحابي وملفاتي',
-                        url: 'https://drive.google.com',
-                        notes: 'المستندات، النماذج، والنسخ الاحتياطية',
-                        tags: ['سحابة', 'عمل'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 10
-                    }
-                ]
-            },
-            {
-                id: 'srv-fonts',
-                name: 'Google Fonts',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-7',
-                        title: 'مكتبة الخطوط العربية والإنجليزية',
-                        url: 'https://fonts.google.com',
-                        notes: 'تضمين الخطوط في مواقع الويب',
-                        tags: ['تصميم', 'خطوط'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 11
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'cat-random',
-        name: 'Random',
-        isRandom: true,
-        services: [
-            {
-                id: 'srv-rnd-wiki',
-                name: 'Wikipedia',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-rnd-1',
-                        title: 'الصفحة الرئيسية',
-                        url: 'https://ar.wikipedia.org',
-                        notes: 'الموسوعة الحرة المفتوحة',
-                        tags: ['معرفة', 'مراجع'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 12
-                    }
-                ]
-            },
-            {
-                id: 'srv-rnd-speed',
-                name: 'Speedtest',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-rnd-2',
-                        title: 'فحص سرعة الإنترنت',
-                        url: 'https://www.speedtest.net',
-                        notes: 'قياس سرعة الاتصال والـ Ping',
-                        tags: ['أدوات'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 13
-                    }
-                ]
-            },
-            {
-                id: 'srv-rnd-unsplash',
-                name: 'Unsplash',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-rnd-3',
-                        title: 'مكتبة الصور المجانية',
-                        url: 'https://unsplash.com',
-                        notes: 'خلفيات وصور بدقة عالية',
-                        tags: ['تصميم', 'صور'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 14
-                    }
-                ]
-            },
-            {
-                id: 'srv-rnd-canva',
-                name: 'Canva',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-rnd-4',
-                        title: 'منصة التصميم السريع',
-                        url: 'https://www.canva.com',
-                        notes: 'تصاميم بوسترات وعروض تقديمية',
-                        tags: ['تصميم'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 15
-                    }
-                ]
-            },
-            {
-                id: 'srv-rnd-time',
-                name: 'Time.is',
-                isPinned: false,
-                links: [
-                    {
-                        id: 'lnk-rnd-5',
-                        title: 'التوقيت الدقيق العالمي',
-                        url: 'https://time.is',
-                        notes: 'عرض الوقت بدقة في كل المدن',
-                        tags: ['أدوات'],
-                        isPinned: false,
-                        createdAt: Date.now() - 86400000 * 16
-                    }
-                ]
-            }
-        ]
-    }
-];
+    let db = { v: 3, catsU: 0, categories: [], tombstones: {} };
+    let ui = { collapsed: {}, lastCat: '' };
+    let view = { name: 'home', catId: null, srvId: null };
+    let searchQuery = '';
+    let detailQuery = '';
+    let homeScroll = 0;
+    let undoStack = [];
+    let sortables = [];
+    let dragging = false;
+    let pendingRemote = null;
+    let deferredInstall = null;
+    let panelKind = null;          // 'sync' عندما تكون لوحة المزامنة مفتوحة
+    let sheetItems = [];
+    let nameCtx = null;
+    let confirmResolve = null;
+    let toastTimer = null;
+    let toastAction = null;
+    let lastFocus = null;
 
-// App State
-let categoriesData = [];
-let activeCategoryFilter = 'all';
-let activeTagFilters = new Set();
-let searchQuery = '';
-let detailSearchQuery = '';
-let currentSort = 'default';
-let currentView = 'home'; // 'home' or 'service-detail'
-let activeDetailCatId = null;
-let activeDetailServiceId = null;
-let expandedCategories = new Set(); // IDs of categories expanded beyond 4 services
-let cachedFavicons = {}; // { [domain]: base64DataUrl }
-let undoStack = []; // Last 10 state snapshots
-let sortableInstances = []; // Active SortableJS instances
-let contextMenuData = null; // Target data for custom context menu
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const el = {};
 
-// DOM Elements - Navigation & Views
-const homeView = document.getElementById('homeView');
-const serviceDetailView = document.getElementById('serviceDetailView');
-const brandHomeBtn = document.getElementById('brandHomeBtn');
-const backToHomeBtn = document.getElementById('backToHomeBtn');
+    /* =====================================================================
+       أدوات
+       ===================================================================== */
+    const now = () => Date.now();
+    const num = x => (typeof x === 'number' && isFinite(x) ? x : 0);
+    const str = x => (typeof x === 'string' ? x : '');
+    const arr = x => (Array.isArray(x) ? x : []);
+    const uid = p => `${p}-${now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const touch = o => { o.u = now(); return o; };
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 
-// DOM Elements - Home View
-const categoriesGrid = document.getElementById('categoriesGrid');
-const emptyState = document.getElementById('emptyState');
-const totalCategoriesCount = document.getElementById('totalCategoriesCount');
-const totalServicesCount = document.getElementById('totalServicesCount');
-const totalLinksCount = document.getElementById('totalLinksCount');
-const lastAddedStat = document.getElementById('lastAddedStat');
-const categoryFilters = document.getElementById('categoryFilters');
-const categorySuggestions = document.getElementById('categorySuggestions');
-const serviceSuggestions = document.getElementById('serviceSuggestions');
-const searchInput = document.getElementById('searchInput');
-const clearSearchBtn = document.getElementById('clearSearchBtn');
-const sortSelect = document.getElementById('sortSelect');
-const tagFilterRow = document.getElementById('tagFilterRow');
-const activeTagChips = document.getElementById('activeTagChips');
-const clearTagsFilterBtn = document.getElementById('clearTagsFilterBtn');
+    const store = {
+        get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+        set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+    };
 
-// DOM Elements - Detail View
-const detailCatName = document.getElementById('detailCatName');
-const detailServiceName = document.getElementById('detailServiceName');
-const serviceHeroTitle = document.getElementById('serviceHeroTitle');
-const serviceHeroIconWrapper = document.getElementById('serviceHeroIconWrapper');
-const serviceHeroCatBadge = document.getElementById('serviceHeroCatBadge');
-const serviceHeroLinksCount = document.getElementById('serviceHeroLinksCount');
-const detailLinksList = document.getElementById('detailLinksList');
-const detailEmptyState = document.getElementById('detailEmptyState');
-const detailSearchInput = document.getElementById('detailSearchInput');
-const addLinkToCurrentServiceBtn = document.getElementById('addLinkToCurrentServiceBtn');
-const deleteCurrentServiceBtn = document.getElementById('deleteCurrentServiceBtn');
-const openAllLinksBtn = document.getElementById('openAllLinksBtn');
-const moveCurrentServiceBtn = document.getElementById('moveCurrentServiceBtn');
+    function nLinks(n) { return n === 0 ? 'بدون روابط' : n === 1 ? 'رابط واحد' : n === 2 ? 'رابطان' : n <= 10 ? `${n} روابط` : `${n} رابطاً`; }
+    function nSites(n) { return n === 0 ? 'بدون مواقع' : n === 1 ? 'موقع واحد' : n === 2 ? 'موقعان' : n <= 10 ? `${n} مواقع` : `${n} موقعاً`; }
+    function nCats(n) { return n === 1 ? 'تصنيف واحد' : n === 2 ? 'تصنيفان' : n <= 10 ? `${n} تصنيفات` : `${n} تصنيفاً`; }
 
-// DOM Elements - Move Service Modal
-const moveServiceModal = document.getElementById('moveServiceModal');
-const moveServiceForm = document.getElementById('moveServiceForm');
-const moveServiceSelect = document.getElementById('moveServiceSelect');
-const closeMoveServiceModalBtn = document.getElementById('closeMoveServiceModalBtn');
-const cancelMoveServiceModalBtn = document.getElementById('cancelMoveServiceModalBtn');
-
-// DOM Elements - Modals
-const linkModal = document.getElementById('linkModal');
-const linkForm = document.getElementById('linkForm');
-const modalTitle = document.getElementById('modalTitle');
-const editCatId = document.getElementById('editCatId');
-const editServiceId = document.getElementById('editServiceId');
-const editLinkId = document.getElementById('editLinkId');
-const categoryInput = document.getElementById('categoryInput');
-const serviceInput = document.getElementById('serviceInput');
-const linkTitleInput = document.getElementById('linkTitleInput');
-const linkUrlInput = document.getElementById('linkUrlInput');
-const linkTagsInput = document.getElementById('linkTagsInput');
-const linkNotesInput = document.getElementById('linkNotesInput');
-const youtubeDetectedHint = document.getElementById('youtubeDetectedHint');
-const duplicateWarningHint = document.getElementById('duplicateWarningHint');
-const duplicateWarningText = document.getElementById('duplicateWarningText');
-const openAddModalBtn = document.getElementById('openAddModalBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const cancelModalBtn = document.getElementById('cancelModalBtn');
-
-// Category Add & Edit Modals
-const categoryModal = document.getElementById('categoryModal');
-const categoryForm = document.getElementById('categoryForm');
-const newCategoryName = document.getElementById('newCategoryName');
-const openAddCategoryModalBtn = document.getElementById('openAddCategoryModalBtn');
-const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
-const cancelCategoryModalBtn = document.getElementById('cancelCategoryModalBtn');
-
-const editCategoryModal = document.getElementById('editCategoryModal');
-const editCategoryForm = document.getElementById('editCategoryForm');
-const editCategoryTargetId = document.getElementById('editCategoryTargetId');
-const editCategoryNewName = document.getElementById('editCategoryNewName');
-const closeEditCategoryModalBtn = document.getElementById('closeEditCategoryModalBtn');
-const cancelEditCategoryModalBtn = document.getElementById('cancelEditCategoryModalBtn');
-
-// Custom Confirm Modal
-const confirmModal = document.getElementById('confirmModal');
-const confirmTitle = document.getElementById('confirmTitle');
-const confirmMessage = document.getElementById('confirmMessage');
-const confirmOkBtn = document.getElementById('confirmOkBtn');
-const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-
-// Custom Context Menu
-const contextMenu = document.getElementById('contextMenu');
-const ctxOpen = document.getElementById('ctxOpen');
-const ctxCopy = document.getElementById('ctxCopy');
-const ctxPin = document.getElementById('ctxPin');
-const ctxPinText = document.getElementById('ctxPinText');
-const ctxEdit = document.getElementById('ctxEdit');
-const ctxDelete = document.getElementById('ctxDelete');
-
-// Theme, Undo & Backup
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const undoBtn = document.getElementById('undoBtn');
-const exportBtn = document.getElementById('exportBtn');
-const importInput = document.getElementById('importInput');
-const toast = document.getElementById('toast');
-const toastIcon = document.getElementById('toastIcon');
-const toastMessage = document.getElementById('toastMessage');
-
-// ==========================================
-// Initialization
-// ==========================================
-function init() {
-    loadTheme();
-    loadCachedFavicons();
-    loadData();
-    bindEvents();
-    render();
-}
-
-function loadData() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    /* ----- الروابط ----- */
+    function normalizeUrl(raw) {
+        let u = str(raw).trim();
+        if (!u) return '';
+        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
         try {
-            categoriesData = JSON.parse(saved);
-        } catch (e) {
-            console.error('Error parsing data:', e);
-            categoriesData = INITIAL_DATA;
-        }
-    } else {
-        categoriesData = INITIAL_DATA;
-        saveToStorage();
+            const x = new URL(u);
+            if (x.protocol !== 'http:' && x.protocol !== 'https:') return '';
+            if (!x.hostname || !x.hostname.includes('.') && x.hostname !== 'localhost') return '';
+            return u;
+        } catch (e) { return ''; }
     }
 
-    // Ensure Random category exists for quick direct links
-    if (!categoriesData.some(c => isRandomCategory(c))) {
-        const randomInitial = INITIAL_DATA.find(c => isRandomCategory(c));
-        if (randomInitial) {
-            categoriesData.push(randomInitial);
-            saveToStorage();
-        }
-    }
-}
-
-function saveToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(categoriesData));
-}
-
-// ==========================================
-// Undo Functionality (Stack of 10 states)
-// ==========================================
-function saveUndoState() {
-    try {
-        const snapshot = JSON.stringify(categoriesData);
-        undoStack.push(snapshot);
-        if (undoStack.length > 10) {
-            undoStack.shift();
-        }
-        updateUndoButton();
-    } catch (e) {
-        console.warn('Could not save undo state:', e);
-    }
-}
-
-function undo() {
-    if (undoStack.length === 0) return;
-    const previousSnapshot = undoStack.pop();
-    try {
-        categoriesData = JSON.parse(previousSnapshot);
-        saveToStorage();
-        render();
-        updateUndoButton();
-        showToast('تم التراجع عن آخر إجراء بنجاح ↩️', 'info');
-    } catch (e) {
-        console.error('Error reverting state:', e);
-    }
-}
-
-function updateUndoButton() {
-    if (undoBtn) {
-        undoBtn.disabled = undoStack.length === 0;
-    }
-}
-
-// ==========================================
-// Favicon Local Caching
-// ==========================================
-function loadCachedFavicons() {
-    try {
-        const cached = localStorage.getItem(FAVICON_CACHE_KEY);
-        if (cached) {
-            cachedFavicons = JSON.parse(cached);
-        }
-    } catch (e) {
-        cachedFavicons = {};
-    }
-}
-
-function saveCachedFavicons() {
-    try {
-        localStorage.setItem(FAVICON_CACHE_KEY, JSON.stringify(cachedFavicons));
-    } catch (e) {
-        console.warn('Storage quota reached for icons cache');
-    }
-}
-
-function cacheImageLocally(domain, imgElement) {
-    if (!domain || cachedFavicons[domain]) return;
-    try {
-        const canvas = document.createElement('canvas');
-        canvas.width = imgElement.naturalWidth || 32;
-        canvas.height = imgElement.naturalHeight || 32;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(imgElement, 0, 0);
-        const dataUrl = canvas.toDataURL('image/png');
-        if (dataUrl && dataUrl.length > 60) {
-            cachedFavicons[domain] = dataUrl;
-            saveCachedFavicons();
-        }
-    } catch (err) {
-        // Cross-origin canvas restriction if any
-    }
-}
-
-function getDomain(urlString) {
-    try {
-        let formattedUrl = (urlString || '').trim();
-        if (!/^https?:\/\//i.test(formattedUrl)) {
-            formattedUrl = 'https://' + formattedUrl;
-        }
-        return new URL(formattedUrl).hostname;
-    } catch {
-        return '';
-    }
-}
-
-function getFavicon(url) {
-    const domain = getDomain(url);
-    if (!domain) return '';
-
-    if (cachedFavicons[domain]) {
-        return { src: cachedFavicons[domain], isCached: true, domain };
+    function hostOf(url) {
+        try { return new URL(url).hostname.replace(/^www\./i, ''); } catch (e) { return ''; }
     }
 
-    return {
-        src: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-        isCached: false,
-        domain
-    };
-}
-
-// ==========================================
-// YouTube Helper (ID, Thumbnail, Title)
-// ==========================================
-function getYouTubeVideoId(url) {
-    if (!url) return null;
-    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i;
-    const match = url.match(regExp);
-    return match ? match[1] : null;
-}
-
-async function fetchYouTubeTitle(url) {
-    try {
-        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-        if (res.ok) {
-            const data = await res.json();
-            return data.title || null;
-        }
-    } catch (e) {
-        // network or CORS fallback
-    }
-    return null;
-}
-
-// ==========================================
-// Duplicate URL Detection
-// ==========================================
-function checkDuplicateUrl(url, currentLinkId) {
-    if (!url || url.length < 5) return null;
-    const cleanUrl = url.trim().toLowerCase().replace(/\/+$/, '');
-    for (const cat of categoriesData) {
-        for (const srv of (cat.services || [])) {
-            for (const lnk of (srv.links || [])) {
-                if (currentLinkId && lnk.id === currentLinkId) continue;
-                const existingUrl = (lnk.url || '').trim().toLowerCase().replace(/\/+$/, '');
-                if (existingUrl === cleanUrl) {
-                    return { catName: cat.name, srvName: srv.name, title: lnk.title };
-                }
-            }
-        }
-    }
-    return null;
-}
-
-// ==========================================
-// Custom Confirmation Dialog (Promise-based)
-// ==========================================
-let confirmResolver = null;
-
-function showConfirmDialog(titleText, messageText) {
-    confirmTitle.textContent = titleText;
-    confirmMessage.textContent = messageText;
-    confirmModal.classList.add('active');
-
-    return new Promise((resolve) => {
-        confirmResolver = resolve;
-    });
-}
-
-function closeConfirmModal(result) {
-    confirmModal.classList.remove('active');
-    if (confirmResolver) {
-        confirmResolver(result);
-        confirmResolver = null;
-    }
-}
-
-// Theme Handling
-function loadTheme() {
-    const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-}
-
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem(THEME_KEY, newTheme);
-    updateThemeIcon(newTheme);
-}
-
-function updateThemeIcon(theme) {
-    const icon = themeToggleBtn.querySelector('i');
-    if (theme === 'light') {
-        icon.className = 'fa-solid fa-sun';
-        icon.style.color = '#f59e0b';
-    } else {
-        icon.className = 'fa-solid fa-moon';
-        icon.style.color = '';
-    }
-}
-
-// ==========================================
-// Toast Notification with Type Styles
-// ==========================================
-let toastTimeout;
-function showToast(msg, type = 'success') {
-    toastMessage.textContent = msg;
-
-    // Reset types
-    toast.classList.remove('toast-success', 'toast-error', 'toast-warning', 'toast-info');
-    toast.classList.add(`toast-${type}`);
-
-    // Update icon based on type
-    if (type === 'error') {
-        toastIcon.className = 'fa-solid fa-circle-xmark';
-    } else if (type === 'warning') {
-        toastIcon.className = 'fa-solid fa-triangle-exclamation';
-    } else if (type === 'info') {
-        toastIcon.className = 'fa-solid fa-circle-info';
-    } else {
-        toastIcon.className = 'fa-solid fa-circle-check';
+    function dupKey(url) {
+        return str(url).trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, '');
     }
 
-    toast.classList.add('show');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-    }, 2800);
-}
-
-// ==========================================
-// Navigation & View Routing
-// ==========================================
-function navigateToHome() {
-    currentView = 'home';
-    activeDetailCatId = null;
-    activeDetailServiceId = null;
-    serviceDetailView.style.display = 'none';
-    homeView.style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    render();
-}
-
-window.navigateToService = function(catId, serviceId) {
-    activeDetailCatId = catId;
-    activeDetailServiceId = serviceId;
-    currentView = 'service-detail';
-    detailSearchQuery = '';
-    detailSearchInput.value = '';
-
-    homeView.style.display = 'none';
-    serviceDetailView.style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    renderDetailView();
-};
-
-// ==========================================
-// Render Logic
-// ==========================================
-function render() {
-    if (currentView === 'service-detail') {
-        renderDetailView();
-        return;
+    function getYouTubeVideoId(url) {
+        const m = str(url).match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?/\s]{11})/i);
+        return m ? m[1] : null;
     }
 
-    // 1. Calculate stats & latest added timestamp
-    let totalServices = 0;
-    let totalLinks = 0;
-    let latestTimestamp = 0;
-
-    categoriesData.forEach(cat => {
-        totalServices += (cat.services || []).length;
-        (cat.services || []).forEach(srv => {
-            totalLinks += (srv.links || []).length;
-            (srv.links || []).forEach(lnk => {
-                if (lnk.createdAt && lnk.createdAt > latestTimestamp) {
-                    latestTimestamp = lnk.createdAt;
-                }
-            });
-        });
-    });
-
-    totalCategoriesCount.textContent = categoriesData.length;
-    totalServicesCount.textContent = totalServices;
-    totalLinksCount.textContent = totalLinks;
-
-    if (latestTimestamp > 0) {
-        const d = new Date(latestTimestamp);
-        lastAddedStat.textContent = d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
-    } else {
-        lastAddedStat.textContent = 'لا يوجد';
+    function prettySiteName(url) {
+        const h = hostOf(url);
+        if (!h) return '';
+        const parts = h.split('.');
+        const base = parts.length > 2 && parts[parts.length - 2].length <= 3 ? parts[parts.length - 3] : parts[parts.length - 2] || parts[0];
+        return base.charAt(0).toUpperCase() + base.slice(1);
     }
 
-    updateSuggestions();
-    renderCategoryFilterChips();
-    renderTagFilters();
-
-    // 2. Filter & Sort categories & websites
-    const filteredCategories = filterCategoriesData();
-
-    if (filteredCategories.length === 0) {
-        categoriesGrid.innerHTML = '';
-        emptyState.style.display = 'block';
-    } else {
-        emptyState.style.display = 'none';
-        categoriesGrid.innerHTML = filteredCategories.map(cat => createCategoryCardHtml(cat)).join('');
+    function favHtml(url) {
+        const h = hostOf(url);
+        if (!h) return `<span class="fav fav-fallback">${ic('globe')}</span>`;
+        return `<span class="fav"><img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64" alt="" width="24" height="24" loading="lazy" decoding="async" draggable="false"></span>`;
     }
 
-    // 3. Initialize Drag & Drop via SortableJS
-    initSortable();
-}
+    const isRandomCat = c => !!c && (c.isRandom === true || /^(random|عشوائي)$/i.test(str(c.name).trim()));
 
-function updateSuggestions() {
-    const catNames = categoriesData.map(c => c.name);
-    categorySuggestions.innerHTML = catNames.map(c => `<option value="${escapeHtml(c)}">`).join('');
+    /* =====================================================================
+       البيانات: تحميل وتنقية وحفظ
+       ===================================================================== */
+    // fill: قيمة تُستخدم للعناصر التي ليس لها u (0 للبيانات القادمة من المزامنة، now للبيانات القديمة)
+    function sanitizeDb(d, fill) {
+        const out = { v: 3, catsU: num(d && d.catsU), categories: [], tombstones: {} };
+        const seen = new Set();
+        const okId = id => { id = str(id).replace(/[^\w-]/g, ''); return id; };
+        const take = (id, prefix) => { id = okId(id) || uid(prefix); if (seen.has(id)) return null; seen.add(id); return id; };
+        const stamp = (o, extra) => num(o && o.u) || (fill ? (extra || fill) : 0);
 
-    const srvSet = new Set();
-    categoriesData.forEach(c => {
-        (c.services || []).forEach(s => srvSet.add(s.name));
-    });
-    serviceSuggestions.innerHTML = Array.from(srvSet).map(s => `<option value="${escapeHtml(s)}">`).join('');
-}
-
-function renderCategoryFilterChips() {
-    let html = `
-        <button class="filter-chip ${activeCategoryFilter === 'all' ? 'active' : ''}" data-cat="all">
-            الكل (${categoriesData.length})
-        </button>
-    `;
-
-    categoriesData.forEach(cat => {
-        const linkCount = (cat.services || []).reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-        const isActive = activeCategoryFilter === cat.id ? 'active' : '';
-        html += `
-            <button class="filter-chip ${isActive}" data-cat="${cat.id}">
-                ${escapeHtml(cat.name)} (${linkCount})
-            </button>
-        `;
-    });
-
-    categoryFilters.innerHTML = html;
-
-    categoryFilters.querySelectorAll('.filter-chip').forEach(btn => {
-        btn.addEventListener('click', () => {
-            activeCategoryFilter = btn.getAttribute('data-cat');
-            render();
-        });
-    });
-}
-
-function renderTagFilters() {
-    // Collect all tags and their counts
-    const tagCounts = {};
-    categoriesData.forEach(cat => {
-        (cat.services || []).forEach(srv => {
-            (srv.links || []).forEach(lnk => {
-                (lnk.tags || []).forEach(tag => {
-                    const t = tag.trim();
-                    if (t) tagCounts[t] = (tagCounts[t] || 0) + 1;
+        const cats = Array.isArray(d) ? d : arr(d && d.categories);
+        cats.forEach(c => {
+            if (!c || typeof c !== 'object') return;
+            const cid = take(c.id, 'cat'); if (!cid) return;
+            const cat = { id: cid, name: str(c.name).trim() || 'بدون اسم', u: stamp(c), sU: num(c.sU), services: [] };
+            if (c.isRandom === true) cat.isRandom = true;
+            arr(c.services).forEach(s => {
+                if (!s || typeof s !== 'object') return;
+                const sid = take(s.id, 'srv'); if (!sid) return;
+                const srv = { id: sid, name: str(s.name).trim() || 'بدون اسم', isPinned: !!s.isPinned, u: stamp(s), lU: num(s.lU), links: [] };
+                arr(s.links).forEach(l => {
+                    if (!l || typeof l !== 'object') return;
+                    const url = normalizeUrl(l.url); if (!url) return;
+                    const lid = take(l.id, 'lnk'); if (!lid) return;
+                    srv.links.push({
+                        id: lid,
+                        title: str(l.title).trim() || hostOf(url) || url,
+                        url,
+                        notes: str(l.notes),
+                        tags: arr(l.tags).map(t => str(t).trim()).filter(Boolean),
+                        isPinned: !!l.isPinned,
+                        createdAt: num(l.createdAt) || fill || 0,
+                        u: stamp(l, num(l.createdAt) || fill)
+                    });
                 });
+                cat.services.push(srv);
+            });
+            out.categories.push(cat);
+        });
+
+        const t = d && !Array.isArray(d) && d.tombstones && typeof d.tombstones === 'object' ? d.tombstones : {};
+        Object.keys(t).forEach(k => { if (num(t[k])) out.tombstones[k] = t[k]; });
+        return out;
+    }
+
+    function loadDb() {
+        let parsed = null;
+        const raw = store.get(STORE_KEY);
+        if (raw) { try { parsed = sanitizeDb(JSON.parse(raw), 0); } catch (e) { parsed = null; } }
+        if (!parsed) {
+            const old = store.get(OLD_KEY);   // ترحيل من النسخة القديمة
+            if (old) { try { parsed = sanitizeDb(JSON.parse(old), now()); } catch (e) { parsed = null; } }
+        }
+        db = parsed || sanitizeDb({}, 0);
+        saveLocal();
+    }
+
+    function saveLocal() {
+        if (!store.set(STORE_KEY, JSON.stringify(db))) toast('تعذّر الحفظ: مساحة التخزين ممتلئة', { type: 'err' });
+    }
+
+    // بعد كل تعديل: حفظ محلي + جدولة مزامنة
+    function commit() {
+        saveLocal();
+        LinkSync.schedule();
+    }
+
+    function loadUi() {
+        try { const u = JSON.parse(store.get(UI_KEY) || 'null'); if (u && typeof u === 'object') ui = Object.assign(ui, u); } catch (e) { /* ignore */ }
+        if (!ui.collapsed || typeof ui.collapsed !== 'object') ui.collapsed = {};
+    }
+    const saveUi = () => store.set(UI_KEY, JSON.stringify(ui));
+
+    const findCat = id => db.categories.find(c => c.id === id);
+    const findSrv = (cid, sid) => { const c = findCat(cid); return c ? c.services.find(s => s.id === sid) : undefined; };
+    function findLinkLoc(lid) {
+        for (const c of db.categories) for (const s of c.services) {
+            const l = s.links.find(x => x.id === lid);
+            if (l) return { c, s, l };
+        }
+        return null;
+    }
+
+    /* =====================================================================
+       التراجع (Undo) — يعمل مع المزامنة
+       ===================================================================== */
+    function flat(d) {
+        const m = new Map();
+        d.categories.forEach(c => {
+            m.set(c.id, { obj: c, sig: JSON.stringify([c.name, !!c.isRandom]) });
+            c.services.forEach(s => {
+                m.set(s.id, { obj: s, sig: JSON.stringify([s.name, s.isPinned, c.id]) });
+                s.links.forEach(l => m.set(l.id, { obj: l, sig: JSON.stringify([l.title, l.url, l.notes, l.tags, l.isPinned, s.id]) }));
             });
         });
-    });
-
-    const uniqueTags = Object.keys(tagCounts);
-    if (uniqueTags.length === 0) {
-        tagFilterRow.style.display = 'none';
-        return;
+        return m;
     }
 
-    tagFilterRow.style.display = 'flex';
-    let chipsHtml = '';
-
-    uniqueTags.forEach(tag => {
-        const isSelected = activeTagFilters.has(tag);
-        chipsHtml += `
-            <span class="tag-badge ${isSelected ? 'active-filter' : ''}" onclick="toggleTagFilter('${escapeHtml(tag)}')">
-                <i class="fa-solid fa-tag"></i> ${escapeHtml(tag)} (${tagCounts[tag]})
-            </span>
-        `;
-    });
-
-    activeTagChips.innerHTML = chipsHtml;
-    clearTagsFilterBtn.style.display = activeTagFilters.size > 0 ? 'inline-flex' : 'none';
-}
-
-window.toggleTagFilter = function(tag) {
-    if (activeTagFilters.has(tag)) {
-        activeTagFilters.delete(tag);
-    } else {
-        activeTagFilters.add(tag);
+    function pushUndo() {
+        undoStack.push(JSON.stringify(db));
+        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
     }
-    render();
-};
 
-window.filterByTag = function(tag) {
-    activeTagFilters.clear();
-    activeTagFilters.add(tag);
-    if (currentView !== 'home') {
-        navigateToHome();
-    } else {
+    function undo() {
+        if (!undoStack.length) return;
+        const prev = sanitizeDb(JSON.parse(undoStack.pop()), 0);
+        // نجعل ما تغيّر "أحدث" من أي نسخة سحابية حتى لا يلغي الدمج التراجع
+        const A = flat(db), B = flat(prev), t = now();
+        B.forEach((e, id) => { if (!A.has(id) || A.get(id).sig !== e.sig) e.obj.u = t; delete prev.tombstones[id]; });
+        A.forEach((e, id) => { if (!B.has(id)) prev.tombstones[id] = t; });
+        prev.catsU = t;
+        prev.categories.forEach(c => { c.sU = t; c.services.forEach(s => { s.lU = t; }); });
+        db = prev;
+        commit();
+        if (view.name === 'detail' && !findSrv(view.catId, view.srvId)) { goHome(false); return; }
         render();
+        toast('تم التراجع', { type: 'info' });
     }
-};
 
-function filterCategoriesData() {
-    const q = searchQuery.toLowerCase().trim();
+    /* =====================================================================
+       الإشعارات
+       ===================================================================== */
+    function toast(msg, { type = 'ok', action = null } = {}) {
+        el.toastMsg.textContent = msg;
+        el.toast.dataset.type = type;
+        el.toastIc.innerHTML = ic(type === 'err' ? 'alert' : type === 'info' ? 'info' : 'check');
+        toastAction = action ? action.fn : null;
+        el.toastAct.hidden = !action;
+        if (action) el.toastAct.textContent = action.label;
+        el.toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.toast.classList.remove('show'), action ? 5500 : 2600);
+    }
 
-    let result = categoriesData
-        .filter(cat => activeCategoryFilter === 'all' || cat.id === activeCategoryFilter)
-        .map(cat => {
-            let matchingServices = (cat.services || []).filter(srv => {
-                const srvMatchesName = srv.name.toLowerCase().includes(q);
-                const matchingLinks = (srv.links || []).filter(lnk => {
-                    // Tag filtering check
-                    if (activeTagFilters.size > 0) {
-                        const lnkTags = lnk.tags || [];
-                        const matchesAllTags = Array.from(activeTagFilters).every(tf => lnkTags.includes(tf));
-                        if (!matchesAllTags) return false;
-                    }
+    /* =====================================================================
+       الطبقات: sheet / modal
+       ===================================================================== */
+    function showLayer(layer) {
+        lastFocus = document.activeElement;
+        layer.classList.add('open');
+        layer.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('no-scroll');
+    }
 
-                    if (!q) return true;
+    function hideLayer(layer) {
+        layer.classList.remove('open');
+        layer.setAttribute('aria-hidden', 'true');
+        if (!$('.backdrop.open')) document.body.classList.remove('no-scroll');
+        if (lastFocus && lastFocus.focus && document.contains(lastFocus)) { try { lastFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+    }
 
-                    const titleMatch = (lnk.title || '').toLowerCase().includes(q);
-                    const urlMatch = (lnk.url || '').toLowerCase().includes(q);
-                    const notesMatch = (lnk.notes || '').toLowerCase().includes(q);
-                    const tagsMatch = (lnk.tags || []).some(t => t.toLowerCase().includes(q));
+    function closeAllLayers() {
+        $$('.backdrop.open').forEach(l => {
+            if (l === el.confirmModal) closeConfirm(false);
+            else l.classList.remove('open'), l.setAttribute('aria-hidden', 'true');
+        });
+        document.body.classList.remove('no-scroll');
+        panelKind = null;
+    }
 
-                    return titleMatch || urlMatch || notesMatch || tagsMatch;
-                });
+    function openSheet(title, items, footer) {
+        panelKind = null;
+        sheetItems = items;
+        el.sheetTitle.textContent = title || '';
+        el.sheetBody.innerHTML = items.map((it, i) => {
+            if (it.sep) return '<div class="sheet-sep"></div>';
+            return `<button type="button" class="sheet-item ${it.danger ? 'danger' : ''}" data-sheet="${i}" ${it.disabled ? 'disabled' : ''}>${ic(it.icon)}<span>${esc(it.label)}</span>${it.hint ? `<small>${esc(it.hint)}</small>` : ''}</button>`;
+        }).join('') + (footer ? `<div class="sheet-foot">${footer}</div>` : '');
+        showLayer(el.sheet);
+    }
 
-                if (activeTagFilters.size > 0) {
-                    return matchingLinks.length > 0;
-                }
+    function openPanel(title, html, kind) {
+        panelKind = kind || null;
+        sheetItems = [];
+        el.sheetTitle.textContent = title || '';
+        el.sheetBody.innerHTML = `<div class="panel">${html}</div>`;
+        showLayer(el.sheet);
+    }
 
-                if (!q) return true;
-                return srvMatchesName || matchingLinks.length > 0;
+    function confirmDialog(title, message, okLabel) {
+        el.confirmTitle.textContent = title;
+        el.confirmMsg.textContent = message;
+        el.confirmOk.textContent = okLabel || 'تأكيد';
+        showLayer(el.confirmModal);
+        return new Promise(res => { confirmResolve = res; });
+    }
+
+    function closeConfirm(result) {
+        hideLayer(el.confirmModal);
+        if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(result); }
+    }
+
+    /* =====================================================================
+       الرسم
+       ===================================================================== */
+    function render() {
+        if (view.name === 'detail') {
+            if (!renderDetail()) { goHome(false); return; }
+        } else {
+            renderHome();
+        }
+        el.homeView.hidden = view.name !== 'home';
+        el.detailView.hidden = view.name !== 'detail';
+    }
+
+    function linkMatches(l, q) {
+        return str(l.title).toLowerCase().includes(q) || str(l.url).toLowerCase().includes(q) ||
+            str(l.notes).toLowerCase().includes(q) || arr(l.tags).some(t => t.toLowerCase().includes(q));
+    }
+
+    function filterCats(q) {
+        if (!q) return db.categories.map(c => ({ cat: c, items: c.services.map(s => ({ srv: s, hit: null })) }));
+        const out = [];
+        db.categories.forEach(c => {
+            const catHit = c.name.toLowerCase().includes(q);
+            const items = [];
+            c.services.forEach(s => {
+                const nameHit = s.name.toLowerCase().includes(q);
+                const lhit = s.links.find(l => linkMatches(l, q));
+                if (catHit || nameHit || lhit) items.push({ srv: s, hit: (!nameHit && !catHit && lhit) ? lhit : null });
             });
-
-            if (matchingServices.length > 0) {
-                return {
-                    ...cat,
-                    services: matchingServices
-                };
-            }
-            return null;
-        })
-        .filter(Boolean);
-
-    // Apply Sorting
-    result = applySorting(result);
-
-    return result;
-}
-
-function applySorting(cats) {
-    if (currentSort === 'default') return cats;
-
-    const sortedCats = [...cats];
-
-    if (currentSort === 'name-asc') {
-        sortedCats.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
-        sortedCats.forEach(c => {
-            c.services = [...c.services].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+            if (items.length || catHit) out.push({ cat: c, items });
         });
-    } else if (currentSort === 'name-desc') {
-        sortedCats.sort((a, b) => b.name.localeCompare(a.name, 'ar'));
-        sortedCats.forEach(c => {
-            c.services = [...c.services].sort((a, b) => b.name.localeCompare(a.name, 'ar'));
-        });
-    } else if (currentSort === 'links-desc') {
-        sortedCats.sort((a, b) => {
-            const countA = a.services.reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-            const countB = b.services.reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-            return countB - countA;
-        });
-        sortedCats.forEach(c => {
-            c.services = [...c.services].sort((a, b) => (b.links ? b.links.length : 0) - (a.links ? a.links.length : 0));
-        });
-    } else if (currentSort === 'links-asc') {
-        sortedCats.sort((a, b) => {
-            const countA = a.services.reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-            const countB = b.services.reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-            return countA - countB;
-        });
-        sortedCats.forEach(c => {
-            c.services = [...c.services].sort((a, b) => (a.links ? a.links.length : 0) - (b.links ? b.links.length : 0));
-        });
-    } else if (currentSort === 'newest') {
-        const getLatest = (item) => {
-            let maxT = 0;
-            if (item.services) {
-                item.services.forEach(s => (s.links || []).forEach(l => { if (l.createdAt && l.createdAt > maxT) maxT = l.createdAt; }));
-            } else if (item.links) {
-                item.links.forEach(l => { if (l.createdAt && l.createdAt > maxT) maxT = l.createdAt; });
-            }
-            return maxT;
-        };
-        sortedCats.sort((a, b) => getLatest(b) - getLatest(a));
-        sortedCats.forEach(c => {
-            c.services = [...c.services].sort((a, b) => getLatest(b) - getLatest(a));
-        });
+        return out;
     }
 
-    return sortedCats;
-}
-
-// Helper to identify Random category
-function isRandomCategory(cat) {
-    if (!cat || !cat.name) return false;
-    const name = cat.name.trim().toLowerCase();
-    return name === 'random' || name === 'عشوائي' || Boolean(cat.isRandom);
-}
-
-// ==========================================
-// View 1 (Home) - Category Card with Pinning
-// ==========================================
-function createCategoryCardHtml(cat) {
-    const services = cat.services || [];
-    const totalCatLinks = services.reduce((acc, s) => acc + (s.links ? s.links.length : 0), 0);
-    const servicesCount = services.length;
-    const isExpanded = expandedCategories.has(cat.id);
-    const isRandom = isRandomCategory(cat);
-
-    // Sort services so pinned items appear first
-    const sortedServices = [...services].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-
-    // Limit to 4 services unless expanded
-    const displayServices = (servicesCount > 4 && !isExpanded) ? sortedServices.slice(0, 4) : sortedServices;
-
-    let servicesHtml = '';
-    if (services.length > 0) {
-        if (isRandom) {
-            servicesHtml = displayServices.map(srv => createRandomServiceCardHtml(cat.id, srv)).join('');
-        } else {
-            servicesHtml = displayServices.map(srv => createServiceSummaryCardHtml(cat.id, srv)).join('');
-        }
-    } else {
-        servicesHtml = `<p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 14px;">لا توجد مواقع في هذا التصنيف بعد.</p>`;
+    function svcRowHtml(cat, srv, hit) {
+        const direct = isRandomCat(cat);
+        const first = srv.links[0];
+        let sub;
+        if (hit) sub = `<span class="hit">${ic('link')}${esc(hit.title)}</span>`;
+        else if (direct) sub = `<span class="ltr">${esc(hostOf(first ? first.url : ''))}</span>`;
+        else sub = esc(nLinks(srv.links.length));
+        if (srv.isPinned) sub += `<span class="pin-mark" title="مثبّت">${ic('pin')}</span>`;
+        return `<div class="row svc ${srv.isPinned ? 'pinned' : ''}" role="link" tabindex="0" data-id="${srv.id}" data-cat="${cat.id}" data-action="${direct ? 'open-direct' : 'open-srv'}" ${direct && first ? `data-url="${esc(first.url)}"` : ''}>
+            ${favHtml(first ? first.url : '')}
+            <div class="row-text"><div class="row-name">${esc(srv.name)}</div><div class="row-sub">${sub}</div></div>
+            <button type="button" class="icon-btn" data-action="srv-menu" aria-label="خيارات ${esc(srv.name)}">${ic('more')}</button>
+        </div>`;
     }
 
-    // Toggle button if more than 4 services
-    let toggleBtnHtml = '';
-    if (servicesCount > 4) {
-        if (!isExpanded) {
-            toggleBtnHtml = `
-                <button class="toggle-expand-btn" onclick="toggleCategoryExpand('${cat.id}')">
-                    <i class="fa-solid fa-chevron-down"></i>
-                    عرض باقي المواقع (${servicesCount - 4}+)
-                </button>
-            `;
-        } else {
-            toggleBtnHtml = `
-                <button class="toggle-expand-btn" onclick="toggleCategoryExpand('${cat.id}')">
-                    <i class="fa-solid fa-chevron-up"></i>
-                    إخفاء باقي المواقع
-                </button>
-            `;
-        }
-    }
-
-    const categoryIcon = isRandom ? 'fa-shuffle' : 'fa-folder';
-    const countsLabel = isRandom ? `${servicesCount} مواقع مباشرة` : `${servicesCount} مواقع • ${totalCatLinks} روابط`;
-
-    return `
-        <div class="category-card" data-cat-id="${cat.id}">
-            <div class="category-header">
-                <div class="category-title-wrap">
-                    <span class="drag-handle" title="اسحب لإعادة ترتيب التصنيف"><i class="fa-solid fa-grip-vertical"></i></span>
-                    <div class="category-icon">
-                        <i class="fa-solid ${categoryIcon}"></i>
-                    </div>
-                    <div>
-                        <div class="category-title-inner">
-                            <h2 class="category-title">${escapeHtml(cat.name)}</h2>
-                            <button class="edit-cat-pencil" title="تعديل اسم التصنيف" onclick="openEditCategoryModal('${cat.id}', '${escapeHtml(cat.name)}')">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                        </div>
-                        <span class="category-counts">${countsLabel}</span>
-                    </div>
-                </div>
-
-                <div class="category-header-actions">
-                    <button class="action-icon-btn" title="إضافة موقع جديد لهذا التصنيف" onclick="openAddModalForCategory('${escapeHtml(cat.name)}')">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <button class="action-icon-btn delete-btn" title="حذف التصنيف" onclick="deleteCategory('${cat.id}')">
-                        <i class="fa-regular fa-trash-can"></i>
-                    </button>
-                </div>
+    function catHtml({ cat, items }, searching) {
+        const collapsed = !searching && ui.collapsed[cat.id];
+        const links = cat.services.reduce((a, s) => a + s.links.length, 0);
+        const meta = isRandomCat(cat) ? nSites(cat.services.length) : `${nSites(cat.services.length)} • ${nLinks(links)}`;
+        const body = items.length
+            ? items.map(i => svcRowHtml(cat, i.srv, i.hit)).join('')
+            : `<div class="cat-empty">لا توجد مواقع بعد — اضغط ⋮ لإضافة أول موقع.</div>`;
+        return `<section class="cat ${collapsed ? 'collapsed' : ''}" data-id="${cat.id}">
+            <div class="cat-head" data-action="toggle-cat" role="button" tabindex="0" aria-expanded="${!collapsed}">
+                <span class="cat-ic">${ic(isRandomCat(cat) ? 'shuffle' : 'folder')}</span>
+                <div class="cat-meta"><h2>${esc(cat.name)}</h2><span>${meta}</span></div>
+                <button type="button" class="icon-btn" data-action="cat-menu" aria-label="خيارات ${esc(cat.name)}">${ic('more')}</button>
+                <span class="chev">${ic('chevron-down')}</span>
             </div>
+            <div class="cat-body" data-cat="${cat.id}">${body}</div>
+        </section>`;
+    }
 
-            <div class="category-body" data-cat-id="${cat.id}">
-                ${servicesHtml}
-                ${toggleBtnHtml}
-            </div>
-        </div>
-    `;
-}
+    function renderHome() {
+        const q = searchQuery.trim().toLowerCase();
+        const list = filterCats(q);
+        el.catList.innerHTML = list.map(x => catHtml(x, !!q)).join('');
 
-// Random Category Website Card
-function createRandomServiceCardHtml(catId, srv) {
-    const link = (srv.links && srv.links.length > 0) ? srv.links[0] : null;
-    const url = link ? link.url : '';
-    const fullUrl = /^https?:\/\//i.test(url) ? url : 'https://' + url;
-    const domain = getDomain(url) || url;
-    const iconData = getFavicon(url);
-    const isPinned = Boolean(srv.isPinned);
+        if (!db.categories.length) {
+            el.homeEmpty.hidden = false;
+            el.homeEmpty.innerHTML = `${ic('layers')}<h3>ابدأ بتنظيم روابطك</h3><p>أضف أول رابط، وسيُنشأ له تصنيف وموقع تلقائياً. يمكنك مشاركة أي رابط من المتصفح إلى هذا التطبيق مباشرة بعد تثبيته.</p><button type="button" class="btn primary" data-action="add">${ic('plus')} إضافة رابط</button>`;
+        } else if (!list.length) {
+            el.homeEmpty.hidden = false;
+            el.homeEmpty.innerHTML = `${ic('search')}<h3>لا توجد نتائج</h3><p>جرّب كلمة أخرى أو جزءاً من الرابط.</p>`;
+        } else {
+            el.homeEmpty.hidden = true;
+        }
+        initSortable();
+    }
 
-    return `
-        <div class="random-service-card ${isPinned ? 'is-pinned' : ''}" data-cat-id="${catId}" data-service-id="${srv.id}">
-            <span class="drag-handle" title="اسحب للترتيب"><i class="fa-solid fa-grip-vertical"></i></span>
-            <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="random-service-left" title="فتح الموقع مباشرة في تبويب جديد: ${escapeHtml(fullUrl)}">
-                ${iconData.src ? `
-                    <img src="${iconData.src}" class="service-favicon" alt="" 
-                         onload="cacheImageLocally('${iconData.domain}', this)"
-                         onerror="this.outerHTML='<div class=\\'service-fallback-icon\\'><i class=\\'fa-solid fa-globe\\'></i></div>';">
-                ` : `
-                    <div class="service-fallback-icon"><i class="fa-solid fa-globe"></i></div>
-                `}
-                <div class="random-service-meta">
-                    <span class="random-service-name">
-                        ${escapeHtml(srv.name)}
-                        ${isPinned ? `<i class="fa-solid fa-thumbtack pinned-indicator" title="مثبت"></i>` : ''}
-                    </span>
-                    <span class="random-service-url">${escapeHtml(domain)}</span>
-                </div>
-            </a>
-
-            <div class="random-service-actions">
-                <button class="pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}" onclick="togglePinService('${catId}', '${srv.id}')">
-                    <i class="fa-solid fa-thumbtack"></i>
-                </button>
-                <button class="action-icon-btn" title="نسخ الرابط" onclick="copyLink('${escapeHtml(fullUrl)}')">
-                    <i class="fa-regular fa-copy"></i>
-                </button>
-                <button class="action-icon-btn" title="تعديل الموقع والرابط" onclick="openEditRandomModal('${catId}', '${srv.id}')">
-                    <i class="fa-regular fa-pen-to-square"></i>
-                </button>
-                <button class="action-icon-btn delete-btn" title="حذف الموقع" onclick="deleteService('${catId}', '${srv.id}')">
-                    <i class="fa-regular fa-trash-can"></i>
-                </button>
-                <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="action-icon-btn visit-btn" title="زيارة الموقع مباشرة">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+    function linkRowHtml(l) {
+        const vid = getYouTubeVideoId(l.url);
+        const lead = vid
+            ? `<span class="thumb"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" alt="" loading="lazy" draggable="false">${ic('play', 'play')}</span>`
+            : favHtml(l.url);
+        const tags = arr(l.tags).map(t => `<button type="button" class="tag" data-action="tag" data-tag="${esc(t)}">#${esc(t)}</button>`).join('');
+        const extra = (l.notes || tags)
+            ? `<div class="row-extra">${l.notes ? `<p class="note">${esc(l.notes)}</p>` : ''}${tags ? `<div class="tags">${tags}</div>` : ''}</div>` : '';
+        return `<li class="row link ${l.isPinned ? 'pinned' : ''}" data-id="${l.id}">
+            <div class="row-top">
+                <a class="row-main" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" draggable="false">
+                    ${lead}
+                    <div class="row-text">
+                        <div class="row-name">${esc(l.title)}</div>
+                        <div class="row-sub"><span class="ltr">${esc(hostOf(l.url))}</span>${l.isPinned ? `<span class="pin-mark" title="مثبّت">${ic('pin')}</span>` : ''}</div>
+                    </div>
                 </a>
+                <button type="button" class="icon-btn" data-action="link-menu" aria-label="خيارات الرابط">${ic('more')}</button>
             </div>
-        </div>
-    `;
-}
-
-function createServiceSummaryCardHtml(catId, srv) {
-    const firstUrl = (srv.links && srv.links.length > 0) ? srv.links[0].url : '';
-    const iconData = getFavicon(firstUrl);
-    const linksCount = (srv.links || []).length;
-    const isPinned = Boolean(srv.isPinned);
-
-    return `
-        <div class="service-summary-card ${isPinned ? 'is-pinned' : ''}" data-cat-id="${catId}" data-service-id="${srv.id}" onclick="navigateToService('${catId}', '${srv.id}')" title="انقر لعرض روابط هذا الموقع">
-            <span class="drag-handle" title="اسحب للترتيب" onclick="event.stopPropagation();"><i class="fa-solid fa-grip-vertical"></i></span>
-            <div class="service-summary-left">
-                ${iconData.src ? `
-                    <img src="${iconData.src}" class="service-favicon" alt="" 
-                         onload="cacheImageLocally('${iconData.domain}', this)"
-                         onerror="this.outerHTML='<div class=\\'service-fallback-icon\\'><i class=\\'fa-solid fa-globe\\'></i></div>';">
-                ` : `
-                    <div class="service-fallback-icon"><i class="fa-solid fa-globe"></i></div>
-                `}
-                <span class="service-summary-name">
-                    ${escapeHtml(srv.name)}
-                    ${isPinned ? `<i class="fa-solid fa-thumbtack pinned-indicator" title="مثبت"></i>` : ''}
-                </span>
-            </div>
-
-            <div class="service-summary-right">
-                <button class="pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}" onclick="event.stopPropagation(); togglePinService('${catId}', '${srv.id}')">
-                    <i class="fa-solid fa-thumbtack"></i>
-                </button>
-                <span class="service-badge">${linksCount} روابط</span>
-                <i class="fa-solid fa-arrow-left service-go-icon"></i>
-            </div>
-        </div>
-    `;
-}
-
-window.togglePinService = function(catId, serviceId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === serviceId);
-    if (!srv) return;
-
-    saveUndoState();
-    srv.isPinned = !srv.isPinned;
-    saveToStorage();
-    render();
-    showToast(srv.isPinned ? `تم تثبيت "${srv.name}" في الأعلى 📌` : `تم إلغاء تثبيت "${srv.name}"`, 'info');
-};
-
-window.togglePinLink = function(catId, serviceId, linkId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === serviceId);
-    if (!srv) return;
-    const link = (srv.links || []).find(l => l.id === linkId);
-    if (!link) return;
-
-    saveUndoState();
-    link.isPinned = !link.isPinned;
-    saveToStorage();
-    renderDetailView();
-    showToast(link.isPinned ? `تم تثبيت الرابط في الأعلى 📌` : `تم إلغاء تثبيت الرابط`, 'info');
-};
-
-window.openEditRandomModal = function(catId, serviceId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === serviceId);
-    if (!srv) return;
-    const link = (srv.links && srv.links.length > 0) ? srv.links[0] : null;
-    if (link) {
-        openEditModal(catId, serviceId, link.id);
-    }
-};
-
-window.toggleCategoryExpand = function(catId) {
-    if (expandedCategories.has(catId)) {
-        expandedCategories.delete(catId);
-    } else {
-        expandedCategories.add(catId);
-    }
-    render();
-};
-
-// ==========================================
-// View 2 (Service Detail Page)
-// ==========================================
-function renderDetailView() {
-    const cat = categoriesData.find(c => c.id === activeDetailCatId);
-    if (!cat) {
-        navigateToHome();
-        return;
-    }
-    const srv = (cat.services || []).find(s => s.id === activeDetailServiceId);
-    if (!srv) {
-        navigateToHome();
-        return;
+            ${extra}
+        </li>`;
     }
 
-    // Breadcrumb
-    detailCatName.textContent = cat.name;
-    detailServiceName.textContent = srv.name;
+    function renderDetail() {
+        const cat = findCat(view.catId);
+        const srv = cat && cat.services.find(s => s.id === view.srvId);
+        if (!srv) return false;
 
-    // Hero Card
-    serviceHeroTitle.textContent = srv.name;
-    serviceHeroCatBadge.innerHTML = `<i class="fa-regular fa-folder"></i> ${escapeHtml(cat.name)}`;
-    const links = srv.links || [];
-    serviceHeroLinksCount.innerHTML = `<i class="fa-solid fa-link"></i> ${links.length} روابط`;
+        el.detailName.textContent = srv.name;
+        el.detailMeta.textContent = `${cat.name} • ${nLinks(srv.links.length)}`;
 
-    // Service Icon
-    const firstUrl = links.length > 0 ? links[0].url : '';
-    const iconData = getFavicon(firstUrl);
-    if (iconData.src) {
-        serviceHeroIconWrapper.innerHTML = `
-            <img src="${iconData.src}" alt="${escapeHtml(srv.name)}" 
-                 onload="cacheImageLocally('${iconData.domain}', this)"
-                 onerror="this.outerHTML='<div class=\\'fallback-icon\\'><i class=\\'fa-solid fa-globe\\'></i></div>';">
-        `;
-    } else {
-        serviceHeroIconWrapper.innerHTML = `<div class="fallback-icon"><i class="fa-solid fa-globe"></i></div>`;
-    }
+        const showSearch = srv.links.length >= DETAIL_SEARCH_MIN || !!detailQuery;
+        el.detailSearchWrap.hidden = !showSearch;
 
-    // Filter links in detail search
-    const q = detailSearchQuery.toLowerCase().trim();
-    let filteredLinks = links.filter(l => {
-        if (!q) return true;
-        const titleMatch = (l.title || '').toLowerCase().includes(q);
-        const urlMatch = (l.url || '').toLowerCase().includes(q);
-        const notesMatch = (l.notes || '').toLowerCase().includes(q);
-        const tagsMatch = (l.tags || []).some(t => t.toLowerCase().includes(q));
-        return titleMatch || urlMatch || notesMatch || tagsMatch;
-    });
+        const q = detailQuery.trim().toLowerCase();
+        const links = srv.links.filter(l => !q || linkMatches(l, q));
+        el.linkList.innerHTML = links.map(linkRowHtml).join('');
 
-    // Pinned links first
-    filteredLinks.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-
-    if (filteredLinks.length === 0) {
-        detailLinksList.innerHTML = '';
-        detailEmptyState.style.display = 'block';
-    } else {
-        detailEmptyState.style.display = 'none';
-        detailLinksList.innerHTML = filteredLinks.map((link, idx) => {
-            const actualIndex = links.indexOf(link) + 1;
-            return createDetailLinkRowHtml(cat.id, srv.id, link, actualIndex);
-        }).join('');
-    }
-
-    // Re-initialize Drag & Drop on detail links
-    initSortable();
-}
-
-function createDetailLinkRowHtml(catId, serviceId, link, index) {
-    const fullUrl = /^https?:\/\//i.test(link.url) ? link.url : 'https://' + link.url;
-    const domain = getDomain(link.url) || link.url;
-    const isYt = link.isYouTube || Boolean(getYouTubeVideoId(link.url));
-    const isPinned = Boolean(link.isPinned);
-
-    // Tags Badges
-    const tagsHtml = (link.tags && link.tags.length > 0)
-        ? `<div class="link-tags-row">
-            ${link.tags.map(tag => `<span class="tag-badge" onclick="event.stopPropagation(); filterByTag('${escapeHtml(tag)}')"><i class="fa-solid fa-tag"></i> ${escapeHtml(tag)}</span>`).join('')}
-           </div>`
-        : '';
-
-    // YouTube Card Style
-    if (isYt) {
-        const videoId = link.ytVideoId || getYouTubeVideoId(link.url);
-        const thumb = link.ytThumbnail || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
-        return `
-            <li class="youtube-preview-card ${isPinned ? 'is-pinned' : ''}" data-cat-id="${catId}" data-service-id="${serviceId}" data-link-id="${link.id}">
-                <span class="drag-handle" title="اسحب للترتيب"><i class="fa-solid fa-grip-vertical"></i></span>
-                <div class="detail-link-left">
-                    <div class="link-index-badge">${index}</div>
-
-                    <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="youtube-thumbnail-wrapper" title="مشاهدة على YouTube">
-                        <img src="${thumb}" alt="${escapeHtml(link.title)}" onerror="this.src='https://placehold.co/140x80?text=YouTube';">
-                        <div class="youtube-play-overlay">
-                            <i class="fa-solid fa-play"></i>
-                        </div>
-                    </a>
-
-                    <div class="detail-link-info">
-                        <span class="youtube-badge"><i class="fa-brands fa-youtube"></i> مقطع فيديو</span>
-                        <h4 class="detail-link-title">
-                            ${escapeHtml(link.title)}
-                            ${isPinned ? `<i class="fa-solid fa-thumbtack pinned-indicator" title="مثبت"></i>` : ''}
-                        </h4>
-                        <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="detail-link-url" title="${escapeHtml(fullUrl)}">
-                            ${escapeHtml(fullUrl)}
-                        </a>
-                        ${link.notes ? `<div class="detail-link-notes">${escapeHtml(link.notes)}</div>` : ''}
-                        ${tagsHtml}
-                    </div>
-                </div>
-
-                <div class="link-actions-group">
-                    <button class="pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}" onclick="togglePinLink('${catId}', '${serviceId}', '${link.id}')">
-                        <i class="fa-solid fa-thumbtack"></i>
-                    </button>
-                    <button class="action-icon-btn" title="نسخ الرابط" onclick="copyLink('${escapeHtml(fullUrl)}')">
-                        <i class="fa-regular fa-copy"></i>
-                    </button>
-                    <button class="action-icon-btn" title="تعديل الرابط" onclick="openEditModal('${catId}', '${serviceId}', '${link.id}')">
-                        <i class="fa-regular fa-pen-to-square"></i>
-                    </button>
-                    <button class="action-icon-btn delete-btn" title="حذف الرابط" onclick="deleteLink('${catId}', '${serviceId}', '${link.id}')">
-                        <i class="fa-regular fa-trash-can"></i>
-                    </button>
-                    <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="action-icon-btn visit-btn" title="مشاهدة الفيديو">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                    </a>
-                </div>
-            </li>
-        `;
-    }
-
-    // Standard Link Card Style
-    return `
-        <li class="detail-link-card ${isPinned ? 'is-pinned' : ''}" data-cat-id="${catId}" data-service-id="${serviceId}" data-link-id="${link.id}">
-            <span class="drag-handle" title="اسحب للترتيب"><i class="fa-solid fa-grip-vertical"></i></span>
-            <div class="detail-link-left">
-                <div class="link-index-badge">${index}</div>
-                <div class="detail-link-info">
-                    <h4 class="detail-link-title">
-                        ${escapeHtml(link.title)}
-                        ${isPinned ? `<i class="fa-solid fa-thumbtack pinned-indicator" title="مثبت"></i>` : ''}
-                    </h4>
-                    <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="detail-link-url" title="${escapeHtml(fullUrl)}">
-                        ${escapeHtml(domain)}
-                    </a>
-                    ${link.notes ? `<div class="detail-link-notes">${escapeHtml(link.notes)}</div>` : ''}
-                    ${tagsHtml}
-                </div>
-            </div>
-
-            <div class="link-actions-group">
-                <button class="pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}" onclick="togglePinLink('${catId}', '${serviceId}', '${link.id}')">
-                    <i class="fa-solid fa-thumbtack"></i>
-                </button>
-                <button class="action-icon-btn" title="نسخ الرابط" onclick="copyLink('${escapeHtml(fullUrl)}')">
-                    <i class="fa-regular fa-copy"></i>
-                </button>
-                <button class="action-icon-btn" title="تعديل الرابط" onclick="openEditModal('${catId}', '${serviceId}', '${link.id}')">
-                    <i class="fa-regular fa-pen-to-square"></i>
-                </button>
-                <button class="action-icon-btn delete-btn" title="حذف الرابط" onclick="deleteLink('${catId}', '${serviceId}', '${link.id}')">
-                    <i class="fa-regular fa-trash-can"></i>
-                </button>
-                <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="action-icon-btn visit-btn" title="فتح الرابط">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </a>
-            </div>
-        </li>
-    `;
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-// ==========================================
-// SortableJS Drag & Drop Initialization
-// ==========================================
-function initSortable() {
-    // Destroy previous instances
-    sortableInstances.forEach(inst => {
-        try { inst.destroy(); } catch (e) {}
-    });
-    sortableInstances = [];
-
-    if (typeof Sortable === 'undefined') return;
-
-    if (currentView === 'home') {
-        // 1. Categories Reordering
-        if (categoriesGrid && activeCategoryFilter === 'all' && !searchQuery && activeTagFilters.size === 0 && currentSort === 'default') {
-            const catSortable = new Sortable(categoriesGrid, {
-                animation: 200,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                onEnd: (evt) => {
-                    if (evt.oldIndex === evt.newIndex) return;
-                    saveUndoState();
-                    const movedItem = categoriesData.splice(evt.oldIndex, 1)[0];
-                    categoriesData.splice(evt.newIndex, 0, movedItem);
-                    saveToStorage();
-                    renderCategoryFilterChips();
-                    showToast('تم تحديث ترتيب التصنيفات', 'info');
-                }
-            });
-            sortableInstances.push(catSortable);
+        if (!links.length) {
+            el.detailEmpty.hidden = false;
+            el.detailEmpty.innerHTML = q
+                ? `${ic('search')}<h3>لا توجد نتائج</h3><p>لا يوجد رابط يطابق بحثك داخل هذا الموقع.</p>`
+                : `${ic('link')}<h3>لا توجد روابط بعد</h3><p>اضغط زر + لإضافة أول رابط لهذا الموقع.</p>`;
+        } else {
+            el.detailEmpty.hidden = true;
         }
-
-        // 2. Services inside each category
-        if (!searchQuery && activeTagFilters.size === 0 && currentSort === 'default') {
-            document.querySelectorAll('.category-body').forEach(bodyEl => {
-                const catId = bodyEl.getAttribute('data-cat-id');
-                const cat = categoriesData.find(c => c.id === catId);
-                if (!cat) return;
-
-                const srvSortable = new Sortable(bodyEl, {
-                    animation: 200,
-                    handle: '.drag-handle',
-                    draggable: '.service-summary-card, .random-service-card',
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    onEnd: (evt) => {
-                        if (evt.oldIndex === evt.newIndex) return;
-                        saveUndoState();
-                        const movedSrv = cat.services.splice(evt.oldIndex, 1)[0];
-                        cat.services.splice(evt.newIndex, 0, movedSrv);
-                        saveToStorage();
-                        showToast('تم تحديث ترتيب المواقع', 'info');
-                    }
-                });
-                sortableInstances.push(srvSortable);
-            });
-        }
-    } else if (currentView === 'service-detail') {
-        // 3. Links Reordering
-        if (detailLinksList && !detailSearchQuery) {
-            const cat = categoriesData.find(c => c.id === activeDetailCatId);
-            const srv = cat ? (cat.services || []).find(s => s.id === activeDetailServiceId) : null;
-            if (srv) {
-                const linkSortable = new Sortable(detailLinksList, {
-                    animation: 200,
-                    handle: '.drag-handle',
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    onEnd: (evt) => {
-                        if (evt.oldIndex === evt.newIndex) return;
-                        saveUndoState();
-                        const movedLink = srv.links.splice(evt.oldIndex, 1)[0];
-                        srv.links.splice(evt.newIndex, 0, movedLink);
-                        saveToStorage();
-                        renderDetailView();
-                        showToast('تم تحديث ترتيب الروابط', 'info');
-                    }
-                });
-                sortableInstances.push(linkSortable);
-            }
-        }
-    }
-}
-
-// ==========================================
-// Category Add & Edit Operations
-// ==========================================
-function openAddCategoryModal() {
-    newCategoryName.value = '';
-    categoryModal.classList.add('active');
-    setTimeout(() => newCategoryName.focus(), 100);
-}
-
-function closeCategoryModal() {
-    categoryModal.classList.remove('active');
-}
-
-function handleCategoryFormSubmit(e) {
-    e.preventDefault();
-    const name = newCategoryName.value.trim();
-    if (!name) return;
-
-    const exists = categoriesData.some(c => c.name.toLowerCase() === name.toLowerCase());
-    if (exists) {
-        showToast('هذا التصنيف موجود بالفعل!', 'warning');
-        return;
+        initSortable();
+        return true;
     }
 
-    saveUndoState();
-
-    const newCat = {
-        id: 'cat-' + Date.now().toString() + Math.random().toString(36).substr(2, 4),
-        name: name,
-        services: []
-    };
-
-    categoriesData.push(newCat);
-    saveToStorage();
-    closeCategoryModal();
-    render();
-    showToast(`تم إنشاء تصنيف "${name}" بنجاح!`);
-}
-
-window.openEditCategoryModal = function(catId, currentName) {
-    editCategoryTargetId.value = catId;
-    editCategoryNewName.value = currentName;
-    editCategoryModal.classList.add('active');
-    setTimeout(() => editCategoryNewName.focus(), 100);
-};
-
-function closeEditCategoryModal() {
-    editCategoryModal.classList.remove('active');
-}
-
-function handleEditCategoryFormSubmit(e) {
-    e.preventDefault();
-    const id = editCategoryTargetId.value;
-    const newName = editCategoryNewName.value.trim();
-    if (!id || !newName) return;
-
-    const cat = categoriesData.find(c => c.id === id);
-    if (cat) {
-        saveUndoState();
-        cat.name = newName;
-        saveToStorage();
-        closeEditCategoryModal();
+    /* =====================================================================
+       التنقل (يدعم زر الرجوع في الجوال)
+       ===================================================================== */
+    function showService(catId, srvId, query) {
+        homeScroll = window.scrollY;
+        view = { name: 'detail', catId, srvId };
+        detailQuery = query || '';
+        el.detailSearch.value = detailQuery;
+        history.pushState({ lh: 'detail', catId, srvId }, '');
         render();
-        showToast('تم تحديث اسم التصنيف بنجاح');
-    }
-}
-
-// ==========================================
-// Link Add & Edit Modal
-// ==========================================
-function openAddModal() {
-    modalTitle.textContent = 'إضافة رابط أو موقع جديد';
-    editCatId.value = '';
-    editServiceId.value = '';
-    editLinkId.value = '';
-    linkTagsInput.value = '';
-    youtubeDetectedHint.style.display = 'none';
-    duplicateWarningHint.style.display = 'none';
-    linkForm.reset();
-    linkModal.classList.add('active');
-    setTimeout(() => categoryInput.focus(), 100);
-}
-
-window.openAddModalForCategory = function(catName) {
-    openAddModal();
-    categoryInput.value = catName;
-    if (isRandomCategory({ name: catName })) {
-        linkTitleInput.value = 'الصفحة الرئيسية';
-    }
-    setTimeout(() => serviceInput.focus(), 100);
-};
-
-window.openEditModal = function(catId, serviceId, linkId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === serviceId);
-    if (!srv) return;
-    const link = (srv.links || []).find(l => l.id === linkId);
-    if (!link) return;
-
-    modalTitle.textContent = 'تعديل تفاصيل الرابط';
-    editCatId.value = catId;
-    editServiceId.value = serviceId;
-    editLinkId.value = linkId;
-
-    categoryInput.value = cat.name;
-    serviceInput.value = srv.name;
-    linkTitleInput.value = link.title;
-    linkUrlInput.value = link.url;
-    linkTagsInput.value = (link.tags || []).join('، ');
-    linkNotesInput.value = link.notes || '';
-
-    // Check YouTube
-    const ytId = getYouTubeVideoId(link.url);
-    youtubeDetectedHint.style.display = ytId ? 'block' : 'none';
-    duplicateWarningHint.style.display = 'none';
-
-    linkModal.classList.add('active');
-    setTimeout(() => linkTitleInput.focus(), 100);
-};
-
-function closeModal() {
-    linkModal.classList.remove('active');
-    linkForm.reset();
-    youtubeDetectedHint.style.display = 'none';
-    duplicateWarningHint.style.display = 'none';
-}
-
-async function handleLinkFormSubmit(e) {
-    e.preventDefault();
-
-    const catName = categoryInput.value.trim();
-    const srvName = serviceInput.value.trim();
-    let title = linkTitleInput.value.trim();
-    let url = linkUrlInput.value.trim();
-    const notes = linkNotesInput.value.trim();
-
-    if (!catName || !srvName || !title || !url) return;
-
-    if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
+        window.scrollTo(0, 0);
     }
 
-    const currentCatId = editCatId.value;
-    const currentServiceId = editServiceId.value;
-    const currentLinkId = editLinkId.value;
-
-    saveUndoState();
-
-    // YouTube detection
-    const ytId = getYouTubeVideoId(url);
-    let isYouTube = Boolean(ytId);
-    let ytThumbnail = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
-
-    // Parse Tags
-    const tags = linkTagsInput.value
-        ? linkTagsInput.value.split(/[,،]/).map(t => t.trim()).filter(Boolean)
-        : [];
-
-    let isPinned = false;
-    let createdAt = Date.now();
-
-    if (currentLinkId) {
-        // Preserve pin status & creation date if editing
-        const oldCat = categoriesData.find(c => c.id === currentCatId);
-        const oldSrv = oldCat ? (oldCat.services || []).find(s => s.id === currentServiceId) : null;
-        const oldLnk = oldSrv ? (oldSrv.links || []).find(l => l.id === currentLinkId) : null;
-        if (oldLnk) {
-            isPinned = Boolean(oldLnk.isPinned);
-            if (oldLnk.createdAt) createdAt = oldLnk.createdAt;
-        }
-        removeLinkById(currentCatId, currentServiceId, currentLinkId);
+    function goHome(useHistory = true) {
+        if (useHistory && history.state && history.state.lh === 'detail') { history.back(); return; }
+        view = { name: 'home', catId: null, srvId: null };
+        render();
+        window.scrollTo(0, homeScroll);
     }
 
-    // Find or create Category
-    let targetCat = categoriesData.find(c => c.name.toLowerCase() === catName.toLowerCase());
-    if (!targetCat) {
-        targetCat = {
-            id: 'cat-' + Date.now().toString() + Math.random().toString(36).substr(2, 4),
-            name: catName,
-            services: []
-        };
-        categoriesData.push(targetCat);
-    }
-
-    // Find or create Service
-    let targetSrv = (targetCat.services || []).find(s => s.name.toLowerCase() === srvName.toLowerCase());
-    if (!targetSrv) {
-        targetSrv = {
-            id: 'srv-' + Date.now().toString() + Math.random().toString(36).substr(2, 4),
-            name: srvName,
-            isPinned: false,
-            links: []
-        };
-        targetCat.services.push(targetSrv);
-    }
-
-    const newLink = {
-        id: currentLinkId || ('lnk-' + Date.now().toString() + Math.random().toString(36).substr(2, 4)),
-        title: title,
-        url: url,
-        notes: notes,
-        tags: tags,
-        isPinned: isPinned,
-        createdAt: createdAt,
-        isYouTube: isYouTube,
-        ytVideoId: ytId || '',
-        ytThumbnail: ytThumbnail
-    };
-
-    targetSrv.links.push(newLink);
-
-    saveToStorage();
-    closeModal();
-    render();
-    showToast(currentLinkId ? 'تم تحديث الرابط بنجاح' : 'تمت إضافة الرابط بنجاح');
-}
-
-function removeLinkById(catId, srvId, linkId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === srvId);
-    if (!srv) return;
-
-    srv.links = (srv.links || []).filter(l => l.id !== linkId);
-}
-
-// ==========================================
-// Deletions with Custom Confirmation Modal
-// ==========================================
-window.deleteLink = async function(catId, serviceId, linkId) {
-    const confirmed = await showConfirmDialog(
-        'تأكيد حذف الرابط',
-        'هل أنت متأكد من رغبتك في حذف هذا الرابط؟ لن يمكنك استرجاعه بعد الحذف.'
-    );
-    if (!confirmed) return;
-
-    saveUndoState();
-    removeLinkById(catId, serviceId, linkId);
-    saveToStorage();
-    render();
-    showToast('تم حذف الرابط بنجاح');
-};
-
-window.deleteService = async function(catId, serviceId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === serviceId);
-    if (!srv) return;
-
-    const confirmed = await showConfirmDialog(
-        `تأكيد حذف موقع "${srv.name}"`,
-        `هل أنت متأكد من حذف هذا الموقع وجميع روابطه المندرجة تحته؟`
-    );
-    if (!confirmed) return;
-
-    saveUndoState();
-    cat.services = cat.services.filter(s => s.id !== serviceId);
-    saveToStorage();
-    render();
-    showToast(`تم حذف موقع "${srv.name}" بنجاح`);
-};
-
-window.deleteCategory = async function(catId) {
-    const cat = categoriesData.find(c => c.id === catId);
-    if (!cat) return;
-
-    const confirmed = await showConfirmDialog(
-        `تأكيد حذف تصنيف "${cat.name}"`,
-        `سيتم حذف هذا التصنيف وجميع المواقع والروابط بداخله بشكل نهائي. هل ترغب بالاستمرار؟`
-    );
-    if (!confirmed) return;
-
-    saveUndoState();
-    categoriesData = categoriesData.filter(c => c.id !== catId);
-    if (activeCategoryFilter === catId) activeCategoryFilter = 'all';
-    saveToStorage();
-    render();
-    showToast(`تم حذف تصنيف "${cat.name}"`);
-};
-
-async function deleteActiveService() {
-    const cat = categoriesData.find(c => c.id === activeDetailCatId);
-    if (!cat) return;
-    const srv = (cat.services || []).find(s => s.id === activeDetailServiceId);
-    if (!srv) return;
-
-    const confirmed = await showConfirmDialog(
-        `تأكيد حذف موقع "${srv.name}"`,
-        `هل أنت متأكد من حذف هذا الموقع وجميع روابطه المندرجة تحته؟`
-    );
-    if (!confirmed) return;
-
-    saveUndoState();
-    cat.services = cat.services.filter(s => s.id !== activeDetailServiceId);
-    saveToStorage();
-    navigateToHome();
-    showToast(`تم حذف موقع "${srv.name}" بنجاح`);
-}
-
-window.copyLink = function(url) {
-    navigator.clipboard.writeText(url).then(() => {
-        showToast('تم نسخ الرابط إلى الحافظة! 📋');
-    }).catch(err => {
-        showToast('تعذر نسخ الرابط', 'error');
-    });
-};
-
-// ==========================================
-// Export & Import
-// ==========================================
-function exportData() {
-    const backupObj = {
-        version: 3,
-        categories: categoriesData,
-        cachedFavicons: cachedFavicons,
-        exportedAt: new Date().toISOString()
-    };
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-    const downloadAnchor = document.createElement('a');
-    const filename = `links_hub_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', filename);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showToast('تم تصدير النسخة الاحتياطية بنجاح');
-}
-
-function importData(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        try {
-            const imported = JSON.parse(event.target.result);
-            saveUndoState();
-            if (imported.categories && Array.isArray(imported.categories)) {
-                categoriesData = imported.categories;
-                if (imported.cachedFavicons) {
-                    cachedFavicons = { ...cachedFavicons, ...imported.cachedFavicons };
-                    saveCachedFavicons();
-                }
-            } else if (Array.isArray(imported)) {
-                categoriesData = imported;
-            } else {
-                showToast('الملف غير مطابق لصيغة الروابط.', 'error');
-                return;
-            }
-            saveToStorage();
+    window.addEventListener('popstate', e => {
+        closeAllLayers();
+        const s = e.state;
+        if (s && s.lh === 'detail' && findSrv(s.catId, s.srvId)) {
+            view = { name: 'detail', catId: s.catId, srvId: s.srvId };
             render();
-            showToast('تم استيراد البيانات والأيقونات بنجاح!');
-        } catch (err) {
-            showToast('حدث خطأ أثناء قراءة ملف JSON.', 'error');
-        }
-        e.target.value = '';
-    };
-    reader.readAsText(file);
-}
-
-// ==========================================
-// Move Service Modal
-// ==========================================
-function openMoveServiceModal() {
-    const otherCats = categoriesData.filter(c => c.id !== activeDetailCatId);
-    if (otherCats.length === 0) {
-        showToast('لا توجد تصنيفات أخرى متاحة للنقل إليها.', 'warning');
-        return;
-    }
-
-    moveServiceSelect.innerHTML = otherCats.map(c => `
-        <option value="${c.id}">${escapeHtml(c.name)}</option>
-    `).join('');
-
-    moveServiceModal.classList.add('active');
-}
-
-function closeMoveServiceModal() {
-    moveServiceModal.classList.remove('active');
-}
-
-function handleMoveServiceSubmit(e) {
-    e.preventDefault();
-    const targetCatId = moveServiceSelect.value;
-    if (!targetCatId) return;
-
-    const currentCat = categoriesData.find(c => c.id === activeDetailCatId);
-    const targetCat = categoriesData.find(c => c.id === targetCatId);
-    if (!currentCat || !targetCat) return;
-
-    const srvIndex = (currentCat.services || []).findIndex(s => s.id === activeDetailServiceId);
-    if (srvIndex === -1) return;
-
-    saveUndoState();
-
-    const [serviceToMove] = currentCat.services.splice(srvIndex, 1);
-    if (!targetCat.services) targetCat.services = [];
-    targetCat.services.push(serviceToMove);
-
-    saveToStorage();
-    closeMoveServiceModal();
-    navigateToService(targetCat.id, serviceToMove.id);
-    showToast(`تم نقل موقع "${serviceToMove.name}" إلى تصنيف "${targetCat.name}" بنجاح!`);
-}
-
-// ==========================================
-// Custom Context Menu Operations
-// ==========================================
-function handleContextMenu(e) {
-    const targetCard = e.target.closest('.service-summary-card, .random-service-card, .detail-link-card, .youtube-preview-card');
-    if (!targetCard) {
-        hideContextMenu();
-        return;
-    }
-
-    e.preventDefault();
-
-    const catId = targetCard.getAttribute('data-cat-id');
-    const serviceId = targetCard.getAttribute('data-service-id');
-    const linkId = targetCard.getAttribute('data-link-id');
-
-    const cat = categoriesData.find(c => c.id === catId);
-    const srv = cat ? (cat.services || []).find(s => s.id === serviceId) : null;
-    let link = null;
-
-    if (linkId && srv) {
-        link = (srv.links || []).find(l => l.id === linkId);
-    } else if (srv && srv.links && srv.links.length > 0) {
-        link = srv.links[0];
-    }
-
-    const fullUrl = link ? (/^https?:\/\//i.test(link.url) ? link.url : 'https://' + link.url) : '';
-    const isPinned = linkId ? (link ? Boolean(link.isPinned) : false) : (srv ? Boolean(srv.isPinned) : false);
-
-    contextMenuData = {
-        type: linkId ? 'link' : 'service',
-        catId,
-        serviceId,
-        linkId,
-        url: fullUrl,
-        isPinned
-    };
-
-    ctxPinText.textContent = isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى 📌';
-
-    // Position context menu
-    contextMenu.style.display = 'block';
-    const menuWidth = 210;
-    const menuHeight = 220;
-
-    let posX = e.clientX;
-    let posY = e.clientY;
-
-    if (posX + menuWidth > window.innerWidth) {
-        posX = window.innerWidth - menuWidth - 10;
-    }
-    if (posY + menuHeight > window.innerHeight) {
-        posY = window.innerHeight - menuHeight - 10;
-    }
-
-    contextMenu.style.left = `${posX}px`;
-    contextMenu.style.top = `${posY}px`;
-}
-
-function hideContextMenu() {
-    if (contextMenu) {
-        contextMenu.style.display = 'none';
-    }
-    contextMenuData = null;
-}
-
-// ==========================================
-// Event Listeners Binding
-// ==========================================
-function bindEvents() {
-    // Theme toggle & Undo
-    themeToggleBtn.addEventListener('click', toggleTheme);
-    undoBtn.addEventListener('click', undo);
-
-    // Navigation back to Home
-    brandHomeBtn.addEventListener('click', navigateToHome);
-    backToHomeBtn.addEventListener('click', navigateToHome);
-
-    // Sorting Dropdown
-    sortSelect.addEventListener('change', (e) => {
-        currentSort = e.target.value;
-        render();
-    });
-
-    // Clear Tags Filter
-    clearTagsFilterBtn.addEventListener('click', () => {
-        activeTagFilters.clear();
-        render();
-    });
-
-    // Main Link Modal
-    openAddModalBtn.addEventListener('click', openAddModal);
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelModalBtn.addEventListener('click', closeModal);
-    linkForm.addEventListener('submit', handleLinkFormSubmit);
-
-    // YouTube URL live detection & Duplicate Warning
-    linkUrlInput.addEventListener('input', async (e) => {
-        const val = e.target.value.trim();
-
-        // 1. YouTube detection
-        const ytId = getYouTubeVideoId(val);
-        if (ytId) {
-            youtubeDetectedHint.style.display = 'block';
-            if (!linkTitleInput.value.trim()) {
-                const fetchedTitle = await fetchYouTubeTitle(val);
-                if (fetchedTitle && !linkTitleInput.value.trim()) {
-                    linkTitleInput.value = fetchedTitle;
-                }
-            }
-            if (!serviceInput.value.trim()) {
-                serviceInput.value = 'YouTube';
-            }
-            if (!categoryInput.value.trim()) {
-                categoryInput.value = 'شروحات ومقاطع فيديو';
-            }
+            window.scrollTo(0, 0);
         } else {
-            youtubeDetectedHint.style.display = 'none';
-        }
-
-        // 2. Duplicate Detection
-        const currentId = editLinkId.value;
-        const dup = checkDuplicateUrl(val, currentId);
-        if (dup) {
-            duplicateWarningHint.style.display = 'block';
-            duplicateWarningText.textContent = `تنبيه: هذا الرابط مسجل مسبقاً في "${dup.srvName}" ضمن تصنيف "${dup.catName}" (${dup.title})`;
-        } else {
-            duplicateWarningHint.style.display = 'none';
+            view = { name: 'home', catId: null, srvId: null };
+            render();
+            window.scrollTo(0, homeScroll);
         }
     });
 
-    // Move Service Modal
-    moveCurrentServiceBtn.addEventListener('click', openMoveServiceModal);
-    closeMoveServiceModalBtn.addEventListener('click', closeMoveServiceModal);
-    cancelMoveServiceModalBtn.addEventListener('click', closeMoveServiceModal);
-    moveServiceForm.addEventListener('submit', handleMoveServiceSubmit);
-
-    // Open All Links in Service
-    openAllLinksBtn.addEventListener('click', async () => {
-        const cat = categoriesData.find(c => c.id === activeDetailCatId);
-        const srv = cat ? (cat.services || []).find(s => s.id === activeDetailServiceId) : null;
-        if (!srv || !srv.links || srv.links.length === 0) {
-            showToast('لا توجد روابط في هذا الموقع لفتحها!', 'warning');
-            return;
-        }
-
-        if (srv.links.length > 6) {
-            const confirmed = await showConfirmDialog(
-                'تأكيد فتح جميع الروابط',
-                `سيتم فتح ${srv.links.length} تبويبات جديدة معاً في متصفحك. هل أنت متأكد من الاستمرار؟`
-            );
-            if (!confirmed) return;
-        }
-
-        srv.links.forEach(l => {
-            const fullUrl = /^https?:\/\//i.test(l.url) ? l.url : 'https://' + l.url;
-            window.open(fullUrl, '_blank');
+    /* =====================================================================
+       السحب للترتيب: ضغطة مطوّلة على البطاقة ثم سحب
+       ===================================================================== */
+    function loadSortable() {
+        if (typeof Sortable !== 'undefined') return Promise.resolve();
+        const add = src => new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error('load'));
+            document.head.appendChild(s);
         });
-        showToast(`تم فتح ${srv.links.length} روابط في تبويبات جديدة! 🚀`);
-    });
+        return add(SORTABLE_LOCAL).catch(() => add(SORTABLE_CDN)).catch(() => { /* بدون سحب */ });
+    }
 
-    // Add Category Modal
-    openAddCategoryModalBtn.addEventListener('click', openAddCategoryModal);
-    closeCategoryModalBtn.addEventListener('click', closeCategoryModal);
-    cancelCategoryModalBtn.addEventListener('click', closeCategoryModal);
-    categoryForm.addEventListener('submit', handleCategoryFormSubmit);
+    const sameOrder = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
-    // Edit Category Modal
-    closeEditCategoryModalBtn.addEventListener('click', closeEditCategoryModal);
-    cancelEditCategoryModalBtn.addEventListener('click', closeEditCategoryModal);
-    editCategoryForm.addEventListener('submit', handleEditCategoryFormSubmit);
+    function initSortable() {
+        sortables.forEach(s => { try { s.destroy(); } catch (e) { /* ignore */ } });
+        sortables = [];
+        if (typeof Sortable === 'undefined') return;
 
-    // Confirm Dialog Events
-    confirmOkBtn.addEventListener('click', () => closeConfirmModal(true));
-    confirmCancelBtn.addEventListener('click', () => closeConfirmModal(false));
+        const base = {
+            animation: 180, delay: 280, delayOnTouchOnly: true, touchStartThreshold: 8,
+            ghostClass: 'drag-ghost', chosenClass: 'drag-chosen',
+            onStart: () => { dragging = true; if (navigator.vibrate) navigator.vibrate(10); }
+        };
 
-    // Detail View Actions
-    addLinkToCurrentServiceBtn.addEventListener('click', () => {
-        const cat = categoriesData.find(c => c.id === activeDetailCatId);
-        const srv = cat ? (cat.services || []).find(s => s.id === activeDetailServiceId) : null;
-        if (cat && srv) {
-            openAddModal();
-            categoryInput.value = cat.name;
-            serviceInput.value = srv.name;
-            setTimeout(() => linkTitleInput.focus(), 100);
+        if (view.name === 'home' && !searchQuery.trim()) {
+            sortables.push(new Sortable(el.catList, Object.assign({}, base, {
+                draggable: '.cat', handle: '.cat-head', onEnd: onCatsEnd
+            })));
+            $$('.cat-body', el.catList).forEach(body => {
+                sortables.push(new Sortable(body, Object.assign({}, base, {
+                    group: 'services', draggable: '.svc', onEnd: onServicesEnd
+                })));
+            });
+        } else if (view.name === 'detail' && !detailQuery.trim()) {
+            sortables.push(new Sortable(el.linkList, Object.assign({}, base, {
+                draggable: '.link', onEnd: onLinksEnd
+            })));
         }
-    });
+    }
 
-    deleteCurrentServiceBtn.addEventListener('click', deleteActiveService);
+    function endDrag() {
+        dragging = false;
+        if (pendingRemote) { const d = pendingRemote; pendingRemote = null; applyRemote(d); }
+    }
 
-    // Search Events
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        clearSearchBtn.style.display = searchQuery ? 'block' : 'none';
-        render();
-    });
-
-    clearSearchBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        searchQuery = '';
-        clearSearchBtn.style.display = 'none';
-        render();
-        searchInput.focus();
-    });
-
-    detailSearchInput.addEventListener('input', (e) => {
-        detailSearchQuery = e.target.value;
-        renderDetailView();
-    });
-
-    // Backup
-    exportBtn.addEventListener('click', exportData);
-    importInput.addEventListener('change', importData);
-
-    // Custom Context Menu Events
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#contextMenu')) {
-            hideContextMenu();
+    function onCatsEnd() {
+        const ids = $$('.cat', el.catList).map(x => x.dataset.id);
+        if (!sameOrder(ids, db.categories.map(c => c.id))) {
+            pushUndo();
+            db.categories = ids.map(findCat).filter(Boolean);
+            db.catsU = now();
+            commit();
+            toast('تم تحديث ترتيب التصنيفات', { type: 'info' });
         }
-    });
+        endDrag();
+    }
 
-    ctxOpen.addEventListener('click', () => {
-        if (contextMenuData && contextMenuData.url) {
-            window.open(contextMenuData.url, '_blank');
-        }
-        hideContextMenu();
-    });
-
-    ctxCopy.addEventListener('click', () => {
-        if (contextMenuData && contextMenuData.url) {
-            copyLink(contextMenuData.url);
-        }
-        hideContextMenu();
-    });
-
-    ctxPin.addEventListener('click', () => {
-        if (!contextMenuData) return;
-        if (contextMenuData.type === 'link') {
-            togglePinLink(contextMenuData.catId, contextMenuData.serviceId, contextMenuData.linkId);
-        } else {
-            togglePinService(contextMenuData.catId, contextMenuData.serviceId);
-        }
-        hideContextMenu();
-    });
-
-    ctxEdit.addEventListener('click', () => {
-        if (!contextMenuData) return;
-        if (contextMenuData.type === 'link') {
-            openEditModal(contextMenuData.catId, contextMenuData.serviceId, contextMenuData.linkId);
-        } else {
-            openEditRandomModal(contextMenuData.catId, contextMenuData.serviceId);
-        }
-        hideContextMenu();
-    });
-
-    ctxDelete.addEventListener('click', () => {
-        if (!contextMenuData) return;
-        if (contextMenuData.type === 'link') {
-            deleteLink(contextMenuData.catId, contextMenuData.serviceId, contextMenuData.linkId);
-        } else {
-            deleteService(contextMenuData.catId, contextMenuData.serviceId);
-        }
-        hideContextMenu();
-    });
-
-    // Keyboard Shortcuts & Escape Handler
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+K -> Focus Search
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
-            e.preventDefault();
-            if (currentView !== 'home') navigateToHome();
-            searchInput.focus();
-            searchInput.select();
-            return;
-        }
-
-        // Ctrl+N -> Add New Link/Service Modal
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N')) {
-            e.preventDefault();
-            openAddModal();
-            return;
-        }
-
-        // Ctrl+Z -> Undo
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
-            // Only trigger undo if not typing inside an input/textarea
-            const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-            if (tag !== 'input' && tag !== 'textarea') {
-                e.preventDefault();
-                undo();
-                return;
+    function onServicesEnd(evt) {
+        const fromCat = findCat(evt.from.dataset.cat), toCat = findCat(evt.to.dataset.cat);
+        const movedId = evt.item.dataset.id;
+        const ids = $$('.svc', evt.to).map(x => x.dataset.id);
+        if (fromCat && toCat) {
+            const cross = fromCat !== toCat;
+            if (cross || !sameOrder(ids, toCat.services.map(s => s.id))) {
+                pushUndo();
+                const t = now();
+                if (cross) {
+                    const i = fromCat.services.findIndex(s => s.id === movedId);
+                    if (i > -1) { const [srv] = fromCat.services.splice(i, 1); toCat.services.push(touch(srv)); }
+                    fromCat.sU = t;
+                }
+                toCat.services = ids.map(id => toCat.services.find(s => s.id === id)).filter(Boolean);
+                toCat.sU = t;
+                commit();
+                if (cross) { render(); toast(`نُقل إلى «${toCat.name}»`, { type: 'info', action: { label: 'تراجع', fn: undo } }); }
+                else toast('تم تحديث الترتيب', { type: 'info' });
             }
         }
+        endDrag();
+    }
 
-        // Escape Key
-        if (e.key === 'Escape') {
-            hideContextMenu();
-            if (confirmModal.classList.contains('active')) closeConfirmModal(false);
-            if (linkModal.classList.contains('active')) closeModal();
-            if (moveServiceModal.classList.contains('active')) closeMoveServiceModal();
-            if (categoryModal.classList.contains('active')) closeCategoryModal();
-            if (editCategoryModal.classList.contains('active')) closeEditCategoryModal();
+    function onLinksEnd() {
+        const srv = findSrv(view.catId, view.srvId);
+        if (srv) {
+            const ids = $$('.link', el.linkList).map(x => x.dataset.id);
+            if (!sameOrder(ids, srv.links.map(l => l.id))) {
+                pushUndo();
+                srv.links = ids.map(id => srv.links.find(l => l.id === id)).filter(Boolean);
+                srv.lU = now();
+                commit();
+                renderDetail();
+                toast('تم تحديث ترتيب الروابط', { type: 'info' });
+            }
         }
-    });
-}
+        endDrag();
+    }
 
-// Start Application
-document.addEventListener('DOMContentLoaded', init);
+    /* =====================================================================
+       العمليات على البيانات
+       ===================================================================== */
+    function setPinned(list, item, val) {
+        const i = list.indexOf(item);
+        if (i > -1) list.splice(i, 1);
+        item.isPinned = val;
+        touch(item);
+        if (val) list.unshift(item);
+        else { let k = 0; while (k < list.length && list[k].isPinned) k++; list.splice(k, 0, item); }
+    }
+
+    function togglePinService(catId, srvId) {
+        const cat = findCat(catId), srv = findSrv(catId, srvId);
+        if (!srv) return;
+        pushUndo();
+        setPinned(cat.services, srv, !srv.isPinned);
+        cat.sU = now();
+        commit(); render();
+        toast(srv.isPinned ? 'تم التثبيت في الأعلى' : 'أُلغي التثبيت', { type: 'info' });
+    }
+
+    function togglePinLink(linkId) {
+        const loc = findLinkLoc(linkId);
+        if (!loc) return;
+        pushUndo();
+        setPinned(loc.s.links, loc.l, !loc.l.isPinned);
+        loc.s.lU = now();
+        commit(); render();
+        toast(loc.l.isPinned ? 'تم التثبيت في الأعلى' : 'أُلغي التثبيت', { type: 'info' });
+    }
+
+    function deleteLink(linkId) {
+        const loc = findLinkLoc(linkId);
+        if (!loc) return;
+        pushUndo();
+        loc.s.links = loc.s.links.filter(l => l.id !== linkId);
+        loc.s.lU = now();
+        db.tombstones[linkId] = now();
+        commit(); render();
+        toast('تم حذف الرابط', { type: 'info', action: { label: 'تراجع', fn: undo } });
+    }
+
+    function deleteService(catId, srvId) {
+        const cat = findCat(catId), srv = findSrv(catId, srvId);
+        if (!srv) return;
+        pushUndo();
+        cat.services = cat.services.filter(s => s.id !== srvId);
+        cat.sU = now();
+        db.tombstones[srvId] = now();
+        commit();
+        if (view.name === 'detail') goHome(false); else render();
+        toast(`تم حذف «${srv.name}»`, { type: 'info', action: { label: 'تراجع', fn: undo } });
+    }
+
+    async function deleteCategory(catId) {
+        const cat = findCat(catId);
+        if (!cat) return;
+        const n = cat.services.length;
+        if (n) {
+            const ok = await confirmDialog(`حذف «${cat.name}»؟`, `سيُحذف التصنيف مع ${nSites(n)} وجميع الروابط بداخله.`, 'حذف');
+            if (!ok) return;
+        }
+        pushUndo();
+        db.categories = db.categories.filter(c => c.id !== catId);
+        db.catsU = now();
+        db.tombstones[catId] = now();
+        commit(); render();
+        toast(`تم حذف «${cat.name}»`, { type: 'info', action: { label: 'تراجع', fn: undo } });
+    }
+
+    function moveService(catId, srvId, targetId) {
+        const from = findCat(catId), to = findCat(targetId), srv = findSrv(catId, srvId);
+        if (!from || !to || !srv || from === to) return;
+        pushUndo();
+        from.services = from.services.filter(s => s.id !== srvId);
+        to.services.push(touch(srv));
+        from.sU = to.sU = now();
+        commit();
+        if (view.name === 'detail') { view.catId = targetId; history.replaceState({ lh: 'detail', catId: targetId, srvId }, ''); }
+        render();
+        toast(`نُقل «${srv.name}» إلى «${to.name}»`, { type: 'info', action: { label: 'تراجع', fn: undo } });
+    }
+
+    async function openAllLinks(catId, srvId) {
+        const srv = findSrv(catId, srvId);
+        if (!srv || !srv.links.length) { toast('لا توجد روابط لفتحها', { type: 'err' }); return; }
+        if (srv.links.length > 5) {
+            const ok = await confirmDialog('فتح جميع الروابط', `سيتم فتح ${nLinks(srv.links.length)} في تبويبات جديدة. قد يمنع المتصفح بعضها.`, 'فتح');
+            if (!ok) return;
+        }
+        srv.links.forEach(l => window.open(l.url, '_blank', 'noopener'));
+    }
+
+    function copyText(text) {
+        const done = () => toast('تم نسخ الرابط');
+        const fail = () => toast('تعذّر النسخ', { type: 'err' });
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail);
+        else {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy'); ta.remove(); done();
+            } catch (e) { fail(); }
+        }
+    }
+
+    /* =====================================================================
+       القوائم
+       ===================================================================== */
+    function openMenu() {
+        const cats = db.categories.length;
+        const sites = db.categories.reduce((a, c) => a + c.services.length, 0);
+        const links = db.categories.reduce((a, c) => a + c.services.reduce((b, s) => b + s.links.length, 0), 0);
+        const light = document.documentElement.dataset.theme === 'light';
+        const items = [
+            { icon: 'folder-plus', label: 'تصنيف جديد', fn: () => openNameModal({ mode: 'new-cat' }, 'تصنيف جديد', '', 'اسم التصنيف') },
+            { icon: 'undo', label: 'تراجع عن آخر إجراء', disabled: !undoStack.length, fn: undo },
+            { icon: light ? 'moon' : 'sun', label: light ? 'المظهر الداكن' : 'المظهر الفاتح', fn: toggleTheme },
+            { icon: 'cloud', label: 'المزامنة والنسخ الاحتياطي', fn: openSyncPanel }
+        ];
+        if (deferredInstall) items.push({ icon: 'install', label: 'تثبيت التطبيق على الجهاز', fn: installApp });
+        openSheet('', items, `${nCats(cats)} • ${nSites(sites)} • ${nLinks(links)}`);
+    }
+
+    function openCatMenu(catId) {
+        const cat = findCat(catId);
+        if (!cat) return;
+        openSheet(cat.name, [
+            { icon: 'plus', label: 'إضافة رابط هنا', fn: () => openLinkModal({ catName: cat.name }) },
+            { icon: 'pencil', label: 'إعادة تسمية التصنيف', fn: () => openNameModal({ mode: 'rename-cat', catId }, 'إعادة تسمية التصنيف', cat.name, 'الاسم الجديد') },
+            { sep: true },
+            { icon: 'trash', label: 'حذف التصنيف', danger: true, fn: () => deleteCategory(catId) }
+        ]);
+    }
+
+    function openSrvMenu(catId, srvId, fromDetail) {
+        const cat = findCat(catId), srv = findSrv(catId, srvId);
+        if (!srv) return;
+        const direct = isRandomCat(cat) && srv.links[0];
+        const items = [];
+        if (fromDetail) items.push({ icon: 'plus', label: 'إضافة رابط', fn: () => openLinkModal({ catName: cat.name, srvName: srv.name }) });
+        if (srv.links.length > 1) items.push({ icon: 'external', label: 'فتح كل الروابط', fn: () => openAllLinks(catId, srvId) });
+        if (direct) {
+            items.push({ icon: 'copy', label: 'نسخ الرابط', fn: () => copyText(srv.links[0].url) });
+            items.push({ icon: 'pencil', label: 'تعديل الرابط', fn: () => openLinkModal({ editId: srv.links[0].id }) });
+        }
+        items.push({ icon: 'pin', label: srv.isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى', fn: () => togglePinService(catId, srvId) });
+        items.push({ icon: 'pencil', label: 'إعادة تسمية الموقع', fn: () => openNameModal({ mode: 'rename-srv', catId, srvId }, 'إعادة تسمية الموقع', srv.name, 'الاسم الجديد') });
+        if (db.categories.length > 1) items.push({ icon: 'move', label: 'نقل إلى تصنيف آخر', fn: () => openMoveSheet(catId, srvId) });
+        items.push({ sep: true });
+        items.push({ icon: 'trash', label: 'حذف الموقع', danger: true, fn: () => deleteService(catId, srvId) });
+        openSheet(srv.name, items);
+    }
+
+    function openMoveSheet(catId, srvId) {
+        openSheet('نقل إلى تصنيف', db.categories.filter(c => c.id !== catId).map(c => ({
+            icon: isRandomCat(c) ? 'shuffle' : 'folder', label: c.name, fn: () => moveService(catId, srvId, c.id)
+        })));
+    }
+
+    function openLinkMenu(linkId) {
+        const loc = findLinkLoc(linkId);
+        if (!loc) return;
+        openSheet(loc.l.title, [
+            { icon: 'pin', label: loc.l.isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى', fn: () => togglePinLink(linkId) },
+            { icon: 'copy', label: 'نسخ الرابط', fn: () => copyText(loc.l.url) },
+            { icon: 'pencil', label: 'تعديل', fn: () => openLinkModal({ editId: linkId }) },
+            { sep: true },
+            { icon: 'trash', label: 'حذف الرابط', danger: true, fn: () => deleteLink(linkId) }
+        ]);
+    }
+
+    /* =====================================================================
+       نافذة الاسم (تصنيف جديد / إعادة تسمية)
+       ===================================================================== */
+    function openNameModal(ctx, title, value, label) {
+        nameCtx = ctx;
+        $('#nameModalTitle').textContent = title;
+        $('#nameLabel').textContent = label || 'الاسم';
+        el.nameInput.value = value || '';
+        showLayer(el.nameModal);
+        setTimeout(() => { el.nameInput.focus(); el.nameInput.select(); }, 120);
+    }
+
+    function submitName(e) {
+        e.preventDefault();
+        const name = el.nameInput.value.trim();
+        if (!name || !nameCtx) return;
+        const ctx = nameCtx;
+        const dupe = db.categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== ctx.catId);
+
+        if (ctx.mode === 'new-cat') {
+            if (dupe) { toast('هذا التصنيف موجود بالفعل', { type: 'err' }); return; }
+            pushUndo();
+            db.categories.push({ id: uid('cat'), name, u: now(), sU: 0, services: [] });
+            db.catsU = now();
+            toast(`تم إنشاء «${name}»`);
+        } else if (ctx.mode === 'rename-cat') {
+            const cat = findCat(ctx.catId);
+            if (!cat) return;
+            if (dupe) { toast('هذا الاسم مستخدم لتصنيف آخر', { type: 'err' }); return; }
+            pushUndo(); cat.name = name; touch(cat);
+            toast('تم تحديث الاسم');
+        } else if (ctx.mode === 'rename-srv') {
+            const srv = findSrv(ctx.catId, ctx.srvId);
+            if (!srv) return;
+            pushUndo(); srv.name = name; touch(srv);
+            toast('تم تحديث الاسم');
+        }
+        hideLayer(el.nameModal);
+        nameCtx = null;
+        commit(); render();
+    }
+
+    /* =====================================================================
+       نافذة الرابط
+       ===================================================================== */
+    let ytFetchToken = 0;
+
+    function refreshSuggestions() {
+        el.catDatalist.innerHTML = db.categories.map(c => `<option value="${esc(c.name)}">`).join('');
+        const cat = db.categories.find(c => c.name.toLowerCase() === el.catInput.value.trim().toLowerCase());
+        const names = new Set();
+        (cat ? [cat] : db.categories).forEach(c => c.services.forEach(s => names.add(s.name)));
+        el.srvDatalist.innerHTML = [...names].map(n => `<option value="${esc(n)}">`).join('');
+    }
+
+    function setUrlHint(html, cls) {
+        el.urlHint.hidden = !html;
+        el.urlHint.className = 'hint ' + (cls || '');
+        el.urlHint.innerHTML = html || '';
+    }
+
+    function openLinkModal(opts = {}) {
+        const loc = opts.editId ? findLinkLoc(opts.editId) : null;
+        $('#linkModalTitle').textContent = loc ? 'تعديل الرابط' : 'رابط جديد';
+        $('#saveLinkBtn').textContent = loc ? 'حفظ التعديل' : 'حفظ';
+        el.editLinkId.value = loc ? loc.l.id : '';
+        ytFetchToken++;
+        setUrlHint('');
+
+        if (loc) {
+            el.urlInput.value = loc.l.url;
+            el.titleInput.value = loc.l.title;
+            el.catInput.value = loc.c.name;
+            el.srvInput.value = loc.s.name;
+            el.tagsInput.value = arr(loc.l.tags).join('، ');
+            el.notesInput.value = loc.l.notes || '';
+            el.moreBox.open = !!(loc.l.tags.length || loc.l.notes);
+        } else {
+            el.urlInput.value = opts.url || '';
+            el.titleInput.value = opts.title || '';
+            el.catInput.value = opts.catName || (db.categories.some(c => c.name === ui.lastCat) ? ui.lastCat : (db.categories[0] ? db.categories[0].name : ''));
+            el.srvInput.value = opts.srvName || '';
+            el.tagsInput.value = '';
+            el.notesInput.value = '';
+            el.moreBox.open = false;
+        }
+        refreshSuggestions();
+        showLayer(el.linkModal);
+        if (el.urlInput.value) onUrlInput();
+        setTimeout(() => {
+            const target = loc ? el.titleInput : (el.urlInput.value ? (el.catInput.value ? el.titleInput : el.catInput) : el.urlInput);
+            target.focus();
+        }, 150);
+    }
+
+    function closeLinkModal() { hideLayer(el.linkModal); }
+
+    async function onUrlInput() {
+        const raw = el.urlInput.value.trim();
+        const url = normalizeUrl(raw);
+        const vid = getYouTubeVideoId(raw);
+        const myToken = ++ytFetchToken;
+
+        const editId = el.editLinkId.value;
+        let dup = null;
+        if (url) {
+            const k = dupKey(url);
+            for (const c of db.categories) for (const s of c.services) for (const l of s.links) {
+                if (l.id !== editId && dupKey(l.url) === k) dup = { c, s, l };
+            }
+        }
+        if (dup) { setUrlHint(`${ic('alert')} محفوظ مسبقاً في «${esc(dup.s.name)}» ضمن «${esc(dup.c.name)}»`, 'warn'); return; }
+        if (vid) {
+            setUrlHint(`${ic('play')} رابط يوتيوب — سيُجلب العنوان والصورة تلقائياً`, 'yt');
+            if (!el.srvInput.value.trim()) el.srvInput.value = 'YouTube';
+            if (!el.titleInput.value.trim()) {
+                try {
+                    const res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(url));
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.title && myToken === ytFetchToken && !el.titleInput.value.trim()) el.titleInput.value = data.title;
+                    }
+                } catch (e) { /* بدون إنترنت: نتجاهل */ }
+            }
+            return;
+        }
+        setUrlHint('');
+    }
+
+    function submitLink(e) {
+        e.preventDefault();
+        const url = normalizeUrl(el.urlInput.value);
+        const catName = el.catInput.value.trim();
+        if (!url) { setUrlHint(`${ic('alert')} الرابط غير صالح`, 'warn'); el.urlInput.focus(); return; }
+        if (!catName) { el.catInput.focus(); return; }
+
+        const random = isRandomCat({ name: catName }) || (findCatByName(catName) && isRandomCat(findCatByName(catName)));
+        const srvName = el.srvInput.value.trim() || prettySiteName(url) || hostOf(url);
+        const title = el.titleInput.value.trim() || (random ? 'الصفحة الرئيسية' : (hostOf(url) || url));
+        const tags = el.tagsInput.value.split(/[,،]/).map(t => t.trim()).filter(Boolean);
+        const notes = el.notesInput.value.trim();
+        const editId = el.editLinkId.value;
+        const t = now();
+
+        pushUndo();
+
+        let cat = findCatByName(catName);
+        if (!cat) { cat = { id: uid('cat'), name: catName, u: t, sU: 0, services: [] }; db.categories.push(cat); db.catsU = t; }
+        let srv = cat.services.find(s => s.name.toLowerCase() === srvName.toLowerCase());
+        if (!srv) { srv = { id: uid('srv'), name: srvName, isPinned: false, u: t, lU: 0, links: [] }; cat.services.push(srv); cat.sU = t; }
+
+        if (editId) {
+            const loc = findLinkLoc(editId);
+            if (loc) {
+                Object.assign(loc.l, { title, url, tags, notes });
+                touch(loc.l);
+                if (loc.s !== srv) {
+                    loc.s.links = loc.s.links.filter(l => l.id !== editId);
+                    loc.s.lU = t;
+                    srv.links.push(loc.l);
+                    srv.lU = t;
+                } else loc.s.lU = loc.s.lU || 0;
+            }
+        } else {
+            srv.links.push({ id: uid('lnk'), title, url, notes, tags, isPinned: false, createdAt: t, u: t });
+            srv.lU = t;
+        }
+
+        ui.lastCat = cat.name; saveUi();
+        closeLinkModal();
+        commit(); render();
+        toast(editId ? 'تم حفظ التعديل' : `تمت الإضافة إلى «${srv.name}»`);
+    }
+
+    const findCatByName = name => db.categories.find(c => c.name.toLowerCase() === str(name).trim().toLowerCase());
+
+    function openAddFromContext() {
+        if (view.name === 'detail') {
+            const cat = findCat(view.catId), srv = findSrv(view.catId, view.srvId);
+            if (cat && srv) { openLinkModal({ catName: cat.name, srvName: srv.name }); return; }
+        }
+        openLinkModal({});
+    }
+
+    /* =====================================================================
+       المظهر
+       ===================================================================== */
+    function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        el.metaTheme.setAttribute('content', theme === 'light' ? '#f3f6fb' : '#0b1220');
+    }
+    function loadTheme() {
+        let t = store.get(THEME_KEY);
+        if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        applyTheme(t);
+    }
+    function toggleTheme() {
+        const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        applyTheme(t); store.set(THEME_KEY, t);
+    }
+
+    /* =====================================================================
+       المزامنة (واجهة)
+       ===================================================================== */
+    function timeAgo(ts) {
+        if (!ts) return '';
+        const s = Math.max(0, Math.round((now() - ts) / 1000));
+        if (s < 45) return 'الآن';
+        const m = Math.round(s / 60);
+        if (m < 60) return `منذ ${m} د`;
+        const h = Math.round(m / 60);
+        if (h < 24) return `منذ ${h} ساعة`;
+        return new Date(ts).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+    }
+
+    function syncText(st) {
+        switch (st.state) {
+            case 'off': return 'المزامنة غير مفعّلة';
+            case 'busy': return 'جارٍ المزامنة…';
+            case 'ok': return st.time ? `تمت المزامنة ${timeAgo(st.time)}` : 'المزامنة مفعّلة';
+            case 'auth': return 'سجّل الدخول لمتابعة المزامنة';
+            case 'offline': return 'لا يوجد اتصال — ستتم المزامنة لاحقاً';
+            default: return 'تعذّرت المزامنة' + (st.message ? ` (${st.message})` : '');
+        }
+    }
+
+    function updateSyncUi(st) {
+        el.syncBtn.dataset.state = st.state;
+        el.syncBtn.title = syncText(st);
+        el.syncBtn.setAttribute('aria-label', 'المزامنة: ' + syncText(st));
+        const use = el.syncBtn.querySelector('use');
+        if (use) use.setAttribute('href', st.state === 'off' || st.state === 'offline' ? '#i-cloud-off' : '#i-cloud');
+        if (panelKind === 'sync') renderSyncPanel();
+    }
+
+    function renderSyncPanel() {
+        const st = LinkSync.status();
+        const hasId = !!LinkSync.getClientId();
+        const connected = LinkSync.isConnected();
+        let body = `<div class="status-line" data-state="${st.state}"><span class="dot"></span><strong>${esc(syncText(st))}</strong></div>`;
+
+        if (!hasId) {
+            body += `<p class="help">لمزامنة روابطك بين جوالك وكمبيوترك عبر Google Drive، أنشئ Client ID مجاناً من Google Cloud (الخطوات في ملف README) والصقه هنا. تُحفظ البيانات في مجلد التطبيق الخاص بك فقط ولا يرى التطبيق بقية ملفاتك.</p>
+                <label class="field"><span>Client ID</span><input id="clientIdInput" type="text" dir="ltr" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+                <div class="btn-row"><button type="button" class="btn primary" data-action="save-client">حفظ وتفعيل</button></div>`;
+        } else if (!connected) {
+            body += `<p class="help">اربط حساب Google لتبقى روابطك متطابقة على كل أجهزتك.</p>
+                <div class="btn-row"><button type="button" class="btn primary" data-action="sync-connect">ربط حساب Google</button></div>`;
+        } else {
+            const needAuth = st.state === 'auth';
+            body += `<div class="btn-row">
+                <button type="button" class="btn primary" data-action="sync-now">${ic('refresh')} ${needAuth ? 'تسجيل الدخول' : 'مزامنة الآن'}</button>
+                <button type="button" class="btn" data-action="sync-off">قطع الاتصال</button></div>
+                <p class="help" style="margin-top:10px">يُحدَّث تلقائياً بعد كل تعديل وعند فتح التطبيق. قطع الاتصال لا يحذف بياناتك من الجهاز.</p>`;
+        }
+
+        body += `<details><summary>نسخة احتياطية يدوية (اختياري)</summary>
+            <div class="btn-row"><button type="button" class="btn" data-action="export">${ic('download')} تصدير</button>
+            <button type="button" class="btn" data-action="import">${ic('upload')} استيراد</button></div>
+            <p class="help" style="margin-top:10px">الاستيراد يدمج الملف مع بياناتك الحالية ولا يمحوها.</p></details>`;
+        el.sheetBody.innerHTML = `<div class="panel">${body}</div>`;
+    }
+
+    function openSyncPanel() {
+        panelKind = 'sync';
+        sheetItems = [];
+        el.sheetTitle.textContent = 'المزامنة والنسخ الاحتياطي';
+        renderSyncPanel();
+        showLayer(el.sheet);
+    }
+
+    // استلام نسخة مدمجة من المزامنة
+    function applyRemote(doc) {
+        if (dragging) { pendingRemote = doc; return; }
+        db = sanitizeDb(doc, 0);
+        saveLocal();
+        if (view.name === 'detail' && !findSrv(view.catId, view.srvId)) { view = { name: 'home', catId: null, srvId: null }; }
+        render();
+    }
+
+    /* =====================================================================
+       نسخ احتياطي يدوي
+       ===================================================================== */
+    function exportData() {
+        const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `link-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        toast('تم تصدير النسخة الاحتياطية');
+    }
+
+    function importData(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result);
+                const imported = sanitizeDb(parsed, now());
+                if (!imported.categories.length) { toast('الملف لا يحتوي بيانات صالحة', { type: 'err' }); return; }
+                pushUndo();
+                db = sanitizeDb(LinkSync.merge(db, imported), 0);
+                commit(); render();
+                closeAllLayers();
+                toast('تم دمج النسخة الاحتياطية', { action: { label: 'تراجع', fn: undo } });
+            } catch (e) { toast('تعذّرت قراءة الملف', { type: 'err' }); }
+        };
+        reader.readAsText(file);
+    }
+
+    /* =====================================================================
+       PWA: التثبيت، المشاركة، Service Worker
+       ===================================================================== */
+    function installApp() {
+        if (!deferredInstall) return;
+        deferredInstall.prompt();
+        deferredInstall.userChoice.finally(() => { deferredInstall = null; });
+    }
+
+    function handleLaunchParams() {
+        const p = new URLSearchParams(location.search);
+        if (!p.has('add') && !p.has('url') && !p.has('text') && !p.has('title')) return;
+        const text = `${p.get('url') || ''} ${p.get('text') || ''}`;
+        const m = text.match(/https?:\/\/[^\s]+/i);
+        const url = m ? m[0] : '';
+        const title = p.get('title') || '';
+        history.replaceState({ lh: 'home' }, '', location.pathname);
+        openLinkModal({ url, title: url && title && title !== url ? title : '' });
+    }
+
+    function registerSW() {
+        if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+            navigator.serviceWorker.register('sw.js').catch(() => { /* ignore */ });
+        }
+    }
+
+    /* =====================================================================
+       الأحداث
+       ===================================================================== */
+    function runSheetItem(i) {
+        const it = sheetItems[i];
+        if (!it || it.disabled) return;
+        hideLayer(el.sheet);
+        setTimeout(() => it.fn && it.fn(), 120);
+    }
+
+    function onClick(e) {
+        const t = e.target;
+
+        // عناصر القائمة
+        const si = t.closest('[data-sheet]');
+        if (si) { runSheetItem(Number(si.dataset.sheet)); return; }
+
+        // إغلاق عند الضغط على الخلفية أو زر الإلغاء
+        if (t.classList && t.classList.contains('backdrop')) {
+            if (t === el.confirmModal) closeConfirm(false); else { hideLayer(t); panelKind = null; }
+            return;
+        }
+        if (t.closest('[data-close]')) { const l = t.closest('.backdrop'); if (l) hideLayer(l); return; }
+
+        const a = t.closest('[data-action]');
+        if (!a) return;
+        const act = a.dataset.action;
+        const row = a.closest('[data-id]');
+
+        switch (act) {
+            case 'add': openAddFromContext(); break;
+            case 'toggle-cat': {
+                const sec = a.closest('.cat'); if (!sec) break;
+                const id = sec.dataset.id;
+                if (ui.collapsed[id]) delete ui.collapsed[id]; else ui.collapsed[id] = 1;
+                saveUi();
+                sec.classList.toggle('collapsed', !!ui.collapsed[id]);
+                a.setAttribute('aria-expanded', String(!ui.collapsed[id]));
+                break;
+            }
+            case 'cat-menu': openCatMenu(a.closest('.cat').dataset.id); break;
+            case 'open-srv': showService(a.dataset.cat, a.dataset.id); break;
+            case 'open-direct': if (a.dataset.url) window.open(a.dataset.url, '_blank', 'noopener'); break;
+            case 'srv-menu': openSrvMenu(row.dataset.cat, row.dataset.id, false); break;
+            case 'link-menu': openLinkMenu(row.dataset.id); break;
+            case 'tag': detailQuery = a.dataset.tag; el.detailSearch.value = detailQuery; renderDetail(); window.scrollTo(0, 0); break;
+            case 'save-client': {
+                const v = ($('#clientIdInput') || {}).value;
+                if (!v || !v.trim()) { toast('أدخل Client ID أولاً', { type: 'err' }); break; }
+                LinkSync.setClientId(v);
+                LinkSync.connect();
+                break;
+            }
+            case 'sync-connect': LinkSync.connect(); break;
+            case 'sync-now': LinkSync.syncNow({ interactive: true }); break;
+            case 'sync-off': LinkSync.disconnect(); toast('تم قطع الاتصال', { type: 'info' }); break;
+            case 'export': exportData(); break;
+            case 'import': el.importInput.click(); break;
+            default: break;
+        }
+    }
+
+    function bindEvents() {
+        document.addEventListener('click', onClick);
+
+        // تفعيل الصفوف بلوحة المفاتيح
+        document.addEventListener('keydown', e => {
+            if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.row.svc, .cat-head')) {
+                e.preventDefault(); e.target.click();
+            }
+            const mod = e.ctrlKey || e.metaKey;
+            const typing = /^(input|textarea|select)$/i.test((document.activeElement || {}).tagName || '');
+            if (mod && /^k$/i.test(e.key)) { e.preventDefault(); if (view.name !== 'home') goHome(); el.searchInput.focus(); el.searchInput.select(); }
+            else if (mod && /^n$/i.test(e.key)) { e.preventDefault(); openAddFromContext(); }
+            else if (mod && /^z$/i.test(e.key) && !typing) { e.preventDefault(); undo(); }
+            else if (e.key === 'Escape') {
+                const open = $$('.backdrop.open').pop();
+                if (open) { if (open === el.confirmModal) closeConfirm(false); else { hideLayer(open); panelKind = null; } }
+            }
+        });
+
+        // القائمة المنبثقة: على الجوال نمنع قائمة المتصفح (تتعارض مع السحب)، وعلى سطح المكتب يفتح كليك يمين قائمة البطاقة
+        const coarse = window.matchMedia('(pointer: coarse)');
+        document.addEventListener('contextmenu', e => {
+            const card = e.target.closest('.row, .cat-head');
+            if (!card) return;
+            if (coarse.matches) { e.preventDefault(); return; }
+            const btn = card.querySelector('[data-action$="-menu"]');
+            if (btn) { e.preventDefault(); btn.click(); }
+        });
+
+        // أيقونة الموقع: في حال فشل التحميل نعرض أيقونة بديلة
+        document.addEventListener('error', e => {
+            const img = e.target;
+            if (img && img.tagName === 'IMG' && img.closest('.fav')) {
+                const box = img.closest('.fav');
+                box.classList.add('fav-fallback');
+                box.innerHTML = ic('globe');
+            }
+        }, true);
+
+        el.brandBtn.addEventListener('click', () => { if (view.name === 'home') window.scrollTo({ top: 0, behavior: 'smooth' }); else goHome(); });
+        el.backBtn.addEventListener('click', () => goHome());
+        el.menuBtn.addEventListener('click', openMenu);
+        el.detailMenuBtn.addEventListener('click', () => openSrvMenu(view.catId, view.srvId, true));
+        el.fabBtn.addEventListener('click', openAddFromContext);
+
+        el.syncBtn.addEventListener('click', () => {
+            const st = LinkSync.status();
+            if (!LinkSync.isConnected()) openSyncPanel();
+            else if (st.state === 'auth') LinkSync.syncNow({ interactive: true });
+            else if (st.state === 'error') openSyncPanel();
+            else { LinkSync.syncNow({}); toast('جارٍ المزامنة…', { type: 'info' }); }
+        });
+
+        // البحث (مع تأخير بسيط)
+        let st;
+        el.searchInput.addEventListener('input', () => {
+            el.clearSearchBtn.hidden = !el.searchInput.value;
+            clearTimeout(st);
+            st = setTimeout(() => { searchQuery = el.searchInput.value; renderHome(); }, 90);
+        });
+        el.clearSearchBtn.addEventListener('click', () => {
+            el.searchInput.value = ''; searchQuery = ''; el.clearSearchBtn.hidden = true; renderHome(); el.searchInput.focus();
+        });
+        el.detailSearch.addEventListener('input', () => { detailQuery = el.detailSearch.value; renderDetail(); });
+
+        // نموذج الرابط
+        el.linkForm.addEventListener('submit', submitLink);
+        el.urlInput.addEventListener('input', onUrlInput);
+        el.urlInput.addEventListener('blur', () => {
+            // عند ترك الحقل نُكمل العنوان من اسم الموقع إن بقي فارغاً (بدون كتابة فوق ما أدخله المستخدم)
+            if (!el.titleInput.value.trim()) {
+                const u = normalizeUrl(el.urlInput.value);
+                if (u && !getYouTubeVideoId(u)) el.titleInput.placeholder = hostOf(u);
+            }
+        });
+        el.catInput.addEventListener('input', refreshSuggestions);
+        el.nameForm.addEventListener('submit', submitName);
+
+        el.confirmOk.addEventListener('click', () => closeConfirm(true));
+        el.confirmCancel.addEventListener('click', () => closeConfirm(false));
+        el.toastAct.addEventListener('click', () => { const f = toastAction; el.toast.classList.remove('show'); if (f) f(); });
+
+        el.importInput.addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
+
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+        window.addEventListener('appinstalled', () => { deferredInstall = null; toast('تم تثبيت التطبيق'); });
+    }
+
+    /* =====================================================================
+       البداية
+       ===================================================================== */
+    function cacheEls() {
+        const ids = ['homeView', 'detailView', 'catList', 'homeEmpty', 'linkList', 'detailEmpty', 'detailName', 'detailMeta', 'detailSearch', 'detailSearchWrap',
+            'searchInput', 'clearSearchBtn', 'brandBtn', 'backBtn', 'menuBtn', 'detailMenuBtn', 'syncBtn', 'fabBtn',
+            'sheet', 'sheetTitle', 'sheetBody', 'linkModal', 'linkForm', 'nameModal', 'nameForm', 'nameInput', 'confirmModal', 'confirmTitle', 'confirmMsg', 'confirmOk', 'confirmCancel',
+            'toast', 'toastIc', 'toastMsg', 'toastAct', 'importInput', 'metaTheme',
+            'urlInput', 'urlHint', 'titleInput', 'catInput', 'srvInput', 'tagsInput', 'notesInput', 'editLinkId'];
+        ids.forEach(id => { el[id] = document.getElementById(id); });
+        el.catDatalist = document.getElementById('catList2');
+        el.srvDatalist = document.getElementById('srvList2');
+        el.moreBox = document.querySelector('#linkForm details.more');
+    }
+
+    function boot() {
+        cacheEls();
+        loadTheme();
+        loadUi();
+        loadDb();
+        bindEvents();
+        history.replaceState({ lh: 'home' }, '');
+        render();
+        loadSortable().then(() => initSortable());
+
+        LinkSync.init({
+            getDoc: () => db,
+            sanitize: d => sanitizeDb(d, 0),
+            applyDoc: applyRemote,
+            onStatus: updateSyncUi
+        });
+        handleLaunchParams();
+        LinkSync.start();
+        registerSW();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else boot();
+})();

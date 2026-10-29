@@ -118,21 +118,11 @@ git push --force
 
 إلا إذا كنت تعرف بالضبط لماذا تستخدمه.
 
----
-
-📝 أمثلة لأسماء Commit
-
-من الهاتف:
-git -C /storage/emulated/0/Projects commit -m "Update from phone"
-
-من الكمبيوتر:
-git commit -m "Update from PC"
-
-تعديلات على حاسبة الطوب:
-git commit -m "Update brick calculator"
-
-تعديلات على شجرة العائلة:
-git commit -m "Update family tree"
-
-تعديلات على BBAN:
-git commit -m "Update BBAN"
+git stash
+لحفظ التعديلات الحالية مؤقتاً في ذاكرة مخفية وإعادة المستودع للحالة النظيفة دون أخطاء.
+​git stash pop
+لاسترجاع التعديلات التي قمت بتخزينها مؤقتاً عبر أمر git stash ودمجها مجدداً في العمل.
+​git restore .
+للتراجع عن جميع التعديلات غير المحفوظة في الملفات الحالية وإعادتها لآخر نسخة مثبتة.
+​git clean -fd
+لحذف جميع الملفات والمجلدات الجديدة غير المتعقبة (Untracked) نهائياً من مساحة العمل.

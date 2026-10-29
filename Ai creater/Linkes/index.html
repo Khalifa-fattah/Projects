@@ -1,374 +1,228 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدير الروابط والمواقع المصنفة | Link Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>مكتبة الروابط | Link Hub</title>
+    <meta name="description" content="تنظيم هرمي لتصنيفاتك ومواقعك وروابطها، مع مزامنة بين الأجهزة وعمل بدون إنترنت.">
+    <meta name="theme-color" content="#0b1220" id="metaTheme">
+    <meta name="color-scheme" content="dark light">
+
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="الروابط">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- SortableJS for Drag & Drop Reordering -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Main Top Header -->
-        <header class="app-header">
-            <div class="brand" id="brandHomeBtn" style="cursor: pointer;" title="العودة للصفحة الرئيسية">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-                <div>
-                    <h1>مكتبة الروابط والمواقع</h1>
-                    <p class="subtitle">تنظيم هرمي ذكي لتصنيفاتك ومواقعك وروابطها</p>
+    <!-- أيقونات SVG مضمّنة (بدون مكتبات خارجية) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+            <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+            <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+            <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></symbol>
+            <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+            <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+            <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+            <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+            <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+            <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+            <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+            <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+            <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol>
+            <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+            <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+            <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+            <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"/><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"/></symbol>
+            <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+            <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+            <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20 7 4" fill="currentColor"/></symbol>
+            <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+            <symbol id="i-move" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+            <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+            <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+            <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.97 4.08a2 2 0 0 1-2.06 0L2 12.5"/><path d="m22 17.5-8.97 4.08a2 2 0 0 1-2.06 0L2 17.5"/></symbol>
+            <symbol id="i-install" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 6v7"/><path d="m9 10 3 3 3-3"/><path d="M12 18h.01"/></symbol>
+            <symbol id="i-cog" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+        </defs>
+    </svg>
+
+    <noscript><p style="padding:24px;text-align:center">يتطلب هذا التطبيق تفعيل JavaScript.</p></noscript>
+
+    <!-- ===================== الصفحة الرئيسية ===================== -->
+    <section id="homeView" class="view">
+        <header class="topbar">
+            <div class="topbar-row">
+                <button class="brand" id="brandBtn" type="button" aria-label="الصفحة الرئيسية">
+                    <span class="brand-mark"><svg class="ic"><use href="#i-layers"/></svg></span>
+                    <span class="brand-name">مكتبة الروابط</span>
+                </button>
+                <div class="topbar-actions">
+                    <button class="icon-btn sync-btn" id="syncBtn" type="button" data-state="off" aria-label="المزامنة">
+                        <svg class="ic"><use href="#i-cloud-off"/></svg><span class="dot"></span>
+                    </button>
+                    <button class="icon-btn" id="menuBtn" type="button" aria-label="القائمة" aria-haspopup="dialog">
+                        <svg class="ic"><use href="#i-more"/></svg>
+                    </button>
                 </div>
             </div>
-
-            <div class="header-actions">
-                <button id="undoBtn" class="btn btn-secondary icon-only" title="تراجع عن آخر إجراء (Ctrl+Z)" disabled>
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
-                <button id="themeToggleBtn" class="btn btn-secondary icon-only" title="تغيير المظهر">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <button id="exportBtn" class="btn btn-secondary" title="تصدير نسخة احتياطية">
-                    <i class="fa-solid fa-download"></i> تصدير
-                </button>
-                <label for="importInput" class="btn btn-secondary" title="استيراد روابط">
-                    <i class="fa-solid fa-upload"></i> استيراد
-                    <input type="file" id="importInput" accept=".json" style="display: none;">
-                </label>
-                <button id="openAddCategoryModalBtn" class="btn btn-secondary">
-                    <i class="fa-solid fa-folder-plus"></i> تصنيف جديد
-                </button>
-                <button id="openAddModalBtn" class="btn btn-primary" title="إضافة رابط جديد (Ctrl+N)">
-                    <i class="fa-solid fa-plus"></i> إضافة رابط / موقع
+            <div class="search">
+                <svg class="ic search-ic" aria-hidden="true"><use href="#i-search"/></svg>
+                <input id="searchInput" type="search" placeholder="ابحث في التصنيفات والمواقع والروابط…" aria-label="بحث"
+                       enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button class="icon-btn clear" id="clearSearchBtn" type="button" hidden aria-label="مسح البحث">
+                    <svg class="ic"><use href="#i-x"/></svg>
                 </button>
             </div>
         </header>
 
-        <!-- ===================================================
-             VIEW 1: HOME VIEW (التصنيفات والمواقع)
-             =================================================== -->
-        <section id="homeView" class="app-view">
-            <!-- Stats Bar -->
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <i class="fa-solid fa-folder-tree"></i>
-                    <span>التصنيفات: <strong id="totalCategoriesCount">0</strong></span>
-                </div>
-                <div class="stat-card">
-                    <i class="fa-solid fa-globe"></i>
-                    <span>المواقع والخدمات: <strong id="totalServicesCount">0</strong></span>
-                </div>
-                <div class="stat-card">
-                    <i class="fa-solid fa-link"></i>
-                    <span>إجمالي الروابط: <strong id="totalLinksCount">0</strong></span>
-                </div>
-                <div class="stat-card">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                    <span>آخر إضافة: <strong id="lastAddedStat">-</strong></span>
-                </div>
-            </div>
+        <main id="catList" class="cat-grid"></main>
+        <div id="homeEmpty" class="empty" hidden></div>
+    </section>
 
-            <!-- Filter & Search Bar -->
-            <div class="controls-section">
-                <div class="search-and-sort">
-                    <div class="search-box">
-                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="ابحث باسم التصنيف، اسم الموقع، عنوان الرابط، الوسوم، أو الـ URL... (Ctrl+K)">
-                        <button id="clearSearchBtn" class="clear-btn" style="display: none;" title="مسح البحث">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    <select id="sortSelect" class="sort-select" title="ترتيب العرض">
-                        <option value="default">الترتيب الافتراضي</option>
-                        <option value="name-asc">الاسم (أ - ي)</option>
-                        <option value="name-desc">الاسم (ي - أ)</option>
-                        <option value="links-desc">الأكثر روابطاً</option>
-                        <option value="links-asc">الأقل روابطاً</option>
-                        <option value="newest">الأحدث إضافةً</option>
-                    </select>
-                </div>
-
-                <!-- Category Filter Chips -->
-                <div class="category-filters" id="categoryFilters">
-                    <!-- Dynamic -->
-                </div>
-
-                <!-- Tags Filter Row -->
-                <div class="tag-filter-row" id="tagFilterRow" style="display: none;">
-                    <span class="tag-filter-label"><i class="fa-solid fa-tags"></i> الوسوم:</span>
-                    <div id="activeTagChips" class="tag-chips-wrap"></div>
-                    <button id="clearTagsFilterBtn" class="filter-chip clear-tags-btn" style="display: none;">
-                        <i class="fa-solid fa-xmark"></i> مسح فلتر الوسوم
-                    </button>
-                </div>
-            </div>
-
-            <!-- Categories Grid (Cards of categories showing websites) -->
-            <main class="categories-grid" id="categoriesGrid">
-                <!-- Dynamically rendered -->
-            </main>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="fa-solid fa-folder-open"></i>
-                <h3>لا توجد مواقع مطابقة للبحث</h3>
-                <p>اضغط على "إضافة رابط / موقع" للبدء في تنظيم مواقعك وروابطك.</p>
-            </div>
-        </section>
-
-        <!-- ===================================================
-             VIEW 2: SERVICE DETAIL VIEW (صفحة روابط الموقع المعين)
-             =================================================== -->
-        <section id="serviceDetailView" class="app-view" style="display: none;">
-            <!-- Breadcrumb Navigation Bar -->
-            <div class="detail-top-bar">
-                <button id="backToHomeBtn" class="btn btn-secondary back-btn">
-                    <i class="fa-solid fa-arrow-right"></i> العودة للرئيسية
+    <!-- ===================== صفحة الموقع ===================== -->
+    <section id="detailView" class="view" hidden>
+        <header class="topbar">
+            <div class="topbar-row">
+                <button class="icon-btn" id="backBtn" type="button" aria-label="رجوع">
+                    <svg class="ic"><use href="#i-arrow-right"/></svg>
                 </button>
-                <div class="breadcrumb">
-                    <span id="detailCatName">التصنيف</span>
-                    <i class="fa-solid fa-chevron-left"></i>
-                    <span id="detailServiceName" class="active">اسم الموقع</span>
+                <div class="detail-title">
+                    <h1 id="detailName"></h1>
+                    <p id="detailMeta"></p>
                 </div>
-            </div>
-
-            <!-- Service Hero Card -->
-            <div class="service-hero-card">
-                <div class="service-hero-meta">
-                    <div id="serviceHeroIconWrapper" class="service-hero-icon-wrapper">
-                        <!-- Dynamic icon -->
-                    </div>
-                    <div>
-                        <h2 id="serviceHeroTitle">اسم الموقع</h2>
-                        <div class="service-hero-tags">
-                            <span class="badge" id="serviceHeroCatBadge"><i class="fa-regular fa-folder"></i> التصنيف</span>
-                            <span class="badge" id="serviceHeroLinksCount"><i class="fa-solid fa-link"></i> 0 روابط</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="service-hero-actions">
-                    <button id="openAllLinksBtn" class="btn btn-secondary" title="فتح جميع روابط هذا الموقع في تبويبات جديدة">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الكل
-                    </button>
-                    <button id="moveCurrentServiceBtn" class="btn btn-secondary" title="نقل هذا الموقع إلى تصنيف آخر">
-                        <i class="fa-solid fa-right-left"></i> نقل التصنيف
-                    </button>
-                    <button id="addLinkToCurrentServiceBtn" class="btn btn-primary">
-                        <i class="fa-solid fa-plus"></i> إضافة رابط لهذا الموقع
-                    </button>
-                    <button id="deleteCurrentServiceBtn" class="btn btn-secondary delete-service-btn" title="حذف هذا الموقع بالكامل">
-                        <i class="fa-regular fa-trash-can"></i> حذف الموقع
-                    </button>
-                </div>
-            </div>
-
-            <!-- Service Links Header -->
-            <div class="service-links-header">
-                <h3><i class="fa-solid fa-list-ol"></i> قائمة روابط الموقع المعين</h3>
-                <div class="detail-search-box">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="detailSearchInput" placeholder="بحث داخل روابط هذا الموقع...">
-                </div>
-            </div>
-
-            <!-- Ordered Links Container for Service Detail -->
-            <ol class="detail-ordered-links-list" id="detailLinksList">
-                <!-- Dynamically rendered -->
-            </ol>
-
-            <div id="detailEmptyState" class="empty-state" style="display: none;">
-                <i class="fa-solid fa-link-slash"></i>
-                <h3>لا توجد روابط لهذا الموقع بعد</h3>
-                <p>اضغط على زر "إضافة رابط لهذا الموقع" لإضافة روابط وصفحات هذا الموقع.</p>
-            </div>
-        </section>
-    </div>
-
-    <!-- ===================================================
-         MODALS
-         =================================================== -->
-
-    <!-- Add / Edit Link Modal -->
-    <div class="modal-backdrop" id="linkModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modalTitle">إضافة رابط لموقع</h2>
-                <button class="close-btn" id="closeModalBtn">&times;</button>
-            </div>
-            <form id="linkForm">
-                <input type="hidden" id="editCatId">
-                <input type="hidden" id="editServiceId">
-                <input type="hidden" id="editLinkId">
-                
-                <div class="form-group">
-                    <label for="categoryInput">التصنيف (مجلد التصنيف) *</label>
-                    <input type="text" id="categoryInput" required placeholder="مثال: الذكاء الاصطناعي، خدمات Google..." list="categorySuggestions">
-                    <datalist id="categorySuggestions"></datalist>
-                </div>
-
-                <div class="form-group">
-                    <label for="serviceInput">اسم الموقع أو الخدمة *</label>
-                    <input type="text" id="serviceInput" required placeholder="مثال: ChatGPT، YouTube، GitHub..." list="serviceSuggestions">
-                    <datalist id="serviceSuggestions"></datalist>
-                </div>
-
-                <div class="form-group">
-                    <label for="linkTitleInput">اسم أو وصف الرابط *</label>
-                    <input type="text" id="linkTitleInput" required placeholder="مثال: الصفحة الرئيسية، شرح ميزة X، لوحة التحكم...">
-                </div>
-
-                <div class="form-group">
-                    <label for="linkUrlInput">الرابط (URL) *</label>
-                    <input type="url" id="linkUrlInput" required placeholder="https://example.com أو رابط فيديو يوتيوب">
-                    <span id="youtubeDetectedHint" class="form-hint" style="display: none;">
-                        <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> تم التعرف على رابط يوتيوب! سيتم جلب الصورة المصغرة والمعلومات تلقائياً.
-                    </span>
-                    <span id="duplicateWarningHint" class="form-hint form-hint-warning" style="display: none;">
-                        <i class="fa-solid fa-triangle-exclamation"></i> <span id="duplicateWarningText">تنبيه: هذا الرابط مسجل مسبقاً!</span>
-                    </span>
-                </div>
-
-                <div class="form-group">
-                    <label for="linkTagsInput">الوسوم / Tags (اختياري - مفصولة بفاصلة)</label>
-                    <input type="text" id="linkTagsInput" placeholder="مثال: مهم، شروحات، برمجة، قراءة...">
-                </div>
-
-                <div class="form-group">
-                    <label for="linkNotesInput">ملاحظات إضافية (اختياري)</label>
-                    <textarea id="linkNotesInput" rows="2" placeholder="ملاحظات سريعة، اسم الحساب، أو وصف للمحتوى..."></textarea>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelModalBtn">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" id="saveLinkBtn">
-                        <i class="fa-solid fa-check"></i> حفظ
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Move Service Modal -->
-    <div class="modal-backdrop" id="moveServiceModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>نقل الموقع إلى تصنيف آخر</h2>
-                <button class="close-btn" id="closeMoveServiceModalBtn">&times;</button>
-            </div>
-            <form id="moveServiceForm">
-                <div class="form-group">
-                    <label for="moveServiceSelect">اختر التصنيف الجديد للموقع *</label>
-                    <select id="moveServiceSelect" required class="form-select"></select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelMoveServiceModalBtn">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-right-left"></i> نقل الموقع
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Category Modal -->
-    <div class="modal-backdrop" id="categoryModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>إضافة تصنيف جديد</h2>
-                <button class="close-btn" id="closeCategoryModalBtn">&times;</button>
-            </div>
-            <form id="categoryForm">
-                <div class="form-group">
-                    <label for="newCategoryName">اسم التصنيف الجديد *</label>
-                    <input type="text" id="newCategoryName" required placeholder="مثال: التسويق الرقمي، محركات البحث...">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelCategoryModalBtn">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-plus"></i> إنشاء التصنيف
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Category Name Modal (Pencil Icon) -->
-    <div class="modal-backdrop" id="editCategoryModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>تعديل اسم التصنيف</h2>
-                <button class="close-btn" id="closeEditCategoryModalBtn">&times;</button>
-            </div>
-            <form id="editCategoryForm">
-                <input type="hidden" id="editCategoryTargetId">
-                <div class="form-group">
-                    <label for="editCategoryNewName">الاسم الجديد للتصنيف *</label>
-                    <input type="text" id="editCategoryNewName" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelEditCategoryModalBtn">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-check"></i> تحديث الاسم
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Custom Confirmation Modal (رسالة تأكيد الحذف بتصميم متناسق) -->
-    <div class="modal-backdrop" id="confirmModal">
-        <div class="modal confirm-modal-card">
-            <div class="confirm-icon-wrapper">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 id="confirmTitle" class="confirm-title">تأكيد الإجراء</h3>
-            <p id="confirmMessage" class="confirm-message">هل أنت متأكد من رغبتك في حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.</p>
-            <div class="modal-actions confirm-actions">
-                <button type="button" class="btn btn-secondary" id="confirmCancelBtn">إلغاء</button>
-                <button type="button" class="btn btn-danger" id="confirmOkBtn">
-                    <i class="fa-regular fa-trash-can"></i> تأكيد الحذف
+                <button class="icon-btn" id="detailMenuBtn" type="button" aria-label="خيارات الموقع" aria-haspopup="dialog">
+                    <svg class="ic"><use href="#i-more"/></svg>
                 </button>
             </div>
+            <div class="search" id="detailSearchWrap" hidden>
+                <svg class="ic search-ic" aria-hidden="true"><use href="#i-search"/></svg>
+                <input id="detailSearch" type="search" placeholder="بحث داخل روابط هذا الموقع…" aria-label="بحث في الروابط"
+                       autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+        </header>
+
+        <ol id="linkList" class="link-list"></ol>
+        <div id="detailEmpty" class="empty" hidden></div>
+    </section>
+
+    <button class="fab" id="fabBtn" type="button" aria-label="إضافة رابط">
+        <svg class="ic"><use href="#i-plus"/></svg>
+    </button>
+
+    <!-- ===================== قائمة الخيارات (Bottom sheet) ===================== -->
+    <div class="backdrop" id="sheet" aria-hidden="true">
+        <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+            <div class="grab" aria-hidden="true"></div>
+            <h2 id="sheetTitle" class="sheet-title"></h2>
+            <div id="sheetBody"></div>
         </div>
     </div>
 
-    <!-- Custom Context Menu -->
-    <div id="contextMenu" class="context-menu" style="display: none;">
-        <button class="context-menu-item" id="ctxOpen">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح في تبويب جديد
-        </button>
-        <button class="context-menu-item" id="ctxCopy">
-            <i class="fa-regular fa-copy"></i> نسخ الرابط
-        </button>
-        <button class="context-menu-item" id="ctxPin">
-            <i class="fa-solid fa-thumbtack"></i> <span id="ctxPinText">تثبيت / إلغاء التثبيت</span>
-        </button>
-        <div class="context-menu-divider"></div>
-        <button class="context-menu-item" id="ctxEdit">
-            <i class="fa-regular fa-pen-to-square"></i> تعديل
-        </button>
-        <button class="context-menu-item context-menu-item-danger" id="ctxDelete">
-            <i class="fa-regular fa-trash-can"></i> حذف
-        </button>
+    <!-- ===================== إضافة / تعديل رابط ===================== -->
+    <div class="backdrop" id="linkModal" aria-hidden="true">
+        <form class="sheet form" id="linkForm" role="dialog" aria-modal="true" aria-labelledby="linkModalTitle" novalidate>
+            <div class="grab" aria-hidden="true"></div>
+            <h2 id="linkModalTitle" class="sheet-title">رابط جديد</h2>
+
+            <input type="hidden" id="editLinkId">
+
+            <label class="field">
+                <span>الرابط</span>
+                <input id="urlInput" type="text" inputmode="url" dir="ltr" placeholder="https://example.com"
+                       autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+                <small id="urlHint" class="hint" hidden></small>
+            </label>
+
+            <label class="field">
+                <span>العنوان <em>(اختياري)</em></span>
+                <input id="titleInput" type="text" placeholder="يُملأ تلقائياً من الرابط" autocomplete="off" enterkeyhint="next">
+            </label>
+
+            <div class="field-row">
+                <label class="field">
+                    <span>التصنيف</span>
+                    <input id="catInput" type="text" list="catList2" placeholder="مثال: الذكاء الاصطناعي" autocomplete="off" required enterkeyhint="next">
+                    <datalist id="catList2"></datalist>
+                </label>
+                <label class="field">
+                    <span>الموقع <em>(اختياري)</em></span>
+                    <input id="srvInput" type="text" list="srvList2" placeholder="مثال: ChatGPT" autocomplete="off" enterkeyhint="done">
+                    <datalist id="srvList2"></datalist>
+                </label>
+            </div>
+
+            <details class="more">
+                <summary>خيارات إضافية</summary>
+                <label class="field">
+                    <span>الوسوم <em>(مفصولة بفاصلة)</em></span>
+                    <input id="tagsInput" type="text" placeholder="مهم، برمجة، قراءة" autocomplete="off">
+                </label>
+                <label class="field">
+                    <span>ملاحظات</span>
+                    <textarea id="notesInput" rows="2" placeholder="أي ملاحظة سريعة…"></textarea>
+                </label>
+            </details>
+
+            <div class="actions">
+                <button type="button" class="btn" data-close>إلغاء</button>
+                <button type="submit" class="btn primary" id="saveLinkBtn">حفظ</button>
+            </div>
+        </form>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">
-        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
-        <span id="toastMessage">تم بنجاح!</span>
+    <!-- ===================== اسم (تصنيف جديد / إعادة تسمية) ===================== -->
+    <div class="backdrop" id="nameModal" aria-hidden="true">
+        <form class="sheet form" id="nameForm" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
+            <div class="grab" aria-hidden="true"></div>
+            <h2 id="nameModalTitle" class="sheet-title"></h2>
+            <label class="field">
+                <span id="nameLabel">الاسم</span>
+                <input id="nameInput" type="text" required autocomplete="off" enterkeyhint="done">
+            </label>
+            <div class="actions">
+                <button type="button" class="btn" data-close>إلغاء</button>
+                <button type="submit" class="btn primary">حفظ</button>
+            </div>
+        </form>
     </div>
 
-    <!-- Keyboard Shortcuts Hint -->
-    <div class="shortcuts-hint" title="اختصارات لوحة المفاتيح">
-        <span><kbd>Ctrl+K</kbd> بحث</span>
-        <span><kbd>Ctrl+N</kbd> رابط جديد</span>
-        <span><kbd>Ctrl+Z</kbd> تراجع</span>
+    <!-- ===================== تأكيد ===================== -->
+    <div class="backdrop" id="confirmModal" aria-hidden="true">
+        <div class="sheet confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+            <div class="grab" aria-hidden="true"></div>
+            <h2 id="confirmTitle" class="sheet-title"></h2>
+            <p id="confirmMsg" class="confirm-msg"></p>
+            <div class="actions">
+                <button type="button" class="btn" id="confirmCancel">إلغاء</button>
+                <button type="button" class="btn danger" id="confirmOk">تأكيد</button>
+            </div>
+        </div>
     </div>
 
+    <!-- ===================== إشعار ===================== -->
+    <div class="toast" id="toast" role="status" aria-live="polite">
+        <span id="toastIc" class="toast-ic"></span>
+        <span id="toastMsg"></span>
+        <button type="button" id="toastAct" class="toast-act" hidden></button>
+    </div>
+
+    <input type="file" id="importInput" accept="application/json,.json" hidden>
+
+    <script src="sync.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
