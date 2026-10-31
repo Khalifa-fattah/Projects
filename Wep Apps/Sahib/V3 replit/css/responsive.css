@@ -1,0 +1,44 @@
+.bottom { position: fixed; z-index: 40; inset-inline: 0; bottom: 0; display: flex; background: var(--paper-soft); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+.bottom button { flex: 1; min-width: 0; min-height: 56px; background: none; border: 0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px; color: var(--ink-faint); }
+.bottom button:hover { background: var(--paper); }
+.bottom button.active { color: var(--ink-strong); background: var(--paper); }
+.bottom button svg { width: 21px; height: 21px; }
+.bottom button span { font-size: .66rem; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 380px) {
+  main { padding-inline: 12px; }
+  .top { padding-inline: 14px; }
+  .date-hint { display: none; }
+  .section-heading { gap: 8px; }
+  .section-heading .btn { padding-inline: 10px; font-size: .8rem; }
+  .row2 { gap: 8px; }
+  .field input, .field select { padding-inline: 8px; font-size: .9rem; }
+  .hidden-ayah { flex-direction: column; align-items: stretch; }
+  .schedule-head .field { width: 140px; }
+}
+
+@media (min-width: 600px) {
+  main { padding: 28px 28px 104px; }
+  .review-modes { grid-template-columns: repeat(3, 1fr); }
+  .mode-action { min-height: 108px; }
+  .list-tools { grid-template-columns: 2fr 1fr 1fr; align-items: end; }
+  .list-tools .search-field { grid-column: auto; }
+  .list-tools .check-line { grid-column: 1 / -1; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .interval-grid { grid-template-columns: repeat(5, 1fr); }
+  .entry-actions { justify-content: flex-start; }
+  .entry-actions .btn { flex: 0 0 auto; }
+}
+
+@media (min-width: 960px) {
+  .app-shell { max-width: 1180px; display: grid; grid-template-columns: 190px minmax(0, 1fr); grid-template-areas: 'header header' 'nav main'; align-items: start; }
+  .top { grid-area: header; padding-inline: 28px; }
+  main { grid-area: main; width: 100%; max-width: 820px; padding: 32px 36px 64px; }
+  .bottom { grid-area: nav; position: sticky; top: 0; height: 100dvh; padding: 28px 16px; border-top: 0; border-inline-end: 1px solid var(--line); flex-direction: column; justify-content: flex-start; gap: 8px; }
+  .bottom button { flex: 0 0 auto; width: 100%; min-height: 52px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 10px 14px; }
+  .bottom button span { font-size: .85rem; }
+  .storage-warning { grid-column: 1 / -1; margin-inline: 28px; }
+  .toast { bottom: 28px; }
+  .review-overlay { inset-inline: 0; border-inline: 1px solid var(--line); }
+  .review-body { padding: 28px 36px; }
+}

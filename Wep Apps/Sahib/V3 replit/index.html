@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f3d3a">
+  <meta name="description" content="صاحِب: رفيق عربي لتنظيم حفظ القرآن الكريم ومراجعته وتتبع التقدم محليًا.">
+  <title>صاحِب — رفيق حفظ القرآن ومراجعته</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+  <link rel="stylesheet" href="./css/themes.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/responsive.css">
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">انتقل إلى المحتوى</a>
+  <div id="app" class="app-shell">
+    <header class="top">
+      <button class="wordmark" data-tab-target="list" aria-label="صاحِب، العودة إلى المحفوظات">صاح<span>ب</span></button>
+      <div class="top-actions">
+        <span id="connectionStatus" class="connection-status">متصل</span>
+        <span id="todayHint" class="date-hint"></span>
+        <button class="icon-btn" id="themeToggleBtn" aria-label="تبديل الوضع الليلي" title="تبديل الوضع الليلي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="storageWarning" class="storage-warning" role="alert" hidden></div>
+
+    <main id="mainContent" tabindex="-1">
+      <section class="view active" id="view-list" aria-labelledby="listTitle">
+        <div class="section-heading">
+          <div><h1 id="listTitle">محفوظاتي</h1><p>المقاطع المسجلة للحفظ، لا مقياس تلقائي للإتقان.</p></div>
+          <button class="btn btn-primary compact" data-tab-target="add">إضافة مقطع</button>
+        </div>
+        <div class="stats-strip" id="listStatsStrip"></div>
+        <div class="list-tools" aria-label="البحث وتصفية المحفوظات">
+          <div class="field search-field"><label for="entrySearch">بحث</label><input id="entrySearch" type="search" placeholder="اسم سورة، رقم آية، أو ملاحظة"></div>
+          <div class="field"><label for="masteryFilter">الإتقان</label><select id="masteryFilter"><option value="all">كل المستويات</option><option value="unrated">دون تقييم</option><option value="new">جديد</option><option value="learning">قيد التثبيت</option><option value="good">جيد</option><option value="mastered">متقن</option></select></div>
+          <div class="field"><label for="entrySort">الترتيب</label><select id="entrySort"><option value="surah">حسب السورة</option><option value="dateAdded">تاريخ الإضافة</option><option value="lastReviewed">آخر مراجعة</option><option value="priority">أولوية المراجعة</option></select></div>
+          <label class="check-line"><input type="checkbox" id="needsReviewFilter"> تحتاج مراجعة</label>
+        </div>
+        <div id="listContent" aria-live="polite"></div>
+      </section>
+
+      <section class="view" id="view-review" aria-labelledby="reviewTitle">
+        <div class="section-heading"><div><h1 id="reviewTitle">خطة المراجعة</h1><p>جدولة واضحة تعتمد على آخر نتيجة وموعد المراجعة.</p></div></div>
+        <div id="dailySummary" class="daily-summary"></div>
+        <div class="review-modes" aria-label="أوضاع المراجعة">
+          <button class="mode-action primary" id="startDailyBtn"><strong>الجلسة اليومية</strong><span>مقاطع مقترحة مع تقدم وملخص</span></button>
+          <button class="mode-action" id="startRandomBtn"><strong>مراجعة عشوائية</strong><span>أولوية أكبر للمستحق دون تكرار الجلسة</span></button>
+          <button class="mode-action" id="openSurahReviewBtn"><strong>سورة ونطاق محدد</strong><span>راجع نطاقًا حتى لو لم يكن مسجلًا</span></button>
+        </div>
+        <div id="surahRangePanel" class="inline-panel" hidden>
+          <h2>مراجعة سورة محددة</h2>
+          <form id="surahReviewForm">
+            <div class="field"><label for="reviewSurahSelect">السورة</label><select id="reviewSurahSelect"></select></div>
+            <div class="row2"><div class="field"><label for="reviewFromAyah">من آية</label><input id="reviewFromAyah" type="number" min="1" value="1" required></div><div class="field"><label for="reviewToAyah">إلى آية</label><input id="reviewToAyah" type="number" min="1" value="1" required></div></div>
+            <div class="field"><label for="reviewChunkSize">طريقة المراجعة</label><select id="reviewChunkSize"><option value="0">النطاق كاملًا</option><option value="5">تقسيمه إلى مقاطع من 5 آيات</option><option value="10">تقسيمه إلى مقاطع من 10 آيات</option></select></div>
+            <div class="button-row"><button type="submit" class="btn btn-primary">بدء المراجعة</button><button type="button" class="btn btn-ghost" id="cancelSurahReview">إلغاء</button></div>
+          </form>
+        </div>
+        <div class="schedule-head"><h2>المقاطع والمواعيد</h2><div class="field"><label for="scheduleFilter">عرض</label><select id="scheduleFilter"><option value="due">المستحقة اليوم</option><option value="overdue">المتأخرة</option><option value="upcoming">القادمة</option><option value="all">الكل</option></select></div></div>
+        <div id="scheduleList"></div>
+        <section class="history-section" aria-labelledby="historyTitle"><h2 id="historyTitle">آخر المراجعات</h2><div id="reviewHistory"></div></section>
+      </section>
+
+      <section class="view" id="view-add" aria-labelledby="addTitle">
+        <div class="section-heading"><div><h1 id="addTitle">إضافة حفظ جديد</h1><p>سجّل ما تحفظه مع ملاحظات تساعدك لاحقًا.</p></div></div>
+        <form id="entryForm" novalidate>
+          <div class="form-error" id="addError" role="alert" hidden></div>
+          <div class="field"><label for="surahSelect">السورة</label><select id="surahSelect" required></select><div class="hint" id="surahAyahHint"></div></div>
+          <div class="row2"><div class="field"><label for="fromAyah">من آية</label><input type="number" id="fromAyah" min="1" value="1" required></div><div class="field"><label for="toAyah">إلى آية</label><input type="number" id="toAyah" min="1" value="1" required></div></div>
+          <label class="check-line"><input type="checkbox" id="wholeSurahBox"> تحديد السورة كاملة</label>
+          <div class="row2"><div class="field"><label for="startDate">تاريخ بدء الحفظ</label><input type="date" id="startDate"></div><div class="field"><label for="masteryInput">تقييمك الحالي للإتقان</label><select id="masteryInput"><option value="unrated">دون تقييم</option><option value="new">جديد</option><option value="learning">قيد التثبيت</option><option value="good">جيد</option><option value="mastered">متقن</option></select></div></div>
+          <div class="field"><label for="categoryInput">تصنيف اختياري</label><input id="categoryInput" maxlength="80" placeholder="مثال: حفظ جديد، مراجعة قديمة"></div>
+          <div class="field"><label for="notesInput">ملاحظات اختيارية</label><textarea id="notesInput" maxlength="4000" rows="3" placeholder="موضع تشابه أو ملاحظة للتثبيت"></textarea></div>
+          <div class="button-row"><button class="btn btn-primary" id="saveEntryBtn" type="submit">حفظ في قائمة المراجعة</button><button class="btn btn-ghost" id="cancelEditBtn" type="button" hidden>إلغاء التعديل</button></div>
+        </form>
+      </section>
+
+      <section class="view" id="view-stats" aria-labelledby="statsTitle">
+        <div class="section-heading"><div><h1 id="statsTitle">إحصائياتي</h1><p>مؤشرات منفصلة للتسجيل والاختبار والتقييم اليدوي.</p></div></div>
+        <div id="statsContent"></div>
+      </section>
+
+      <section class="view" id="view-settings" aria-labelledby="settingsTitle">
+        <div class="section-heading"><div><h1 id="settingsTitle">الإعدادات والبيانات</h1><p>كل بياناتك الشخصية تبقى في هذا المتصفح.</p></div></div>
+        <form id="settingsForm" class="settings-form">
+          <h2>التخصيص والأهداف</h2>
+          <div class="row2"><div class="field"><label for="themeSetting">المظهر</label><select id="themeSetting"><option value="light">نهاري</option><option value="dark">ليلي</option></select></div><div class="field"><label for="defaultSortSetting">ترتيب المحفوظات</label><select id="defaultSortSetting"><option value="surah">حسب السورة</option><option value="dateAdded">تاريخ الإضافة</option><option value="lastReviewed">آخر مراجعة</option><option value="priority">أولوية المراجعة</option></select></div></div>
+          <div class="row2"><div class="field"><label for="dailyGoalSetting">الهدف اليومي (جلسات)</label><input id="dailyGoalSetting" type="number" min="1" max="50" required></div><div class="field"><label for="weeklyGoalSetting">الهدف الأسبوعي (جلسات)</label><input id="weeklyGoalSetting" type="number" min="1" max="200" required></div></div>
+          <div class="row2"><div class="field"><label for="suggestedCountSetting">المقاطع المقترحة يوميًا</label><input id="suggestedCountSetting" type="number" min="1" max="20" required></div><div class="field"><label for="fontSizeSetting">حجم نص الآيات</label><input id="fontSizeSetting" type="number" min="20" max="40" required></div></div>
+          <label class="check-line"><input id="notificationsSetting" type="checkbox"> إظهار التنبيهات المؤقتة داخل التطبيق</label>
+          <h2>فترات الجدولة بالأيام</h2>
+          <div class="interval-grid"><div class="field"><label for="intervalMastered">متقن</label><input id="intervalMastered" type="number" min="1" max="365"></div><div class="field"><label for="intervalGood">جيد</label><input id="intervalGood" type="number" min="1" max="180"></div><div class="field"><label for="intervalSoon">مراجعة قريبة</label><input id="intervalSoon" type="number" min="0" max="60"></div><div class="field"><label for="intervalFailed">تعذر التسميع</label><input id="intervalFailed" type="number" min="0" max="30"></div><div class="field"><label for="intervalNew">مقطع جديد</label><input id="intervalNew" type="number" min="0" max="30"></div></div>
+          <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+        </form>
+        <section class="data-section" aria-labelledby="backupTitle"><h2 id="backupTitle">النسخ الاحتياطي والاستعادة</h2><p>لا يتضمن الملف نص القرآن؛ يتضمن المحفوظات والمراجعات والإعدادات والجدولة.</p><div class="button-row"><button class="btn btn-gold" id="exportBtn">تصدير نسخة JSON</button><button class="btn btn-ghost" id="importBtn">اختيار ملف استعادة</button></div><input id="importFile" type="file" accept="application/json,.json" hidden><div id="importOptions" class="inline-panel" hidden><p id="importSummary"></p><div class="button-row"><button class="btn btn-primary" id="mergeImportBtn">دمج دون تكرار</button><button class="btn btn-danger" id="replaceImportBtn">استبدال بعد نسخة احتياطية</button></div></div><button class="text-btn" id="downloadRawBtn" hidden>تنزيل البيانات الخام للإنقاذ</button></section>
+        <section class="data-section" aria-labelledby="installTitle"><h2 id="installTitle">التثبيت والمعلومات</h2><p id="installHelp">يمكن تثبيت «صاحِب» من متصفح يدعم تطبيقات الويب التقدمية. على Android: قائمة المتصفح ثم «تثبيت التطبيق».</p><button class="btn btn-ghost" id="installBtn" hidden>تثبيت التطبيق</button><p class="app-meta">صاحِب · الإصدار <span id="appVersion"></span><br>المصدر النصي: Al Quran Cloud، إصدار quran-uthmani. التقييم اليدوي ولا يوجد كشف آلي لأخطاء التلاوة.</p></section>
+      </section>
+    </main>
+
+    <nav class="bottom" aria-label="التنقل الرئيسي">
+      <button data-tab="list" class="active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>محفوظاتي</span></button>
+      <button data-tab="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2 5.5M20 5v6h-6"/></svg><span>المراجعة</span></button>
+      <button data-tab="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>إضافة</span></button>
+      <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"/></svg><span>الإحصائيات</span></button>
+      <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></svg><span>الإعدادات</span></button>
+    </nav>
+  </div>
+
+  <div id="reviewOverlay" class="review-overlay" role="dialog" aria-modal="true" aria-labelledby="sessionTitle" hidden>
+    <div class="review-head"><div class="titles"><h2 id="sessionTitle">—</h2><p id="reviewSubtitle">—</p></div><div class="session-head-actions"><span id="sessionTimer" class="session-timer" aria-label="مدة الجلسة">0:00</span><button class="icon-btn" id="reviewCloseBtn" aria-label="إغلاق الجلسة">✕</button></div></div>
+    <div class="review-toolbar"><button id="toggleHideBtn" class="btn btn-ghost" disabled>إخفاء النص للاختبار</button><button id="revealAllBtn" class="btn btn-ghost" disabled>إظهار كل النص</button></div>
+    <div class="review-body" id="reviewBody"><div class="review-loading" role="status">جارٍ تحميل الآيات والتحقق منها…</div></div>
+    <div class="review-footer" id="reviewFooter"><button class="btn btn-primary" id="finishSessionBtn" disabled>إنهاء المراجعة وتقييمها</button></div>
+    <form id="evaluationPanel" class="evaluation-panel" hidden>
+      <fieldset><legend>كيف كانت محاولتك؟</legend><label><input type="radio" name="reviewRating" value="mastered" required> متقن</label><label><input type="radio" name="reviewRating" value="good"> جيد مع بعض الأخطاء</label><label><input type="radio" name="reviewRating" value="soon"> يحتاج إلى مراجعة قريبة</label><label><input type="radio" name="reviewRating" value="failed"> لم أتمكن من التسميع</label></fieldset>
+      <div class="field"><label for="reviewNotes">ملاحظات اختيارية</label><textarea id="reviewNotes" rows="2" maxlength="4000" placeholder="موضع خطأ، آية منسية، أو تشابه يحتاج تثبيتًا"></textarea></div>
+      <div class="form-error" id="reviewSaveError" role="alert" hidden></div>
+      <div class="button-row"><button class="btn btn-primary" id="saveReviewBtn" type="submit">تسجيل النتيجة</button><button class="btn btn-ghost" id="backToSessionBtn" type="button">عودة</button></div>
+    </form>
+    <div id="sessionResult" class="session-result" hidden></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastText"></span><button id="toastAction" hidden></button></div>
+
+  <div class="modal-backdrop" id="confirmModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmMsg"><p class="modal-msg" id="confirmMsg"></p><div class="modal-actions"><button class="btn btn-ghost" id="confirmCancelBtn">إلغاء</button><button class="btn btn-gold" id="confirmOptionalBtn" hidden></button><button class="btn btn-danger" id="confirmOkBtn">تأكيد</button></div></div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فحص مصدر التفسير — صاحِب</title>
+<style>
+  body{font-family:system-ui,sans-serif; margin:16px; line-height:1.8; max-width:760px}
+  button{padding:10px 18px; font-size:15px; cursor:pointer}
+  pre{background:#f4f1e8; padding:12px; white-space:pre-wrap; overflow-wrap:anywhere; border-radius:8px; direction:ltr; text-align:left}
+</style>
+</head>
+<body>
+<h1>فحص مصدر التفسير</h1>
+<p>افتح هذه الصفحة على جهازك (بإنترنت) واضغط «ابدأ الفحص». تطلب الأداة عيّنة آيات من كل slug مرشّح وتعرض حالة HTTP وحقول الردّ ومقتطفًا من النص، لتتأكد من أن التفسير الميسر وتفسير السعدي موجودان وأن الحقول <code>surah</code> و<code>ayah</code> و<code>text</code> هي الفعلية. أرسل لي المخرجات إن اختلف شيء. لا تُرسل الأداة أي بيانات عنك.</p>
+<p><button id="run">ابدأ الفحص</button></p>
+<pre id="out">لم يبدأ الفحص بعد.</pre>
+<script>
+const BASE = 'https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main';
+const CANDIDATES = {
+  'التفسير الميسر': ['ar-tafsir-muyassar'],
+  'تفسير السعدي':   ['ar-tafseer-al-saddi', 'ar-tafsir-as-saadi']
+};
+const SAMPLES = [[1, 1], [2, 255], [112, 1], [114, 6]];
+const out = document.getElementById('out');
+const log = (s) => { out.textContent += s + '\n'; };
+
+async function probe(slug, s, a) {
+  const url = `${BASE}/tafsir/${slug}/${s}/${a}.json`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return `  ${s}:${a} -> HTTP ${r.status}`;
+    const j = await r.json();
+    const keys = Object.keys(j).join(', ');
+    const text = typeof j.text === 'string' ? j.text.replace(/\s+/g, ' ').slice(0, 70) : '(لا يوجد حقل text نصي)';
+    return `  ${s}:${a} -> OK | keys: ${keys} | surah=${j.surah} ayah=${j.ayah} | text: ${text}`;
+  } catch (e) {
+    return `  ${s}:${a} -> فشل الطلب (${e.message})`;
+  }
+}
+
+document.getElementById('run').addEventListener('click', async () => {
+  out.textContent = '';
+  for (const [name, slugs] of Object.entries(CANDIDATES)) {
+    log(`== ${name}`);
+    for (const slug of slugs) {
+      log(` slug: ${slug}`);
+      for (const [s, a] of SAMPLES) log(await probe(slug, s, a));
+    }
+  }
+  try {
+    const r = await fetch(`${BASE}/tafsir/editions.json`);
+    const j = await r.json();
+    const list = (Array.isArray(j) ? j : []).filter((e) => /^ar/.test(e.slug || e.id || ''));
+    log('\n== إصدارات عربية معلنة في المصدر (slug)');
+    log(list.map((e) => `${e.slug || e.id} — ${e.name || ''}`).join('\n') || '(تعذّر تحليل editions.json)');
+  } catch (e) {
+    log('\n(تعذّر جلب editions.json: ' + e.message + ')');
+  }
+  log('\nانتهى الفحص. إن اختلف slug أو أسماء الحقول فعدّل config في js/tafsir-api.js (و parseResponse عند الحاجة).');
+});
+</script>
+</body>
+</html>

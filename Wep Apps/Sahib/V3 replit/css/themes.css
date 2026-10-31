@@ -1,0 +1,60 @@
+:root {
+  /* Primitive palette */
+  --p-paper: oklch(0.955 0.025 88);
+  --p-paper-soft: oklch(0.978 0.015 88);
+  --p-card: oklch(0.992 0.008 88);
+  --p-green: oklch(0.34 0.045 175);
+  --p-green-deep: oklch(0.27 0.04 175);
+  --p-green-muted: oklch(0.45 0.035 172);
+  --p-gold: oklch(0.65 0.105 83);
+  --p-gold-dark: oklch(0.49 0.09 80);
+  --p-gold-soft: oklch(0.86 0.065 85);
+  --p-line: oklch(0.86 0.035 85);
+  --p-danger: oklch(0.45 0.13 28);
+  --p-danger-bg: oklch(0.94 0.035 25);
+  --p-success: oklch(0.48 0.085 153);
+  --p-focus: oklch(0.62 0.14 75);
+
+  /* Semantic tokens */
+  --paper: var(--p-paper);
+  --paper-soft: var(--p-paper-soft);
+  --card: var(--p-card);
+  --ink: var(--p-green);
+  --ink-strong: var(--p-green-deep);
+  --ink-soft: var(--p-green-muted);
+  --ink-faint: oklch(0.46 0.025 172);
+  --gold: var(--p-gold-dark);
+  --gold-fill: var(--p-gold);
+  --gold-soft: var(--p-gold-soft);
+  --maroon: var(--p-danger);
+  --line: var(--p-line);
+  --error-bg: var(--p-danger-bg);
+  --error-border: oklch(0.82 0.06 25);
+  --success: var(--p-success);
+  --on-dark: oklch(0.97 0.015 88);
+  --on-primary: var(--on-dark);
+  --shadow: 0 8px 28px oklch(0.25 0.03 175 / 0.09);
+  color-scheme: light;
+}
+
+body[data-theme="dark"] {
+  --paper: oklch(0.20 0.02 172);
+  --paper-soft: oklch(0.23 0.022 172);
+  --card: oklch(0.26 0.025 172);
+  --ink: oklch(0.91 0.025 86);
+  --ink-strong: oklch(0.96 0.018 86);
+  --ink-soft: oklch(0.78 0.025 170);
+  --ink-faint: oklch(0.72 0.022 170);
+  --gold: oklch(0.79 0.1 82);
+  --gold-fill: oklch(0.72 0.1 82);
+  --gold-soft: oklch(0.40 0.06 80);
+  --maroon: oklch(0.75 0.12 25);
+  --line: oklch(0.36 0.025 172);
+  --error-bg: oklch(0.29 0.06 25);
+  --error-border: oklch(0.45 0.08 25);
+  --success: oklch(0.75 0.1 153);
+  --on-dark: oklch(0.97 0.015 88);
+  --on-primary: oklch(0.24 0.035 172);
+  --shadow: 0 8px 28px oklch(0.1 0.01 172 / 0.3);
+  color-scheme: dark;
+}
