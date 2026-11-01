@@ -12,7 +12,16 @@ git -C /storage/emulated/0/Projects commit -m "Update from phone"
 HOME=/data/data/com.termux/files/home git -C /storage/emulated/0/Projects -c core.compression=0 push
 
 اختصار سكريبت:
-bash push.sh
+nano ~/.bashrc
+ 
+ 
+alias gpush
+alias gpull
+alias gstat
+alias gproj
+
+alias gps
+alias gpu
 
 الدخول إلى الملف:
 cd /storage/emulated/0/Projects 
