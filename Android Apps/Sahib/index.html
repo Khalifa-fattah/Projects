@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1F3D3A">
+<meta name="description" content="رفيق حفظ القرآن الكريم ومراجعته">
+<title>محفظتي — رفيق حفظ القرآن</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="wordmark">صاح<span>ب</span></div>
+    <div class="top-right">
+      <div class="net-status" id="netStatus" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span class="txt">متصل</span></div>
+      <div class="date-hint" id="todayHint"></div>
+      <button type="button" class="theme-toggle" id="themeToggleBtn" title="تبديل الوضع الليلي" aria-label="تبديل الوضع الليلي">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="storage-banner" id="storageBanner" role="alert" hidden></div>
+
+  <main>
+
+    <section class="view active" id="view-list">
+      <h1 class="page-title">محفوظاتي</h1>
+      <div class="stats-strip" id="listStatsStrip"></div>
+      <div class="list-tools" id="listTools" hidden>
+        <label class="sr-only" for="searchInput">بحث في المحفوظات</label>
+        <input type="search" id="searchInput" placeholder="ابحث باسم السورة أو رقم آية أو ملاحظة" autocomplete="off">
+        <div class="list-selects">
+          <label class="sr-only" for="sortSelect">الترتيب</label>
+          <select id="sortSelect">
+            <option value="surah">الترتيب: حسب السورة</option>
+            <option value="added">الأحدث إضافة</option>
+            <option value="reviewed">الأقدم مراجعة</option>
+            <option value="priority">أولوية المراجعة</option>
+          </select>
+          <label class="sr-only" for="filterSelect">التصفية</label>
+          <select id="filterSelect">
+            <option value="all">الكل</option>
+            <option value="due">تحتاج مراجعة</option>
+            <option value="never">لم تُراجَع بعد</option>
+            <option value="weak">تقييمها ضعيف</option>
+            <option value="mastered">متقنة</option>
+          </select>
+        </div>
+      </div>
+      <div id="listContent"></div>
+    </section>
+
+    <section class="view" id="view-plan">
+      <h1 class="page-title">المراجعة</h1>
+      <div id="planContent"></div>
+    </section>
+
+    <section class="view" id="view-add">
+      <h1 class="page-title" id="addTitle">إضافة حفظ جديد</h1>
+      <div class="form-error" id="addError" role="alert"></div>
+      <div class="field">
+        <label for="surahSelect">السورة</label>
+        <select id="surahSelect"></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fromAyah">من آية</label>
+          <input type="number" id="fromAyah" min="1" value="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="toAyah">إلى آية</label>
+          <input type="number" id="toAyah" min="1" value="1" inputmode="numeric">
+        </div>
+      </div>
+      <label class="whole-toggle">
+        <input type="checkbox" id="wholeSurahBox">
+        تحديد السورة كاملة
+      </label>
+      <div class="field hint" id="surahAyahHint" style="margin-top:-10px;"></div>
+      <div class="row2">
+        <div class="field">
+          <label for="startDate">تاريخ بدء الحفظ</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="field">
+          <label for="masterySelect">مستوى الإتقان (اختياري)</label>
+          <select id="masterySelect">
+            <option value="">غير محدد</option>
+            <option value="weak">ضعيف</option>
+            <option value="medium">متوسط</option>
+            <option value="strong">قوي</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="notesInput">ملاحظات (اختياري)</label>
+        <textarea id="notesInput" rows="2" maxlength="300" placeholder="مثال: موضع تشابه يحتاج تثبيتًا"></textarea>
+      </div>
+      <button type="button" class="btn btn-primary" id="saveEntryBtn">حفظ في قائمة المراجعة</button>
+      <button type="button" class="btn btn-ghost cancel-edit" id="cancelEditBtn" hidden>إلغاء التعديل</button>
+    </section>
+
+    <section class="view" id="view-stats">
+      <h1 class="page-title">إحصائياتي</h1>
+      <div id="statsContent"></div>
+
+      <h2 class="section-title">بياناتي</h2>
+      <div class="data-card">
+        <p class="data-hint">تُحفظ بياناتك على هذا الجهاز فقط. صدّر نسخة احتياطية بانتظام، فمسح بيانات المتصفح يحذفها. النسخة تشمل المحفوظات وسجل المراجعات والإعدادات، ولا تشمل نص القرآن ولا التفاسير (تُجلب من جديد عند الحاجة).</p>
+        <div class="data-actions">
+          <button type="button" class="btn btn-primary" id="exportBtn">تصدير نسخة احتياطية</button>
+          <button type="button" class="btn btn-ghost" id="importBtn">استيراد نسخة احتياطية</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <h1 class="page-title">الإعدادات</h1>
+      <div id="settingsContent"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom" aria-label="التنقل الرئيسي">
+    <button type="button" data-tab="list" class="active" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span>محفوظاتي</span>
+    </button>
+    <button type="button" data-tab="plan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 12a8 8 0 11-2.34-5.66M20 4v5h-5"/><path d="M9 12l2 2 4-4"/></svg>
+      <span>المراجعة</span>
+    </button>
+    <button type="button" data-tab="add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>إضافة</span>
+    </button>
+    <button type="button" data-tab="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"/></svg>
+      <span>الإحصائيات</span>
+    </button>
+    <button type="button" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      <span>الإعدادات</span>
+    </button>
+  </nav>
+
+  <div id="reviewOverlay" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+    <div class="review-head">
+      <div class="titles">
+        <div class="t1" id="reviewTitle">—</div>
+        <div class="t2" id="reviewSubtitle">—</div>
+      </div>
+      <button type="button" class="review-close" id="reviewCloseBtn" aria-label="إغلاق المراجعة">✕</button>
+    </div>
+    <div class="review-toolbar">
+      <button type="button" id="toggleHideBtn">إخفاء النص للاختبار</button>
+      <button type="button" id="markReviewedBtn">✓ تمت المراجعة الآن</button>
+    </div>
+    <div class="review-tools">
+      <div class="tafsir-switch" id="tafsirSwitch" role="group" aria-label="اختيار التفسير"></div>
+      <div class="tools-row">
+        <span class="tafsir-active" id="tafsirActiveLabel"></span>
+        <button type="button" class="mini-btn" id="fontDownBtn" aria-label="تصغير الخط">أ−</button>
+        <button type="button" class="mini-btn" id="fontUpBtn" aria-label="تكبير الخط">أ+</button>
+        <button type="button" class="mini-btn wide" id="downloadTafsirBtn">⬇ حفظ التفسير للمقطع</button>
+      </div>
+      <p class="tools-hint">اضغط مطولًا على أي آية لعرض تفسيرها، أو اضغط رقم الآية.</p>
+    </div>
+    <div class="review-body" id="reviewBody"></div>
+
+    <div class="tafsir-pop" id="tafsirPop" role="region" aria-live="polite" aria-label="تفسير الآية" hidden>
+      <div class="tafsir-head">
+        <span class="tafsir-name"></span>
+        <span class="tafsir-ref"></span>
+        <button type="button" class="tafsir-close" aria-label="إغلاق التفسير">✕</button>
+      </div>
+      <div class="tafsir-body"></div>
+      <p class="tafsir-note" hidden></p>
+    </div>
+
+    <div class="rate-panel" id="ratePanel" role="group" aria-labelledby="rateTitle" hidden>
+      <div class="rate-title" id="rateTitle">كيف كان تسميعك؟</div>
+      <div class="rate-options">
+        <button type="button" class="btn btn-ghost" data-rating="mastered">متقن</button>
+        <button type="button" class="btn btn-ghost" data-rating="good">جيد مع بعض الأخطاء</button>
+        <button type="button" class="btn btn-ghost" data-rating="soon">يحتاج إلى مراجعة قريبة</button>
+        <button type="button" class="btn btn-ghost" data-rating="failed">لم أتمكن من التسميع</button>
+      </div>
+      <label class="sr-only" for="rateNote">ملاحظة اختيارية عن المراجعة</label>
+      <textarea id="rateNote" rows="2" maxlength="300" placeholder="ملاحظة اختيارية: الآية التي نسيتها أو موضع الخطأ"></textarea>
+      <div class="rate-actions">
+        <button type="button" class="btn btn-gold" id="rateSkipBtn">حفظ دون تقييم</button>
+        <button type="button" class="btn btn-ghost" id="rateCancelBtn">رجوع</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="choiceModal">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="choiceMsg">
+      <div class="modal-icon" id="choiceIcon" aria-hidden="true">﴾ ! ﴿</div>
+      <p class="modal-msg" id="choiceMsg"></p>
+      <div class="modal-content" id="choiceContent"></div>
+      <div class="modal-actions" id="choiceActions"></div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="selectSheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <div class="sheet-title" id="sheetTitle"></div>
+      <input type="search" class="sheet-search" id="sheetSearch" placeholder="ابحث…" aria-label="بحث في الخيارات" autocomplete="off" hidden>
+      <div class="sheet-list" id="sheetList" role="listbox"></div>
+      <p class="sheet-empty" id="sheetEmpty" hidden>لا توجد نتائج مطابقة.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/quran-data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/memorization.js"></script>
+<script src="js/quran-api.js"></script>
+<script src="js/tafsir-api.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/tafsir-ui.js"></script>
+<script src="js/review.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/offline.js"></script>
+<script src="js/settings-ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
