@@ -47,8 +47,6 @@
   let onCloseCb = null;
   let offlineJob = null; // { cancelled, controller }
 
-  const PLACEHOLDER = '• • • • •';
-
   function rangeLabel(entry) {
     return `الآيات ${entry.from} إلى ${entry.to}`;
   }
@@ -96,24 +94,18 @@
   }
 
   // ---------- عرض الآيات ووضع الاختبار ----------
-  // ملاحظة أمنية: إخفاء النص هنا إجراء واجهة فقط وليس حماية بيانات. عند الإخفاء نزيل النص من
-  // عقدة DOM فعليًا (نستبدله بعلامة) ولا نكتفي بالتمويه البصري، لكن النص يبقى في ذاكرة الصفحة
-  // (مصفوفة session.ayahs) وفي ذاكرة التخزين المحلي للنصوص، وقد يطّلع عليه من يفحص الصفحة.
+  // وضع الاختبار: يبقى نص الآية بحجمه كما هو ويُموَّه بصريًا فقط (CSS blur). هذا إجراء واجهة وليس حماية بيانات:
+  // النص يبقى في الصفحة ويمكن لمن يفحصها قراءته.
   function paintAyah(node, ayah) {
-    if (ayah.shown) {
-      node.textContent = ayah.text;
-      node.classList.remove('is-hidden');
-      node.removeAttribute('aria-label'); // النص ظاهر ويُقرأ بنفسه
-    } else {
-      node.textContent = PLACEHOLDER;
-      node.classList.add('is-hidden');
-      node.setAttribute('aria-label', `الآية رقم ${ayah.num} مخفية. اضغط لإظهارها`);
-    }
+    node.textContent = ayah.text;
+    node.classList.toggle('is-hidden', !ayah.shown);
+    if (ayah.shown) node.removeAttribute('aria-label'); // النص ظاهر ويُقرأ بنفسه
+    else node.setAttribute('aria-label', `الآية رقم ${ayah.num} مخفية. اضغط لإظهارها`);
   }
 
   // بنية كل آية: <span class="ayah"> نص الآية (data-surah/data-ayah) + زر رقم الآية </span>
   // ربط الآية بالتفسير يعتمد على data-* وليس على ترتيب العناصر.
-  function renderAyahs(surah, ayahs) {
+  function renderAyahs(surah, ayahs, hasBasmala) {
     const body = $('reviewBody');
     body.removeAttribute('aria-busy');
     TafsirUI.reset();
@@ -141,11 +133,11 @@
         type: 'button', class: 'ayah-num',
         'data-surah': String(surah), 'data-ayah': String(ayah.num),
         'aria-label': `عرض تفسير الآية ${ayah.num}`, title: 'عرض التفسير',
-        text: String(ayah.num)
+        text: ayah.num.toLocaleString('ar-EG') // أرقام هندية كالمصحف (١٢٣)
       });
       flow.append(el('span', { class: 'ayah' }, node, ' ', num), ' ');
     });
-    body.replaceChildren(flow);
+    body.replaceChildren(...(hasBasmala ? [el('div', { class: 'basmala', lang: 'ar', dir: 'rtl', text: QuranApi.BASMALA })] : []), flow);
   }
 
   function syncToggleButton() {
@@ -302,18 +294,21 @@
     if (!session || session.token !== token) return;
 
     const slice = [];
+    let hasBasmala = false;
     for (let i = spec.from; i <= spec.to; i++) {
-      const text = all[i - 1];
+      let text = all[i - 1];
       if (typeof text !== 'string' || !text.trim()) {
         session.status = 'error';
         showError(new QuranApi.ApiError('invalid'), spec, opener, ctx);
         return;
       }
+      const split = QuranApi.splitBasmala(spec.surah, i, text);   // البسملة سطر مستقل فوق السورة كالمصحف
+      if (split.basmala && split.text) { text = split.text; hasBasmala = true; }
       slice.push({ num: i, text, shown: true });
     }
     session.ayahs = slice;
     session.status = 'ready';
-    renderAyahs(spec.surah, slice);
+    renderAyahs(spec.surah, slice, hasBasmala);
     setToolbar({ canMark: true, canToggle: true });
   }
 

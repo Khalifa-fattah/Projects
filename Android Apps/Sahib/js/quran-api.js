@@ -122,5 +122,17 @@
     return res;
   }
 
-  NS.QuranApi = { config, ApiError, fetchSurahAyahs, isCached, validatePayload, cachedSurahCount, clearCache };
+  // المصدر يلصق البسملة في أول آية من كل سورة (عدا الفاتحة والتوبة). في المصحف تُكتب البسملة سطرًا مستقلًا فوق السورة،
+  // فنفصلها عن نص الآية الأولى للعرض فقط (النص المخزَّن يبقى كما وصل). الفاتحة: البسملة آيتها الأولى فلا تُفصل.
+  const BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+  function splitBasmala(surah, ayah, text) {
+    const plain = { text, basmala: false };
+    if (ayah !== 1 || surah === 1 || surah === 9 || typeof text !== 'string') return plain;
+    const norm = NS.Memorization.normalizeArabic;
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length <= 4 || norm(words.slice(0, 4).join(' ')) !== norm(BASMALA)) return plain;
+    return { text: words.slice(4).join(' '), basmala: true };
+  }
+
+  NS.QuranApi = { config, ApiError, fetchSurahAyahs, isCached, validatePayload, cachedSurahCount, clearCache, splitBasmala, BASMALA };
 })(globalThis);

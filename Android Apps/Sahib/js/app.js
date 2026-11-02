@@ -9,7 +9,7 @@
   const $ = (id) => document.getElementById(id);
 
   const MASTERY_LABELS = { weak: 'إتقان: ضعيف', medium: 'إتقان: متوسط', strong: 'إتقان: قوي' };
-  const view = { query: '', sort: Settings.get('defaultSort'), filter: 'all' };
+  const view = { query: '', sort: Settings.get('defaultSort'), filter: 'all', masteredOpen: false };
   let editingId = null; // المقطع قيد التعديل في تبويب الإضافة (null = إضافة جديدة)
 
   // ---------- تنبيهات التخزين ----------
@@ -254,18 +254,35 @@
     }
 
     const cov = Memorization.coveredMap(entries);
-    if (view.sort !== 'surah') {
-      // ترتيب غير حسب السورة: قائمة مسطحة، ويظهر اسم السورة على كل بطاقة
-      container.replaceChildren(...visible.map((e) => entryCard(e, Quran.surahByNumber(e.surah), true, today)));
-      return;
-    }
 
+    // الصفحة الافتراضية (بلا بحث ولا تصفية): السور المحفوظة كاملة (كل آياتها مغطاة) تنتقل كاملة بمقاطعها
+    // إلى مجلد مطويّ آخر القائمة. مع البحث أو أي تصفية تظهر كل النتائج كما هي، فلا تختفي سورة عن البحث.
+    const isComplete = (e) => {
+      const s = Quran.surahByNumber(e.surah);
+      return !!s && cov.has(e.surah) && cov.get(e.surah).size >= s.ayahs;
+    };
+    const collapse = !view.query.trim() && view.filter === 'all';
+    const mastered = collapse ? visible.filter(isComplete) : [];
+    const active = collapse ? visible.filter((e) => !isComplete(e)) : visible;
+
+    const nodes = [];
+    if (active.length) nodes.push(...entryNodes(active, cov, today));
+    else if (mastered.length) nodes.push(el('div', { class: 'plan-empty', text: 'كل سورك المحفوظة مكتملة. افتح مجلد «المتقنة» أدناه.' }));
+    if (mastered.length) nodes.push(masteredFolder(mastered, cov, today));
+    container.replaceChildren(...nodes);
+  }
+
+  // بطاقات المقاطع: قائمة مسطحة لغير ترتيب السورة، ومجموعات حسب السورة في ترتيب السورة
+  function entryNodes(items, cov, today) {
+    if (view.sort !== 'surah') {
+      return items.map((e) => entryCard(e, Quran.surahByNumber(e.surah), true, today));
+    }
     const bySurah = new Map();
-    visible.forEach((e) => {
+    items.forEach((e) => {
       if (!bySurah.has(e.surah)) bySurah.set(e.surah, []);
       bySurah.get(e.surah).push(e);
     });
-    const groups = Array.from(bySurah.keys()).sort((a, b) => a - b).map((surahNum) => {
+    return Array.from(bySurah.keys()).sort((a, b) => a - b).map((surahNum) => {
       const s = Quran.surahByNumber(surahNum);
       const covered = cov.get(surahNum).size;
       const isDone = covered >= s.ayahs;
@@ -277,7 +294,22 @@
         bySurah.get(surahNum).map((e) => entryCard(e, s, false, today))
       );
     });
-    container.replaceChildren(...groups);
+  }
+
+  function masteredFolder(items, cov, today) {
+    const open = view.masteredOpen;
+    const surahCount = new Set(items.map((e) => e.surah)).size;
+    const head = el('button', {
+      type: 'button', class: `folder-head${open ? ' open' : ''}`, id: 'masteredFolderBtn',
+      'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'masteredFolderBody',
+      onClick: () => { view.masteredOpen = !view.masteredOpen; renderList(); }
+    },
+      el('span', { class: 'folder-ico', 'aria-hidden': 'true', text: '📁' }),
+      el('span', { class: 'folder-name', text: `المتقنة (${surahCount} ${surahCount === 1 ? 'سورة' : 'سور'})` }),
+      el('span', { class: 'folder-chev', 'aria-hidden': 'true', text: open ? '▴' : '▾' })
+    );
+    const body = el('div', { class: 'folder-body', id: 'masteredFolderBody', hidden: !open }, open ? entryNodes(items, cov, today) : null);
+    return el('div', { class: 'folder' }, head, body);
   }
 
   function entryCard(e, s, showSurah, today) {

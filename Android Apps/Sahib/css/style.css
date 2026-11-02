@@ -15,18 +15,19 @@
   --shadow: 0 1px 0 rgba(31,61,58,0.06);
 }
 body.dark-theme{
-  --paper:#141F1C;
-  --paper-soft:#182722;
-  --card:#1E2F2A;
-  --ink:#ECE6D6;
-  --ink-soft:#B9C4BE;
-  --ink-faint:#728179;
-  --gold:#D9B463;
-  --gold-soft:#5B4A28;
-  --maroon:#C24B4B;
-  --line:#2B3B35;
-  --error-bg:#3A1F1F;
-  --error-border:#5C2E2E;
+  /* نفس الدرجات الخضراء الأصلية لكن بتباين أعلى: خلفية أغمق، بطاقات أفتح قليلًا، نص أنصع، حدود أوضح */
+  --paper:#0E1815;
+  --paper-soft:#14221E;
+  --card:#1D312B;
+  --ink:#F5F0E3;
+  --ink-soft:#D0D9D3;
+  --ink-faint:#98A9A1;
+  --gold:#E6C06A;
+  --gold-soft:#6B5731;
+  --maroon:#EE7B7B;
+  --line:#3B5048;
+  --error-bg:#40201F;
+  --error-border:#74403E;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -60,13 +61,20 @@ header.top{
   border-bottom:1px solid var(--line);
 }
 header.top .wordmark{
-  font-family:'Amiri',serif;
-  font-size:26px;
-  font-weight:700;
+  font-family:'Amiri Quran','Amiri','Noto Naskh Arabic',serif;
+  font-size:38px;
+  font-weight:400;
+  line-height:1.15;
   color:var(--ink);
-  letter-spacing:0.5px;
+  letter-spacing:0;
+  position:relative;
+  padding-bottom:6px;
 }
 header.top .wordmark span{color:var(--gold);}
+header.top .wordmark::after{
+  content:''; position:absolute; inset-inline-start:0; bottom:0; width:56px; height:2px; border-radius:2px;
+  background:linear-gradient(to left, var(--gold), transparent);
+}
 header.top .date-hint{
   font-size:12px;
   color:var(--ink-faint);
@@ -179,10 +187,14 @@ section.view.active{display:block; animation:fadeIn .25s ease;}
 }
 .entry-card:active{border-color:var(--gold);}
 .entry-marker{
-  width:34px;
+  /* حبة بعرض ثابت تتسع للأرقام الطويلة مثل 286-286 دون أن يتشوه شكلها أو يتبدل محاذاة النص */
+  width:58px;
   height:34px;
-  min-width:34px;
-  border-radius:50%;
+  min-width:58px;
+  padding:0 4px;
+  white-space:nowrap;
+  direction:ltr;
+  border-radius:999px;
   border:1.5px solid var(--gold-soft);
   display:flex;
   align-items:center;
@@ -376,8 +388,8 @@ nav.bottom button span{font-size:11px; font-weight:700;}
   vertical-align:middle;
   margin:0 4px;
 }
-.ayah-text{transition:filter .15s, opacity .15s; cursor:pointer;}
-.ayah-text.hidden-test{filter:blur(7px); opacity:.55;}
+.ayah-text{transition:filter .15s, opacity .15s;}
+.ayah-text.is-hidden{filter:blur(7px); opacity:.55; user-select:none; -webkit-user-select:none;}
 .review-loading, .review-error{
   text-align:center; color:var(--ink-faint); padding:40px 20px; font-size:14px;
 }
@@ -594,17 +606,28 @@ input[type="date"], input[type="search"]{
 @media (pointer:coarse){
   .ayah-text{-webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
 }
-/* رقم الآية: زر صغير بشكل زخرفة دائرية (يفتح التفسير بلوحة المفاتيح أو النقر) */
+
+/* رقم الآية: زخرفة على شكل وردة مصحف (حلقة بتويجات) ويتوسطها الرقم؛ يفتح التفسير بالنقر أو لوحة المفاتيح */
 .ayah-num{
-  display:inline-flex; align-items:center; justify-content:center;
-  min-width:1.6em; height:1.6em; padding:0 .25em;
-  margin:0 .2em; vertical-align:middle;
-  border:1px solid var(--gold); border-radius:50%;
-  background:transparent; color:var(--gold);
-  font-family:'Tajawal',sans-serif; font-size:max(11px, calc(12px * var(--ayah-scale))); font-weight:700;
-  line-height:1; cursor:pointer;
+  --num-y: .15em;                 /* تعديل يدوي: قيمة موجبة تنزل الرقم، سالبة ترفعه */
+  position:relative; isolation:isolate;
+  display:inline-grid; place-items:center;
+  width:2.3em; height:2.3em; padding:0; margin:0 .25em; vertical-align:middle;
+  border:0; background:transparent; color:var(--ink);
+  font-family:'Tajawal',sans-serif;   /* خط التطبيق: قياساته متوازنة فيتوسط الرقم */
+  font-size:max(11px, calc(13px * var(--ayah-scale))); font-weight:700;
+  line-height:1; text-align:center; cursor:pointer;
 }
-.ayah-num:hover{background:var(--gold-soft);}
+.ayah-num{ padding-top:var(--num-y); }
+
+.ayah-num::before{
+  content:''; position:absolute; inset:0; z-index:-1; background:var(--gold);
+  -webkit-mask:var(--rosette) center/100% 100% no-repeat; mask:var(--rosette) center/100% 100% no-repeat;
+  --rosette:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.5'%3E%3Ccircle cx='20' cy='20' r='13.2'/%3E%3Ccircle cx='20' cy='20' r='10.4' stroke-width='.9'/%3E%3C/g%3E%3Cg fill='%23000'%3E%3Ccircle cx='20' cy='4.6' r='2.6'/%3E%3Ccircle cx='27.7' cy='6.7' r='2.6'/%3E%3Ccircle cx='33.3' cy='12.3' r='2.6'/%3E%3Ccircle cx='35.4' cy='20' r='2.6'/%3E%3Ccircle cx='33.3' cy='27.7' r='2.6'/%3E%3Ccircle cx='27.7' cy='33.3' r='2.6'/%3E%3Ccircle cx='20' cy='35.4' r='2.6'/%3E%3Ccircle cx='12.3' cy='33.3' r='2.6'/%3E%3Ccircle cx='6.7' cy='27.7' r='2.6'/%3E%3Ccircle cx='4.6' cy='20' r='2.6'/%3E%3Ccircle cx='6.7' cy='12.3' r='2.6'/%3E%3Ccircle cx='12.3' cy='6.7' r='2.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.ayah-num:hover::before, .ayah-num:focus-visible::before{background:var(--ink);}
+.ayah-num:focus-visible{outline:2px solid var(--gold); outline-offset:2px; border-radius:50%;} 
 
 /* ---- نافذة التفسير: صغيرة بجوار الآية وليست نافذة كبيرة تحجب المصحف ---- */
 .tafsir-pop{
@@ -850,3 +873,23 @@ body.dark-theme .sched-when.today{color:#7FD1A4; border-color:#2F5C46;}
 .about a{color:var(--gold);}
 
 .btn[hidden]{display:none;}
+
+/* ---- مجلد المقاطع المتقنة في القائمة الرئيسية ---- */
+.folder{margin-top:6px;}
+.folder-head{
+  display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px; cursor:pointer;
+  background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px;
+  font-family:'Tajawal',sans-serif; font-size:15px; font-weight:700; text-align:start;
+}
+.folder-head:hover, .folder-head:focus-visible{border-color:var(--gold); outline:none;}
+.folder-name{flex:1;}
+.folder-chev{color:var(--gold);}
+.folder-body{margin-top:10px;}
+.folder-body[hidden]{display:none;}
+
+/* البسملة: سطر مستقل في أعلى السورة كالمصحف */
+.basmala{
+  text-align:center; color:var(--ink); margin:2px 0 18px; padding-bottom:14px; border-bottom:1px solid var(--line);
+  font-family:'Amiri Quran','Amiri','Noto Naskh Arabic',serif; line-height:2;
+  font-size:calc(26px * var(--ayah-scale));
+}

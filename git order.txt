@@ -20,9 +20,6 @@ alias gpull
 alias gstat
 alias gproj
 
-alias gps
-alias gpu
-
 الدخول إلى الملف:
 cd /storage/emulated/0/Projects 
 
