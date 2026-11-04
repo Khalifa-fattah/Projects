@@ -361,7 +361,166 @@ test('تفسير: 404 = غير متاح، HTTP، شبكة، مهلة، JSON فا
   };
   await run(async () => ({ ok: false, status: 404 }), 'notfound');
   await run(async () => ({ ok: false, status: 500 }), 'http');
-  await run(async () => { throw new TypeError('x'); }, 'network');
+  await run// ================= تنزيل القرآن والتفسير كاملين =================
+function makeFakeIndexedDB() {
+  const data = new Map();
+  const tx = (mode) => {
+    const t = { oncomplete: null, onerror: null, onabort: null };
+    const done = () => setTimeout(() => t.oncomplete && t.oncomplete(), 0);
+    t.objectStore = () => ({
+      put(v, k) { data.set(k, v); done.pending = true; },
+      clear() { data.clear(); },
+      openCursor() {
+        const keys = Array.from(data.keys()); let i = 0;
+        const req = { result: null, onsuccess: null };
+        const step = () => {
+          req.result = i < keys.length ? { key: keys[i], value: data.get(keys[i]), continue() { i++; setTimeout(step, 0); } } : null;
+          req.onsuccess && req.onsuccess();
+          if (!req.result) done();
+        };
+        setTimeout(step, 0);
+        return req;
+      }
+    });
+    setTimeout(() => { if (mode === 'readwrite') t.oncomplete && t.oncomplete(); }, 0);
+    return t;
+  };
+  return {
+    data,
+    open() {
+      const req = { result: { createObjectStore() {}, transaction: (_n, mode) => tx(mode) }, onsuccess: null };
+      setTimeout(() => { req.onupgradeneeded && req.onupgradeneeded(); req.onsuccess && req.onsuccess(); }, 0);
+      return req;
+    }
+  };
+}
+function loadOffline(opts = {}) {
+  globalThis.indexedDB = opts.idb;
+  const S = load(opts);
+  globalThis.document = { getElementById: () => null };
+  require(path.join(__dirname, '..', 'js', 'offline.js'));
+  return S;
+}
+function fakeFetch(handler) {
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+    const r = await handler(String(url));
+    return { ok: r.status === undefined || (r.status >= 200 && r.status < 300), status: r.status || 200, json: async () => r.body };
+  };
+  return calls;
+}
+const surahOfUrl = (u, re) => { const m = re.exec(u); return m ? Number(m[1]) : NaN; };
+
+test('downloadAllTexts: ينزّل 114 سورة، يتخطى المحفوظ، ويحفظها على الجهاز', async () => {
+  const S = loadOffline({});
+  const calls = fakeFetch((u) => { const n = surahOfUrl(u, /surah\/(\d+)\//); return { body: fakeSurahJson(n, S.Quran.surahByNumber(n).ayahs) }; });
+  const seen = [];
+  const r1 = await S.Offline.downloadAllTexts({ onProgress: (d, t) => seen.push([d, t]) });
+  assert.strictEqual(r1.done, 114); assert.ok(!r1.failure && !r1.aborted && !r1.storage);
+  assert.strictEqual(calls.length, 114);
+  assert.strictEqual(S.QuranApi.cachedSurahCount(), 114);
+  assert.strictEqual(Object.keys(S.Storage.loadTextCache()).length, 114);
+  assert.deepStrictEqual(seen[seen.length - 1], [114, 114]);
+  const r2 = await S.Offline.downloadAllTexts({});
+  assert.strictEqual(r2.done, 114); assert.strictEqual(calls.length, 114, 'لا طلبات جديدة');
+});
+test('downloadAllTexts: فشل الشبكة يوقف دون ادّعاء اكتمال، والإلغاء يُحتسب', async () => {
+  const S = loadOffline({});
+  fakeFetch((u) => { const n = surahOfUrl(u, /surah\/(\d+)\//); if (n === 5) throw new Error('net'); return { body: fakeSurahJson(n, S.Quran.surahByNumber(n).ayahs) }; });
+  const r = await S.Offline.downloadAllTexts({});
+  assert.ok(r.failure && r.done < 114);
+  const S2 = loadOffline({});
+  fakeFetch((u) => { const n = surahOfUrl(u, /surah\/(\d+)\//); return { body: fakeSurahJson(n, S2.Quran.surahByNumber(n).ayahs) }; });
+  const ctl = new AbortController(); ctl.abort();
+  const r2 = await S2.Offline.downloadAllTexts({ signal: ctl.signal });
+  assert.ok(r2.aborted && r2.done === 0);
+});
+test('downloadAllTexts: امتلاء المساحة يُبلَّغ (storage) ولا يُعدّ حفظًا ناجحًا', async () => {
+  const S = loadOffline({ throwSet: true });
+  fakeFetch((u) => { const n = surahOfUrl(u, /surah\/(\d+)\//); return { body: fakeSurahJson(n, S.Quran.surahByNumber(n).ayahs) }; });
+  const r = await S.Offline.downloadAllTexts({});
+  assert.strictEqual(r.storage, true);
+});
+test('parseSurahResponse: يقبل سورة كاملة، ويرفض الناقصة والمعطوبة', () => {
+  const S = load();
+  const mk = (n) => ({ ayahs: Array.from({ length: S.Quran.surahByNumber(n).ayahs }, (_, i) => ({ ayah: i + 1, text: `تفسير ${i + 1}` })) });
+  const ok = S.TafsirApi.parseSurahResponse(mk(2), 2);
+  assert.strictEqual(ok.entries.length, 286);
+  assert.ok(S.TafsirApi.parseSurahResponse(Array.from({ length: 7 }, (_, i) => ({ ayah: i + 1, text: 'x' })), 1).entries.length === 7);
+  const half = mk(2); half.ayahs.length = 100;
+  assert.throws(() => S.TafsirApi.parseSurahResponse(half, 2), /incomplete/);
+  assert.throws(() => S.TafsirApi.parseSurahResponse({ ayahs: [{ ayah: 99, text: 'x' }] }, 1), /bad ayah/);
+  assert.throws(() => S.TafsirApi.parseSurahResponse({ nope: 1 }, 1), /no ayahs/);
+  assert.throws(() => S.TafsirApi.parseSurahResponse({ ayahs: [{ ayah: 1, text: 5 }] }, 1), /no text/);
+});
+test('downloadAllTafsir: ملف السورة يُحفظ في IndexedDB ويظهر عبر getCachedTafsir/isPersisted، ويُتخطى عند الإعادة', async () => {
+  const idb = makeFakeIndexedDB();
+  const S = loadOffline({ idb });
+  await S.TafsirApi.bulkReady;
+  const calls = fakeFetch((u) => {
+    const n = surahOfUrl(u, /\/(\d+)\.json$/);
+    return { body: { ayahs: Array.from({ length: S.Quran.surahByNumber(n).ayahs }, (_, i) => ({ ayah: i + 1, text: `تفسير ${n}:${i + 1}` })) } };
+  });
+  const r = await S.Offline.downloadAllTafsir({ tafsirId: 'muyassar' });
+  assert.ok(!r.failure && !r.aborted, JSON.stringify(r));
+  assert.strictEqual(r.done, 114); assert.strictEqual(r.ayat, 6236); assert.strictEqual(r.viaAyah, 0);
+  assert.strictEqual(calls.length, 114);
+  assert.ok(calls[0].includes('/tafsir/ar-tafsir-muyassar/'));
+  assert.strictEqual(S.TafsirApi.persistedCount('muyassar'), 6236);
+  assert.strictEqual(S.TafsirApi.persistedCount('saadi'), 0);
+  assert.strictEqual(S.TafsirApi.getCachedTafsir('muyassar', 2, 255).text, 'تفسير 2:255');
+  assert.ok(S.TafsirApi.isPersisted('muyassar', 114, 6));
+  assert.strictEqual(idb.data.size, 6236);
+  const r2 = await S.Offline.downloadAllTafsir({ tafsirId: 'muyassar' });
+  assert.strictEqual(r2.done, 114); assert.strictEqual(calls.length, 114); assert.strictEqual(r2.ayat, 0);
+  const c = await S.TafsirApi.clearStore();
+  assert.ok(c.ok); assert.strictEqual(S.TafsirApi.persistedCount(), 0); assert.strictEqual(idb.data.size, 0);
+});
+test('downloadAllTafsir: إن لم يتوفر ملف السورة يعود للجلب آية آية بالتحقق نفسه', async () => {
+  const idb = makeFakeIndexedDB();
+  const S = loadOffline({ idb });
+  await S.TafsirApi.bulkReady;
+  const calls = fakeFetch((u) => {
+    if (/\/\d+\.json$/.test(u) && !/\/\d+\/\d+\.json$/.test(u)) return { status: 404, body: null };
+    const m = /\/(\d+)\/(\d+)\.json$/.exec(u);
+    if (Number(m[1]) === 1 && Number(m[2]) === 3) return { status: 404, body: null };
+    return { body: { surah: Number(m[1]), ayah: Number(m[2]), text: `ت ${m[1]}:${m[2]}` } };
+  });
+  const ctl = new AbortController();
+  let stopAfter = 0;
+  const r = await S.Offline.downloadAllTafsir({ tafsirId: 'saadi', signal: ctl.signal, onProgress: (d) => { if (d >= 2 && !stopAfter) { stopAfter = d; ctl.abort(); } } });
+  assert.ok(r.aborted, JSON.stringify(r));
+  assert.ok(r.viaAyah >= 1 && r.skipped === 1, JSON.stringify(r));
+  assert.ok(S.TafsirApi.isPersisted('saadi', 1, 1) && !S.TafsirApi.isPersisted('saadi', 1, 3));
+  assert.ok(calls.some((u) => u.includes('/ar-tafseer-al-saddi/1/2.json')));
+});
+test('downloadAllTafsir: فشل الشبكة أو التخزين يوقف ويُبلَّغ بوضوح', async () => {
+  const idb = makeFakeIndexedDB();
+  const S = loadOffline({ idb });
+  await S.TafsirApi.bulkReady;
+  fakeFetch(() => { throw new Error('offline'); });
+  const r = await S.Offline.downloadAllTafsir({ tafsirId: 'muyassar' });
+  assert.ok(r.failure && r.failure.code === 'network' && r.done < 114);
+  const S2 = loadOffline({});  // لا IndexedDB
+  await S2.TafsirApi.bulkReady;
+  fakeFetch((u) => { const n = surahOfUrl(u, /\/(\d+)\.json$/); return { body: { ayahs: Array.from({ length: S2.Quran.surahByNumber(n).ayahs }, (_, i) => ({ ayah: i + 1, text: 'x' })) } }; });
+  const r2 = await S2.Offline.downloadAllTafsir({ tafsirId: 'muyassar' });
+  assert.ok(r2.failure && r2.failure.code === 'storage'); assert.strictEqual(S2.TafsirApi.persistedCount(), 0);
+});
+test('التفسير المحفوظ في IndexedDB يُحمَّل عند الفتح التالي', async () => {
+  const idb = makeFakeIndexedDB();
+  const S = loadOffline({ idb });
+  await S.TafsirApi.bulkReady;
+  assert.ok((await S.TafsirApi.saveBulk('muyassar', 1, [[1, 'أ'], [2, 'ب']])).ok);
+  assert.strictEqual((await S.TafsirApi.saveBulk('muyassar', 1, [[99, 'x']])).ok, false);
+  const S2 = loadOffline({ idb });
+  await S2.TafsirApi.bulkReady;
+  assert.strictEqual(S2.TafsirApi.getCachedTafsir('muyassar', 1, 2).text, 'ب');
+  assert.strictEqual(S2.TafsirApi.persistedCount('muyassar'), 2);
+});
+
+(async () => { throw new TypeError('x'); }, 'network');
   await run(async () => ({ ok: true, status: 200, json: async () => { throw new SyntaxError('x'); } }), 'invalid');
   await run((u, { signal }) => new Promise((_, rej) => signal.addEventListener('abort', () => rej(new Error('a')))), 'timeout', (S) => { S.TafsirApi.config.timeoutMs = 30; });
 });
@@ -760,6 +919,21 @@ test('نسخة احتياطية قديمة بإعدادات قديمة (بلا �
   assert.ok(r.ok, JSON.stringify(r));
   const clean = S.Settings.sanitize(r.data.settings);
   assert.strictEqual(clean.tafsirId, 'saadi'); assert.strictEqual(clean.dailyGoal, 3);
+});
+
+
+test('البسملة: تُفصل عن الآية الأولى لكل السور عدا الفاتحة والتوبة، وبأشكال تشكيل مختلفة، دون المساس بغيرها', () => {
+  const S = load();
+  const B1 = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+  const B2 = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+  const r = S.QuranApi.splitBasmala(2, 1, `${B1} الٓمٓ`);
+  assert.deepStrictEqual(r, { text: 'الٓمٓ', basmala: true });
+  assert.strictEqual(S.QuranApi.splitBasmala(112, 1, `${B2} قُلْ هُوَ اللَّهُ أَحَدٌ`).text, 'قُلْ هُوَ اللَّهُ أَحَدٌ');
+  assert.strictEqual(S.QuranApi.splitBasmala(1, 1, B1).basmala, false);          // الفاتحة: آيتها الأولى
+  assert.strictEqual(S.QuranApi.splitBasmala(9, 1, 'بَرَآءَةٌ مِّنَ ٱللَّهِ وَرَسُولِهِۦٓ').basmala, false);
+  assert.strictEqual(S.QuranApi.splitBasmala(2, 2, `${B1} x y`).basmala, false);   // ليست الآية الأولى
+  assert.strictEqual(S.QuranApi.splitBasmala(2, 1, 'الٓمٓ ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ').basmala, false);
+  assert.strictEqual(S.QuranApi.splitBasmala(2, 1, B1).basmala, false);            // لا نترك آية فارغة
 });
 
 (async () => {

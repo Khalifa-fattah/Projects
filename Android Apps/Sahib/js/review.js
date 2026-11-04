@@ -158,6 +158,15 @@
     syncToggleButton();
   }
 
+  // ---------- وضع القراءة: إخفاء الشريط العلوي وشريط الأدوات السفلي لمساحة أكبر للآيات ----------
+  function setReading(on) {
+    $('reviewOverlay').classList.toggle('reading', on);
+    $('readExitBtn').hidden = !on;
+    if (on) TafsirUI.hide();
+    TafsirUI.position();
+    if (on) $('readExitBtn').focus(); else if (isOpen()) $('readModeBtn').focus();
+  }
+
   // ---------- اختيار التفسير والخط ----------
   function renderTafsirSwitch() {
     const active = Settings.get('tafsirId');
@@ -208,7 +217,7 @@
     try {
       for (let a = entry.from; a <= entry.to; a++) {
         if (job.cancelled) break;
-        btn.textContent = `جارٍ الحفظ ${done + skipped + 1}/${total}`;
+        btn.textContent = `${done + skipped + 1}/${total}`;
         try {
           const r = await TafsirApi.fetchTafsir(tafsirId, entry.surah, a, { signal: job.controller.signal, persist: true });
           if (r.storageError) { failure = { code: 'storage' }; break; }
@@ -222,7 +231,7 @@
       }
     } finally {
       offlineJob = null;
-      btn.textContent = '⬇ حفظ التفسير للمقطع';
+      btn.textContent = '⬇';
       if (session) btn.disabled = false;
     }
     if (job.cancelled) return;
@@ -278,6 +287,7 @@
     applyFont();
     setToolbar({ canMark: false, canToggle: false });
     showLoading();
+    setReading(false);
     $('reviewOverlay').classList.add('active');
     $('reviewCloseBtn').focus();
 
@@ -434,6 +444,8 @@
       Memorization.all().some((e) => e.surah === surah && ayah >= e.from && ayah <= e.to));
 
     $('reviewCloseBtn').addEventListener('click', close);
+    $('readModeBtn').addEventListener('click', () => setReading(true));
+    $('readExitBtn').addEventListener('click', () => setReading(false));
     $('toggleHideBtn').addEventListener('click', toggleAll);
     $('markReviewedBtn').addEventListener('click', showRatePanel);
     $('fontDownBtn').addEventListener('click', () => changeFont(-1));

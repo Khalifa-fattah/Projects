@@ -31,7 +31,19 @@
   <main>
 
     <section class="view active" id="view-list">
-      <h1 class="page-title">محفوظاتي</h1>
+      <div class="page-head">
+        <h1 class="page-title">محفوظاتي</h1>
+        <div class="head-actions" role="group" aria-label="التنزيل للعمل دون اتصال">
+          <button type="button" class="chip-btn" id="dlQuranBtn" title="تنزيل نص القرآن كاملًا للعمل دون اتصال" aria-label="تنزيل نص القرآن كاملًا">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>القرآن</span>
+          </button>
+          <button type="button" class="chip-btn" id="dlTafsirBtn" title="تنزيل التفسير كاملًا للعمل دون اتصال" aria-label="تنزيل التفسير كاملًا">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>التفسير</span>
+          </button>
+        </div>
+      </div>
       <div class="stats-strip" id="listStatsStrip"></div>
       <div class="list-tools" id="listTools" hidden>
         <label class="sr-only" for="searchInput">بحث في المحفوظات</label>
@@ -113,7 +125,7 @@
 
       <h2 class="section-title">بياناتي</h2>
       <div class="data-card">
-        <p class="data-hint">تُحفظ بياناتك على هذا الجهاز فقط. صدّر نسخة احتياطية بانتظام، فمسح بيانات المتصفح يحذفها. النسخة تشمل المحفوظات وسجل المراجعات والإعدادات، ولا تشمل نص القرآن ولا التفاسير (تُجلب من جديد عند الحاجة).</p>
+        <p class="data-hint">تُحفظ بياناتك على هذا الجهاز فقط</p>
         <div class="data-actions">
           <button type="button" class="btn btn-primary" id="exportBtn">تصدير نسخة احتياطية</button>
           <button type="button" class="btn btn-ghost" id="importBtn">استيراد نسخة احتياطية</button>
@@ -158,23 +170,27 @@
         <div class="t1" id="reviewTitle">—</div>
         <div class="t2" id="reviewSubtitle">—</div>
       </div>
+      <button type="button" class="review-close read-toggle" id="readModeBtn" aria-label="وضع القراءة: إخفاء الشريطين" title="وضع القراءة">⤢</button>
       <button type="button" class="review-close" id="reviewCloseBtn" aria-label="إغلاق المراجعة">✕</button>
     </div>
-    <div class="review-toolbar">
-      <button type="button" id="toggleHideBtn">إخفاء النص للاختبار</button>
-      <button type="button" id="markReviewedBtn">✓ تمت المراجعة الآن</button>
-    </div>
-    <div class="review-tools">
-      <div class="tafsir-switch" id="tafsirSwitch" role="group" aria-label="اختيار التفسير"></div>
-      <div class="tools-row">
-        <span class="tafsir-active" id="tafsirActiveLabel"></span>
-        <button type="button" class="mini-btn" id="fontDownBtn" aria-label="تصغير الخط">أ−</button>
-        <button type="button" class="mini-btn" id="fontUpBtn" aria-label="تكبير الخط">أ+</button>
-        <button type="button" class="mini-btn wide" id="downloadTafsirBtn">⬇ حفظ التفسير للمقطع</button>
-      </div>
-      <p class="tools-hint">اضغط مطولًا على أي آية لعرض تفسيرها، أو اضغط رقم الآية.</p>
-    </div>
     <div class="review-body" id="reviewBody"></div>
+    <button type="button" class="read-exit" id="readExitBtn" aria-label="إظهار الشريطين" title="إظهار الشريطين" hidden>⤡</button>
+    <div class="review-dock" id="reviewDock">
+      <div class="review-tools">
+        <div class="tafsir-switch" id="tafsirSwitch" role="group" aria-label="اختيار التفسير"></div>
+        <div class="tools-row">
+          <span class="tafsir-active sr-only" id="tafsirActiveLabel"></span>
+          <button type="button" class="mini-btn" id="fontDownBtn" aria-label="تصغير الخط" title="تصغير الخط">−</button>
+          <button type="button" class="mini-btn" id="fontUpBtn" aria-label="تكبير الخط" title="تكبير الخط">+</button>
+          <button type="button" class="mini-btn" id="downloadTafsirBtn" aria-label="حفظ التفسير للمقطع" title="حفظ التفسير للمقطع (للعمل دون اتصال)">⬇</button>
+        </div>
+        <p class="tools-hint sr-only">اضغط مطولًا على أي آية لعرض تفسيرها، أو اضغط رقم الآية.</p>
+      </div>
+      <div class="review-toolbar">
+        <button type="button" id="toggleHideBtn">إخفاء النص للاختبار</button>
+        <button type="button" id="markReviewedBtn">✓ تمت المراجعة الآن</button>
+      </div>
+    </div>
 
     <div class="tafsir-pop" id="tafsirPop" role="region" aria-live="polite" aria-label="تفسير الآية" hidden>
       <div class="tafsir-head">
@@ -241,6 +257,8 @@
 <script src="js/stats.js"></script>
 <script src="js/offline.js"></script>
 <script src="js/settings-ui.js"></script>
+<script src="js/download-ui.js"></script>
 <script src="js/app.js"></script>
+<script src="js/exit-guard.js"></script>
 </body>
 </html>

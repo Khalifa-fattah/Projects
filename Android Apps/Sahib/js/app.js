@@ -67,6 +67,7 @@
     if (tab === 'stats') renderStats();
     if (tab === 'plan') Plan.render();
     if (tab === 'settings') SettingsUI.refresh();
+    if (tab === 'list' && NS.DownloadUI) NS.DownloadUI.paintButtons();
     if (tab === 'add') resetAddForm();
   }
 
@@ -257,13 +258,18 @@
 
     // الصفحة الافتراضية (بلا بحث ولا تصفية): السور المحفوظة كاملة (كل آياتها مغطاة) تنتقل كاملة بمقاطعها
     // إلى مجلد مطويّ آخر القائمة. مع البحث أو أي تصفية تظهر كل النتائج كما هي، فلا تختفي سورة عن البحث.
-    const isComplete = (e) => {
-      const s = Quran.surahByNumber(e.surah);
-      return !!s && cov.has(e.surah) && cov.get(e.surah).size >= s.ayahs;
+    const isCompleteAndMastered = (surahNum) => {
+      const s = Quran.surahByNumber(surahNum);
+      const surahEntries = entries.filter((e) => e.surah === surahNum);
+      return !!s && cov.has(surahNum) && cov.get(surahNum).size >= s.ayahs &&
+        surahEntries.length > 0 && surahEntries.every(Stats.isMastered);
     };
     const collapse = !view.query.trim() && view.filter === 'all';
-    const mastered = collapse ? visible.filter(isComplete) : [];
-    const active = collapse ? visible.filter((e) => !isComplete(e)) : visible;
+    const masteredSurahs = new Set(collapse
+      ? entries.filter((e) => isCompleteAndMastered(e.surah)).map((e) => e.surah)
+      : []);
+    const mastered = collapse ? visible.filter((e) => masteredSurahs.has(e.surah)) : [];
+    const active = collapse ? visible.filter((e) => !masteredSurahs.has(e.surah)) : visible;
 
     const nodes = [];
     if (active.length) nodes.push(...entryNodes(active, cov, today));
@@ -452,6 +458,7 @@
     Plan.init();
     SettingsUI.init();
     Offline.init();
+    NS.DownloadUI.init();
     $('surahSelect').addEventListener('change', updateSurahHint);
     $('wholeSurahBox').addEventListener('change', updateSurahHint);
     $('saveEntryBtn').addEventListener('click', onSave);

@@ -109,10 +109,8 @@ async function addEntry(page, surah, from, to) {
   await check('إضافة مقطع ثم ظهوره في القائمة والإحصاء', async () => {
     const { page, errors, ctx } = await newPage(browser);
     await addEntry(page, 1, 1, 7);
-    await page.waitForSelector('#masteredFolderBtn');   // الفاتحة مكتملة: تُطوى في مجلد المتقنة
-    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 0);
-    await openMastered(page);
-    await page.waitForSelector('.entry-card');
+    await page.waitForSelector('.entry-card');          // الفاتحة مكتملة لكنها غير متقنة: تبقى ظاهرة
+    assert.strictEqual(await page.locator('#masteredFolderBtn').count(), 0);
     assert.ok((await page.textContent('#listStatsStrip')).includes('7'));
     assert.ok((await page.textContent('.surah-group-head .progress')).includes('كاملة'));
     const saved = JSON.parse(await page.evaluate(() => localStorage.getItem('quran_hifz_entries_v1')));
@@ -169,18 +167,24 @@ async function addEntry(page, surah, from, to) {
     await ctx.close();
   });
 
-  await check('وضع الاختبار: النص يُزال من DOM فعليًا ويُظهر بالنقر وبلوحة المفاتيح', async () => {
+  await check('وضع الاختبار: النص يُموَّه بنفس الحجم (لا نجوم) ويُظهر بالنقر وبلوحة المفاتيح', async () => {
     const { page, ctx } = await newPage(browser);
     await addEntry(page, 112, 1, 4);
     await openMastered(page); await page.click('.entry-main');
     await page.waitForSelector('.ayah-text');
+    const before = await page.$$eval('.ayah-text', (n) => n.map((x) => Math.round(x.getBoundingClientRect().width)));
     await page.click('#toggleHideBtn');
     const flow = await page.textContent('.ayah-flow');
-    assert.ok(!flow.includes('كلمة112'), 'النص ما زال في DOM');
+    assert.ok(flow.includes('كلمة112_1') && !flow.includes('•'), 'النص يبقى (مموّهًا) بلا نجوم');
     assert.strictEqual(await page.locator('.ayah-text.is-hidden').count(), 4);
+    assert.ok((await page.$eval('.ayah-text', (n) => getComputedStyle(n).filter)).includes('blur'));
+    const after = await page.$$eval('.ayah-text', (n) => n.map((x) => Math.round(x.getBoundingClientRect().width)));
+    assert.deepStrictEqual(after, before, 'حجم الآية لا يتغير بالتمويه');
     await page.focus('.ayah-text >> nth=0');
     await page.keyboard.press('Enter');
-    assert.ok((await page.textContent('.ayah-text >> nth=0')).includes('كلمة112_1'));
+    assert.strictEqual(await page.locator('.ayah-text.is-hidden').count(), 3);
+    await page.waitForTimeout(300); // انتهاء انتقال التمويه
+    assert.strictEqual(await page.$eval('.ayah-text', (n) => getComputedStyle(n).filter), 'none');
     assert.strictEqual(await page.textContent('#toggleHideBtn'), 'إظهار كل النص');
     await page.click('#toggleHideBtn'); // يظهر الباقي
     assert.strictEqual(await page.locator('.ayah-text.is-hidden').count(), 0);
@@ -272,9 +276,7 @@ async function addEntry(page, surah, from, to) {
       { id: 'e2', surah: 1, surahName: 'y', from: 1, to: 3, dateAdded: '2026-10-02', lastReviewed: null, reviewCount: 0 }
     ];
     const { page, ctx, errors } = await newPage(browser, { storage: { quran_hifz_entries_v1: JSON.stringify(old) } });
-    assert.strictEqual(await page.locator('.entry-card').count(), 1);      // الإخلاص مكتملة داخل المجلد المطويّ
-    await openMastered(page);
-    assert.strictEqual(await page.locator('.entry-card').count(), 2);
+    assert.strictEqual(await page.locator('.entry-card').count(), 2);      // الإخلاص مكتملة لكنها غير متقنة: ظاهرة
     const kept = JSON.parse(await page.evaluate(() => localStorage.getItem('quran_hifz_entries_v1')));
     assert.strictEqual(kept.length, 2);
     assert.deepStrictEqual(errors, []);
@@ -701,8 +703,7 @@ async function addEntry(page, surah, from, to) {
     const surahs = await page.$$eval('.entry-card .entry-surah', (ns) => ns.map((n) => n.textContent));
     assert.strictEqual(surahs.length, 3);
     assert.ok(surahs[0].includes('الكَهۡفِ'), surahs[0]); // غير المراجع أولًا
-    assert.ok(surahs[1].includes('البَقَرَةِ'), surahs[1]);
-    assert.ok(surahs[2].includes('ٱلْإِخْلَاصِ') || surahs[2].includes('الإِخۡلَاصِ'), surahs[2]); // الإخلاص مكتملة: داخل المجلد في آخر القائمة
+    assert.ok(surahs[2].includes('البَقَرَةِ'), surahs[2]);
     assert.strictEqual(JSON.parse(await page.evaluate(() => localStorage.getItem('quran_hifz_entries_v1'))).length, 3);
     await ctx.close();
   });
@@ -1081,6 +1082,7 @@ async function addEntry(page, surah, from, to) {
     assert.strictEqual((await settingsOf()).defaultSort, 'added');
     await page.click('nav.bottom button[data-tab="list"]');
     assert.strictEqual(await page.inputValue('#sortSelect'), 'added');
+    await page.waitForTimeout(400); // localStorage على file:// يُكتب إلى القرص بتأخير؛ نتجنب سباقًا في الاختبار فقط
     await page.reload();
     assert.strictEqual(await page.inputValue('#sortSelect'), 'added', await page.evaluate(() => localStorage.getItem('sahib_settings_v1')));
     // مدة الضغط 300ms: ضغطة 420ms تفتح التفسير بينما الافتراضي 500 لا يفتح
@@ -1211,39 +1213,49 @@ async function addEntry(page, surah, from, to) {
   });
 
 
-  await check('مجلد المتقنة: السور المحفوظة كاملة تنتقل بكل مقاطعها إلى المجلد، وتظهر في البحث، وتخرج إذا نقصت', async () => {
-    const mk = (id, surah, from, to) => ({ id, surah, surahName: 'x', from, to, dateAdded: ds(-5), lastReviewed: ds(-1), reviewCount: 1, lastRating: 'mastered' });
-    // الإخلاص مكتملة بمقطعين (1-2 و3-4)، الفاتحة 1-3 ناقصة (ولو كانت «متقنة» بالتقييم)، البقرة 1-20 ناقصة
+  await check('مجلد المتقنة: السورة المكتملة والمتقنة كل مقاطعها تنتقل كاملة، وآيات متقنة جزئية أو سورة فيها مقطع غير متقن تبقى ظاهرة', async () => {
+    const mk = (id, surah, from, to, r = 'mastered') => ({ id, surah, surahName: 'x', from, to, dateAdded: ds(-5), lastReviewed: ds(-1), reviewCount: 1, lastRating: r });
+    // الإخلاص مكتملة (1-2 و3-4) ومتقنة؛ الفاتحة 1-3 متقنة لكنها جزء من سورة؛ البقرة 1-20 جزء
     const ents = [mk('i1', 112, 1, 2), mk('i2', 112, 3, 4), mk('f1', 1, 1, 3), mk('b1', 2, 1, 20)];
     const { page, ctx, errors } = await newPage(browser, { storage: { quran_hifz_entries_v1: JSON.stringify(ents) } });
-    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 2);       // الفاتحة والبقرة (ناقصتان)
+    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 2);       // الفاتحة والبقرة (جزئيتان)
     assert.ok((await page.textContent('#masteredFolderBtn')).includes('المتقنة (1 سورة)'));
     assert.strictEqual(await page.getAttribute('#masteredFolderBtn', 'aria-expanded'), 'false');
-    assert.ok((await page.textContent('#listStatsStrip')).includes('27'));                // الشريط يحسب كل الآيات (4+3+20)
+    assert.ok((await page.textContent('#listStatsStrip')).includes('27'));                // الشريط يحسب كل الآيات
     await page.click('#masteredFolderBtn');
-    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 4);       // السورة المكتملة بمقطعيها
-    assert.strictEqual(await page.getAttribute('#masteredFolderBtn', 'aria-expanded'), 'true');
+    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 4);       // السورة بمقطعيها
     await page.click('#masteredFolderBtn');
     assert.strictEqual(await page.locator('#listContent .entry-card').count(), 2);
-    await page.fill('#searchInput', '112');                                               // البحث برقم الآية/النص يشمل المكتمل بلا مجلد
-    await page.fill('#searchInput', 'الاخلاص');
+    await page.fill('#searchInput', 'الاخلاص');                                           // البحث يشمل المكتمل بلا مجلد
     assert.strictEqual(await page.locator('#masteredFolderBtn').count(), 0);
     await page.fill('#searchInput', '');
-    // إكمال الفاتحة بإضافة 4-7: تنتقل السورة كاملة إلى المجلد
+    // إكمال الفاتحة بمقطع جديد غير متقن: تبقى ظاهرة (فيها مقطع غير متقن)
     await addEntry(page, 1, 4, 7);
-    await page.waitForSelector('#choiceModal.active');                                    // المقطع مجاور لـ 1-3
+    await page.waitForSelector('#choiceModal.active');                                    // مجاور لـ 1-3
     await page.click('#choiceActions button:has-text("إضافة كمقطع مستقل")');
-    await page.waitForSelector('#masteredFolderBtn');
+    await page.waitForSelector('#listContent .entry-card');
+    assert.ok((await page.textContent('#masteredFolderBtn')).includes('المتقنة (1 سورة)'));
+    assert.strictEqual(await page.locator('#listContent .entry-card').count(), 3);       // الفاتحة×2 + البقرة
+    // تقييم المقطع الجديد «متقن»: تنتقل الفاتحة كاملة
+    await page.click('#listContent .entry-card:has-text("4 إلى 7") .entry-main');
+    await page.waitForSelector('.ayah-text');
+    await page.click('#markReviewedBtn');
+    await page.click('#ratePanel [data-rating="mastered"]');
+    await page.waitForFunction(() => document.getElementById('toast').textContent.includes('أحسنت'));
+    await page.click('#reviewCloseBtn');
     assert.ok((await page.textContent('#masteredFolderBtn')).includes('المتقنة (2 سور)'));
     assert.strictEqual(await page.locator('#listContent .entry-card').count(), 1);       // البقرة فقط
-    // حذف مقطع من سورة مكتملة يخرجها من المجلد
+    // تقييم مقطع منها بتقييم أقل يُخرج السورة كلها من المجلد
     await page.click('#masteredFolderBtn');
-    await page.click('#listContent .entry-card[data-id="i2"] .entry-del');
-    await page.click('#choiceActions button:has-text("حذف")');
-    await page.waitForFunction(() => document.getElementById('masteredFolderBtn').textContent.includes('(1 سورة)'));
-    // كل السور مكتملة: رسالة + المجلد
-    const all = [mk('i1', 112, 1, 4)];
-    const f = await newPage(browser, { storage: { quran_hifz_entries_v1: JSON.stringify(all) } });
+    await page.click('#listContent .entry-card[data-id="i1"] .entry-main');
+    await page.waitForSelector('.ayah-text');
+    await page.click('#markReviewedBtn');
+    await page.click('#ratePanel [data-rating="soon"]');
+    await page.waitForFunction(() => document.getElementById('toast').textContent.includes('أحسنت'));
+    await page.click('#reviewCloseBtn');
+    assert.ok((await page.textContent('#masteredFolderBtn')).includes('المتقنة (1 سورة)'));
+    // كل السور مكتملة ومتقنة: رسالة + المجلد
+    const f = await newPage(browser, { storage: { quran_hifz_entries_v1: JSON.stringify([mk('i1', 112, 1, 4)]) } });
     assert.ok((await f.page.textContent('#listContent')).includes('كل سورك المحفوظة مكتملة'));
     assert.deepStrictEqual(errors, []);
     await f.ctx.close(); await ctx.close();
@@ -1256,6 +1268,147 @@ async function addEntry(page, surah, from, to) {
     const r = await page.$$eval('.entry-marker', (ms) => ms.map((m) => ({ w: m.getBoundingClientRect().width, sw: m.scrollWidth, cw: m.clientWidth, h: m.getBoundingClientRect().height })));
     assert.ok(r.every((x) => x.sw <= x.cw && x.h <= 36 && Math.abs(x.w - r[0].w) < 1), JSON.stringify(r));
     assert.ok((await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+    await ctx.close();
+  });
+
+
+  await check('البسملة: سطر مستقل فوق السورة، وأول آية بدونها، ولا تظهر في الفاتحة ولا عند البدء من آية 2', async () => {
+    const B = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+    const { page, ctx, errors } = await newPage(browser);
+    await page.unroute(/api\.alquran\.cloud/);
+    await page.route(/api\.alquran\.cloud/, (r) => {
+      const n = Number(/surah\/(\d+)\//.exec(r.request().url())[1]);
+      const ayahs = Array.from({ length: AYAH_COUNTS[n] }, (_, i) => ({ numberInSurah: i + 1, text: i === 0 && n !== 1 ? `${B} كلمةأولى${n}` : `كلمة${n}_${i + 1}` }));
+      if (n === 1) ayahs[0].text = B;
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 200, data: { number: n, edition: { identifier: 'quran-uthmani' }, ayahs } }) });
+    });
+    await openReview(page, 112, 1, 4);
+    assert.strictEqual((await page.textContent('.basmala')).trim(), B);
+    assert.strictEqual(await page.locator('.basmala').count(), 1);
+    assert.strictEqual((await page.textContent('.ayah-text[data-ayah="1"]')).trim(), 'كلمةأولى112');
+    // أول عنصر في الجسم هو البسملة (فوق الآيات)
+    assert.strictEqual(await page.$eval('#reviewBody', (n) => n.firstElementChild.className), 'basmala');
+    await page.click('#reviewCloseBtn');
+    await openMastered(page);
+    await page.click('.entry-del');
+    await page.click('#choiceActions button:has-text("حذف")');
+    await addEntry(page, 112, 2, 4);
+    await openMastered(page); await page.waitForSelector('.entry-main');
+    await page.click('.entry-main');
+    await page.waitForSelector('.ayah-text');
+    assert.strictEqual(await page.locator('.basmala').count(), 0);        // البداية من آية 2: لا بسملة
+    await page.click('#reviewCloseBtn');
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+
+  // ---- أزرار تنزيل القرآن/التفسير كاملين ----
+  async function mockFull(page, { slow = 0, surahFile = true } = {}) {
+    const counts = await page.evaluate(() => Sahib.Quran.SURAHS.map((s) => s.ayahs));
+    await page.route(/api\.alquran\.cloud/, (r) => {
+      const n = Number(/surah\/(\d+)\//.exec(r.request().url())[1]);
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ code: 200, data: { number: n, edition: { identifier: 'quran-uthmani' }, ayahs: Array.from({ length: counts[n - 1] }, (_, i) => ({ numberInSurah: i + 1, text: `ن${n}_${i + 1}` })) } }) });
+    });
+    await page.route(/cdn\.jsdelivr\.net/, async (r) => {
+      if (slow) await new Promise((res) => setTimeout(res, slow));
+      const url = r.request().url();
+      const ms = /tafsir\/([^/]+)\/(\d+)\.json$/.exec(url);
+      if (ms) {
+        if (!surahFile) return r.fulfill({ status: 404, body: 'nf' });
+        const n = +ms[2];
+        return r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ayahs: Array.from({ length: counts[n - 1] }, (_, i) => ({ ayah: i + 1, text: `[${ms[1]}] ت${n}:${i + 1}` })) }) });
+      }
+      const m = /tafsir\/([^/]+)\/(\d+)\/(\d+)\.json/.exec(url);
+      return r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ surah: +m[2], ayah: +m[3], text: `[${m[1]}] ت${m[2]}:${m[3]}` }) });
+    });
+  }
+  const waitResult = (page, re) => page.waitForFunction((src) => new RegExp(src).test(document.getElementById('choiceMsg').textContent) && !!document.querySelector('#choiceActions button'), re.source, { timeout: 60000 });
+
+  await check('أزرار التنزيل بجانب «محفوظاتي»: صغيرة وأنيقة وفي نفس السطر بلا تجاوز (390 و320)', async () => {
+    for (const w of [390, 320]) {
+      const { page, ctx, errors } = await newPage(browser, { viewport: { width: w, height: 700 } });
+      const r = await page.evaluate(() => {
+        const rc = (id) => document.getElementById(id).getBoundingClientRect();
+        const h = document.querySelector('h1.page-title').getBoundingClientRect();
+        return { h: { t: h.top, b: h.bottom, r: h.right, l: h.left }, a: rc('dlQuranBtn').toJSON(), b: rc('dlTafsirBtn').toJSON(), over: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+      });
+      for (const x of [r.a, r.b]) assert.ok(x.height <= 36 && x.width <= 100 && x.top >= r.h.t - 6 && x.bottom <= r.h.b + 6, JSON.stringify(r));
+      assert.ok(r.over <= 0 && r.a.left >= 0 && r.b.left >= 0);
+      assert.ok((await page.textContent('#dlQuranBtn')).includes('القرآن') && (await page.textContent('#dlTafsirBtn')).includes('التفسير'));
+      assert.deepStrictEqual(errors, []);
+      if (w === 390) await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/home.png' : '/tmp/home.png', clip: { x: 0, y: 0, width: 390, height: 200 } });
+      await ctx.close();
+    }
+  });
+
+  await check('تنزيل نص القرآن كاملًا: تأكيد ثم تقدّم ثم اكتمال، والمحفوظ على الجهاز، وإعادة الضغط لا تنزّل شيئًا', async () => {
+    const { page, ctx, errors, hits } = await newPage(browser);
+    await mockFull(page);
+    await page.click('#dlQuranBtn');
+    assert.ok((await page.textContent('#choiceMsg')).includes('114'));
+    await page.click('#choiceActions button:has-text("تنزيل")');
+    await waitResult(page, /اكتمل التنزيل/);
+    assert.strictEqual(await page.evaluate(() => Sahib.QuranApi.cachedSurahCount()), 114);
+    assert.strictEqual(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('quran_text_cache_v1'))).length), 114);
+    await page.click('#choiceActions button:has-text("حسنًا")');
+    assert.ok(await page.$eval('#dlQuranBtn', (b) => b.classList.contains('done')));
+    await page.click('#dlQuranBtn');
+    assert.ok(!(await page.$('#choiceModal.active')));
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('تنزيل التفسير كاملًا: يُحفظ في IndexedDB ويبقى بعد إعادة التحميل ويظهر دون إنترنت', async () => {
+    const { page, ctx, errors } = await newPage(browser, { storage: { sahib_settings_v1: JSON.stringify({ tafsirId: 'saadi' }) } });
+    await mockFull(page);
+    await page.click('#dlTafsirBtn');
+    assert.ok((await page.textContent('#choiceMsg')).includes('تفسير السعدي'));
+    await page.click('#choiceActions button:has-text("تنزيل")');
+    await waitResult(page, /اكتمل التنزيل/);
+    await page.click('#choiceActions button:has-text("حسنًا")');
+    assert.strictEqual(await page.evaluate(() => Sahib.TafsirApi.persistedCount('saadi')), 6236);
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem('sahib_tafsir_cache_v1')), null, 'لا يملأ localStorage');
+    assert.ok(await page.$eval('#dlTafsirBtn', (b) => b.classList.contains('done')));
+    await page.waitForTimeout(300);
+    await page.unroute(/cdn\.jsdelivr\.net/);
+    await page.route(/cdn\.jsdelivr\.net/, (r) => r.abort());
+    await page.reload();
+    const got = await page.evaluate(async () => { await Sahib.TafsirApi.bulkReady; const r = await Sahib.TafsirApi.fetchTafsir('saadi', 2, 255); return { text: r.text, fromCache: r.fromCache, n: Sahib.TafsirApi.persistedCount('saadi') }; });
+    assert.deepStrictEqual(got, { text: '[ar-tafseer-al-saddi] ت2:255', fromCache: true, n: 6236 });
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('تنزيل التفسير: يعود للجلب آية آية إن لم يتوفر ملف السورة، ويمكن الإيقاف وما نُزِّل يبقى', async () => {
+    const { page, ctx } = await newPage(browser);
+    await mockFull(page, { slow: 40, surahFile: false });
+    await page.click('#dlTafsirBtn');
+    await page.click('#choiceActions button:has-text("تنزيل")');
+    await page.waitForFunction(() => /\(\d+%\)/.test(document.querySelector('.dl-count').textContent) && Sahib.TafsirApi.persistedCount('muyassar') > 0, null, { timeout: 30000 });
+    await page.click('#choiceActions button:has-text("إيقاف")');
+    await waitResult(page, /أُوقف التنزيل/);
+    const n = await page.evaluate(() => Sahib.TafsirApi.persistedCount('muyassar'));
+    assert.ok(n > 0 && n < 6236, String(n));
+    await page.click('#choiceActions button:has-text("حسنًا")');
+    assert.ok(!(await page.$eval('#dlTafsirBtn', (b) => b.classList.contains('done'))));
+    await ctx.close();
+  });
+
+  await check('تنزيل بلا إنترنت أو عند فشل المصدر: رسالة واضحة ولا ادّعاء نجاح', async () => {
+    const { page, ctx } = await newPage(browser);
+    await page.route(/api\.alquran\.cloud/, (r) => r.abort());
+    await page.click('#dlQuranBtn');
+    await page.click('#choiceActions button:has-text("تنزيل")');
+    await waitResult(page, /توقف التنزيل/);
+    assert.ok(!(await page.textContent('#choiceMsg')).includes('اكتمل'));
+    await page.click('#choiceActions button:has-text("حسنًا")');
+    assert.ok(!(await page.$eval('#dlQuranBtn', (b) => b.classList.contains('done'))));
+    await ctx.setOffline(true);
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await page.click('#dlQuranBtn');
+    await page.waitForTimeout(150);
+    assert.ok(!(await page.$('#choiceModal.active')) || !(await page.textContent('#choiceMsg')).includes('تنزيل نص'));
     await ctx.close();
   });
 

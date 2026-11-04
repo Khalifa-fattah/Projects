@@ -81,6 +81,9 @@
     });
   }
 
+  // يغلق نافذة الرسالة الحالية إن كانت مفتوحة (تُحلّ وعدها بـ null).
+  function dismiss() { if (choiceOpen()) closeModal(null); }
+
   // تأكيد بسيط (إلغاء / تأكيد). النقر على "إلغاء" أو Esc يعيد false.
   async function confirm(message, okLabel) {
     const v = await choice(
@@ -278,5 +281,5 @@
     });
   }
 
-  NS.UI = { toast, choice, confirm, isModalOpen, initModal, initTheme, applyTheme, enhanceSelect };
+  NS.UI = { toast, choice, confirm, dismiss, isModalOpen, initModal, initTheme, applyTheme, enhanceSelect };
 })(globalThis);

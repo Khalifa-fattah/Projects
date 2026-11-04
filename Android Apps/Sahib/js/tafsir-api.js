@@ -53,6 +53,77 @@
   const mem = new Map(); // سجلات الجلسة فقط (آيات غير مرتبطة بمحفوظات)
   const inflight = new Map();
 
+  // ---------- التخزين الكبير (IndexedDB) لتنزيل التفسير كاملًا ----------
+  // localStorage لا يتسع لتفسير القرآن كله (~5 م.ب)، فالتنزيل الكامل يُحفظ في IndexedDB ويُحمَّل إلى ذاكرة الجلسة عند الفتح.
+  // bulk: مفتاح "<tafsirId>:<سورة>:<آية>" -> نص التفسير. bulkReady تنتهي سواء نجح التحميل أم لا.
+  const BULK_DB = 'sahib_tafsir_bulk_v1';
+  const BULK_STORE = 'ayat';
+  const bulk = new Map();
+  let bulkDbPromise = null;
+
+  function openBulkDb() {
+    if (bulkDbPromise) return bulkDbPromise;
+    bulkDbPromise = new Promise((resolve, reject) => {
+      try {
+        if (!g.indexedDB) { reject(new Error('no-idb')); return; }
+        const req = g.indexedDB.open(BULK_DB, 1);
+        req.onupgradeneeded = () => { req.result.createObjectStore(BULK_STORE); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('idb-open'));
+        req.onblocked = () => reject(new Error('idb-blocked'));
+      } catch (e) { reject(e); }
+    });
+    bulkDbPromise.catch(() => { bulkDbPromise = null; });
+    return bulkDbPromise;
+  }
+
+  function loadBulk() {
+    return openBulkDb().then((db) => new Promise((resolve) => {
+      try {
+        const tx = db.transaction(BULK_STORE, 'readonly');
+        const cur = tx.objectStore(BULK_STORE).openCursor();
+        cur.onsuccess = () => {
+          const c = cur.result;
+          if (c) { if (typeof c.value === 'string') bulk.set(c.key, c.value); c.continue(); }
+        };
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = tx.onabort = () => resolve(false);
+      } catch (e) { resolve(false); }
+    })).catch(() => false);
+  }
+  const bulkReady = loadBulk();
+
+  // يكتب مجموعة آيات في معاملة واحدة (كلها أو لا شيء). entries: [[ayah, text], ...]. يعيد { ok, reason }.
+  function saveBulk(tafsirId, surah, entries) {
+    const items = [];
+    for (const [ayah, text] of entries) {
+      if (!validTarget(tafsirId, surah, ayah) || typeof text !== 'string' || !toPlainText(text)) {
+        return Promise.resolve({ ok: false, reason: 'invalid' });
+      }
+      items.push([keyOf(tafsirId, surah, ayah), text]);
+    }
+    return openBulkDb().then((db) => new Promise((resolve) => {
+      try {
+        const tx = db.transaction(BULK_STORE, 'readwrite');
+        const os = tx.objectStore(BULK_STORE);
+        items.forEach(([k, t]) => os.put(t, k));
+        tx.oncomplete = () => { items.forEach(([k, t]) => bulk.set(k, t)); resolve({ ok: true }); };
+        tx.onerror = tx.onabort = () => resolve({ ok: false, reason: 'storage' });
+      } catch (e) { resolve({ ok: false, reason: 'storage' }); }
+    })).catch(() => ({ ok: false, reason: 'storage' }));
+  }
+
+  function clearBulk() {
+    return openBulkDb().then((db) => new Promise((resolve) => {
+      try {
+        const tx = db.transaction(BULK_STORE, 'readwrite');
+        tx.objectStore(BULK_STORE).clear();
+        tx.oncomplete = () => { bulk.clear(); resolve({ ok: true }); };
+        tx.onerror = tx.onabort = () => resolve({ ok: false, reason: 'storage' });
+      } catch (e) { resolve({ ok: false, reason: 'storage' }); }
+    })).catch(() => (bulk.size ? { ok: false, reason: 'storage' } : { ok: true }));
+  }
+
   function validTarget(tafsirId, surah, ayah) {
     const s = Quran.surahByNumber(surah);
     return !!TAFSIRS[tafsirId] && !!s && Number.isInteger(ayah) && ayah >= 1 && ayah <= s.ayahs;
@@ -60,7 +131,11 @@
 
   function getCachedTafsir(tafsirId, surah, ayah) {
     const k = keyOf(tafsirId, surah, ayah);
-    return store[k] || mem.get(k) || null;
+    if (store[k] || mem.get(k)) return store[k] || mem.get(k);
+    if (bulk.has(k)) {
+      return { tafsirId, surahNumber: surah, ayahNumber: ayah, text: bulk.get(k), cachedAt: null, source: 'bulk' };
+    }
+    return null;
   }
 
   // يخزّن في الذاكرة دائمًا؛ ويكتب في التخزين المحلي فقط عند persist=true.
@@ -89,12 +164,13 @@
   // يرقّي سجلًا موجودًا في الذاكرة المؤقتة إلى التخزين (عند صيرورة الآية جزءًا من محفوظ).
   function persistIfCached(tafsirId, surah, ayah) {
     const rec = mem.get(keyOf(tafsirId, surah, ayah));
-    if (!rec || store[keyOf(tafsirId, surah, ayah)]) return { ok: true, persisted: !!rec };
+    if (!rec || store[keyOf(tafsirId, surah, ayah)] || bulk.has(keyOf(tafsirId, surah, ayah))) return { ok: true, persisted: !!rec };
     return cacheTafsir(tafsirId, surah, ayah, rec.text, { persist: true });
   }
 
   function isPersisted(tafsirId, surah, ayah) {
-    return !!store[keyOf(tafsirId, surah, ayah)];
+    const k = keyOf(tafsirId, surah, ayah);
+    return !!store[k] || bulk.has(k);
   }
 
   // تحويل نص التفسير إلى نص عادي للعرض (إزالة وسوم HTML إن وُجدت). العرض يتم بـ textContent دائمًا.
@@ -215,20 +291,76 @@
   }
 
   function persistedCount(tafsirId) {
-    const keys = Object.keys(store);
+    const all = new Set([...Object.keys(store), ...bulk.keys()]);
+    const keys = Array.from(all);
     return tafsirId ? keys.filter((k) => k.startsWith(`${tafsirId}:`)).length : keys.length;
   }
 
-  // مسح التفاسير المحفوظة على الجهاز فقط (لا يمس المحفوظات). يعيد نتيجة الكتابة.
-  function clearStore() {
+  // كم آية من القرآن محفوظة لهذا التفسير على الجهاز (من أصل 6236).
+  function persistedCountFor(tafsirId) { return persistedCount(tafsirId); }
+
+  // مسح التفاسير المحفوظة على الجهاز فقط (لا يمس المحفوظات). يعيد وعدًا بنتيجة الكتابة.
+  async function clearStore() {
     const res = Storage.saveTafsirCache({});
     if (res.ok) { store = {}; mem.clear(); }
-    return res;
+    const b = await clearBulk();
+    return res.ok && b.ok ? { ok: true } : { ok: false, reason: res.ok ? b.reason : res.reason };
+  }
+
+  // ---------- جلب سورة كاملة بطلب واحد ----------
+  // الشكل المتوقع (غير متحقَّق منه من بيئة التطوير): {baseUrl}@{ref}/tafsir/{slug}/{سورة}.json
+  //   => { ayahs: [ { ayah: 1, text: "..." }, ... ] } (ويُقبل أيضًا مصفوفة مباشرة).
+  // لا نقبل إلا سورة مكتملة العدد وبترقيم صحيح؛ وإلا يرمي خطأً فيعود المُنزِّل إلى الجلب آية آية.
+  function parseSurahResponse(json, surah) {
+    const s = Quran.surahByNumber(surah);
+    const list = Array.isArray(json) ? json : json && Array.isArray(json.ayahs) ? json.ayahs : null;
+    if (!s || !list) throw new TafsirError('invalid', 'no ayahs');
+    const byAyah = new Map();
+    for (const a of list) {
+      if (!a || typeof a !== 'object') throw new TafsirError('invalid', 'bad item');
+      const n = Number(a.ayah !== undefined ? a.ayah : a.ayah_number);
+      if (!Number.isInteger(n) || n < 1 || n > s.ayahs) throw new TafsirError('invalid', 'bad ayah number');
+      if (typeof a.text !== 'string') throw new TafsirError('invalid', 'no text');
+      byAyah.set(n, a.text);
+    }
+    const out = [];
+    let missing = 0;
+    for (let n = 1; n <= s.ayahs; n++) {
+      if (byAyah.has(n) && toPlainText(byAyah.get(n))) out.push([n, byAyah.get(n)]); else missing++;
+    }
+    // نسمح بنقص يسير فقط (آيات بلا تفسير في المصدر)؛ أكثر من ذلك نعدّه ردًّا غير صالح.
+    if (out.length === 0 || missing > Math.max(2, Math.floor(s.ayahs * 0.1))) throw new TafsirError('invalid', 'incomplete surah');
+    return { entries: out, missing };
+  }
+
+  async function requestSurahTafsir(tafsirId, surah, signal) {
+    const def = TAFSIRS[tafsirId];
+    const url = `${config.baseUrl}@${config.ref}/tafsir/${def.slug}/${surah}.json`;
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, config.timeoutMs * 2);
+    const onAbort = () => controller.abort();
+    if (signal) signal.addEventListener('abort', onAbort, { once: true });
+    try {
+      let res;
+      try { res = await fetch(url, { signal: controller.signal }); }
+      catch (e) { throw new TafsirError(signal && signal.aborted ? 'aborted' : timedOut ? 'timeout' : 'network'); }
+      if (res.status === 404) throw new TafsirError('notfound');
+      if (!res.ok) throw new TafsirError('http', `HTTP ${res.status}`);
+      let json;
+      try { json = await res.json(); }
+      catch (e) { throw signal && signal.aborted ? new TafsirError('aborted') : timedOut ? new TafsirError('timeout') : new TafsirError('invalid', 'not json'); }
+      return parseSurahResponse(json, surah);
+    } finally {
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
+    }
   }
 
   NS.TafsirApi = {
     TAFSIRS, TAFSIR_IDS, config, TafsirError,
-    fetchTafsir, getCachedTafsir, cacheTafsir, isPersisted, persistIfCached, persistedCount, clearStore,
-    toPlainText, parseResponse, describeError
+    fetchTafsir, getCachedTafsir, cacheTafsir, isPersisted, persistIfCached, persistedCount, persistedCountFor, clearStore,
+    toPlainText, parseResponse, describeError,
+    bulkReady, saveBulk, clearBulk, requestSurahTafsir, parseSurahResponse
   };
 })(globalThis);

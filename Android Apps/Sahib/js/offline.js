@@ -129,6 +129,105 @@
     return out;
   }
 
+  // ---------- تنزيل القرآن كاملًا (114 سورة) ----------
+  // يتخطى السور المحفوظة مسبقًا. يعمل بثلاثة طلبات متوازية. onProgress(done,total).
+  // storage: true إن تعذّر حفظ النص على الجهاز (امتلاء المساحة)؛ يبقى متاحًا في الجلسة فقط.
+  async function downloadAllTexts({ signal, onProgress } = {}) {
+    const total = Quran.SURAHS.length;
+    const out = { total, done: 0, aborted: false, failure: null, storage: false };
+    const nums = Quran.SURAHS.map((s) => s.n);
+    let next = 0;
+    async function worker() {
+      while (next < nums.length && !out.failure && !out.aborted) {
+        if (signal && signal.aborted) { out.aborted = true; return; }
+        const n = nums[next++];
+        if (!QuranApi.isCached(n)) {
+          try { await QuranApi.fetchSurahAyahs(n, { signal }); }
+          catch (err) {
+            if (err && err.code === 'aborted') { out.aborted = true; return; }
+            out.failure = err || { code: 'network' };
+            return;
+          }
+        }
+        out.done++;
+        if (onProgress) onProgress(out.done, total);
+      }
+    }
+    if (onProgress) onProgress(0, total);
+    await Promise.all([worker(), worker(), worker()]);
+    const saved = Storage.loadTextCache();
+    out.storage = QuranApi.cachedSurahCount() > 0 && Object.keys(saved).length < QuranApi.cachedSurahCount();
+    return out;
+  }
+
+  // ---------- تنزيل تفسير القرآن كاملًا ----------
+  // لكل سورة: طلب واحد لملف السورة، فإن لم يكن متاحًا أو كان غير صالح يُجلب آية آية (مع التحقق الصارم نفسه).
+  // يُحفظ في IndexedDB. onProgress(doneSurahs,totalSurahs). يعيد أيضًا ayat (المحفوظ جديدًا) وskipped (آيات بلا نص في المصدر).
+  async function downloadAllTafsir({ tafsirId, signal, onProgress } = {}) {
+    const id = tafsirId || NS.Settings.get('tafsirId');
+    const total = Quran.SURAHS.length;
+    const out = { total, done: 0, ayat: 0, skipped: 0, aborted: false, failure: null, viaAyah: 0 };
+    await TafsirApi.bulkReady;
+    const hasAll = (s) => { for (let a = 1; a <= s.ayahs; a++) if (!TafsirApi.isPersisted(id, s.n, a)) return false; return true; };
+    const list = Quran.SURAHS.slice();
+    let next = 0;
+
+    async function fetchPerAyah(s) {
+      const entries = [];
+      let idx = 1;
+      async function w() {
+        while (idx <= s.ayahs && !out.failure && !out.aborted) {
+          if (signal && signal.aborted) { out.aborted = true; return; }
+          const a = idx++;
+          if (TafsirApi.isPersisted(id, s.n, a)) continue;
+          try {
+            const r = await TafsirApi.fetchTafsir(id, s.n, a, { signal });
+            entries.push([a, r.text]);
+          } catch (err) {
+            if (err && err.code === 'aborted') { out.aborted = true; return; }
+            if (err && (err.code === 'notfound' || err.code === 'empty')) { out.skipped++; continue; }
+            out.failure = err || { code: 'network' };
+            return;
+          }
+        }
+      }
+      await Promise.all([w(), w(), w()]);
+      return entries;
+    }
+
+    async function worker() {
+      while (next < list.length && !out.failure && !out.aborted) {
+        if (signal && signal.aborted) { out.aborted = true; return; }
+        const s = list[next++];
+        if (!hasAll(s)) {
+          let entries = null;
+          try {
+            const r = await TafsirApi.requestSurahTafsir(id, s.n, signal);
+            entries = r.entries.filter(([a]) => !TafsirApi.isPersisted(id, s.n, a));
+            out.skipped += r.missing;
+          } catch (err) {
+            if (err && err.code === 'aborted') { out.aborted = true; return; }
+            if (err && (err.code === 'notfound' || err.code === 'invalid' || err.code === 'empty')) {
+              out.viaAyah++;
+              entries = await fetchPerAyah(s);
+              if (out.aborted || out.failure) return;
+            } else { out.failure = err || { code: 'network' }; return; }
+          }
+          if (entries.length) {
+            const r = await TafsirApi.saveBulk(id, s.n, entries);
+            if (!r.ok) { out.failure = { code: 'storage' }; return; }
+            out.ayat += entries.length;
+          }
+        }
+        out.done++;
+        if (onProgress) onProgress(out.done, total);
+      }
+    }
+    if (onProgress) onProgress(0, total);
+    await Promise.all([worker(), worker()]);
+    return out;
+  }
+
   // ---------- المساحة المستخدمة ----------
   function storageBreakdown() {
     const K = Storage.KEYS;
@@ -159,6 +258,6 @@
 
   NS.Offline = {
     init, onChange, state, isOnline, updateIndicator, register, checkForUpdate, clearShellCache,
-    memorizedSurahs, downloadTexts, downloadTafsir, storageBreakdown, formatBytes
+    memorizedSurahs, downloadTexts, downloadTafsir, downloadAllTexts, downloadAllTafsir, storageBreakdown, formatBytes
   };
 })(globalThis);

@@ -9,7 +9,7 @@
   const { el } = Utils;
   const $ = (id) => document.getElementById(id);
 
-  const VERSION = '1.3.0';
+  const VERSION = '1.4.1';
   const SORT_LABELS = { surah: 'حسب السورة', added: 'الأحدث إضافة', reviewed: 'الأقدم مراجعة', priority: 'أولوية المراجعة' };
   const INTERVAL_ROWS = [
     ['mastered', 'بعد تقييم «متقن»', 'أيام'],

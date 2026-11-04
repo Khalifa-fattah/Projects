@@ -9,7 +9,7 @@
  */
 'use strict';
 
-const VERSION = '1.3.0';
+const VERSION = '1.4.2';
 const SHELL_PREFIX = 'sahib-shell-';
 const SHELL_CACHE = `${SHELL_PREFIX}${VERSION}`;
 const FONT_CACHE = 'sahib-fonts-v1';
@@ -35,7 +35,9 @@ const SHELL_FILES = [
   'js/stats.js',
   'js/offline.js',
   'js/settings-ui.js',
-  'js/app.js'
+  'js/download-ui.js',
+  'js/app.js',
+  'js/exit-guard.js'
 ];
 
 const scopeUrl = (path) => new URL(path, self.registration.scope).href;
