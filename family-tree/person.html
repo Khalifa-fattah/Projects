@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">شجرة العائلة</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="navigation">
+                <a href="index.html" class="back-link">← العودة للصفحة الرئيسية</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="person-profile">
+                <!-- صورة الشخص -->
+                <div class="person-image-container">
+                    <img id="personImage" src="" alt="" class="person-image">
+                </div>
+
+                <!-- معلومات الشخص -->
+                <div class="person-info">
+                    <h1 id="personName" class="person-name"></h1>
+                    <div class="person-details">
+                        <div class="detail-item">
+                            <span class="detail-label">تاريخ الميلاد:</span>
+                            <span id="personBirthDate" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">الجيل:</span>
+                            <span id="personGeneration" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+    <span class="detail-label">الوالد:</span>
+    <span id="personParent" class="detail-value"></span>
+</div>
+                    </div>
+                    <div class="person-bio">
+                        <h3>نبذة شخصية</h3>
+                        <p id="personBio"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قائمة الأبناء -->
+            <div id="childrenSection" class="children-section">
+                <h2 class="section-title">الأبناء</h2>
+                <div id="childrenContainer" class="children-container">
+                    <!-- سيتم ملء هذا القسم ديناميكياً -->
+                </div>
+            </div>
+
+            <!-- رسالة في حالة عدم وجود أبناء -->
+            <div id="noChildrenMessage" class="no-children-message hidden">
+                <p>لا يوجد أبناء مسجلون لهذا الشخص.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 شجرة العائلة. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/person.js"></script>
+</body>
+</html>
