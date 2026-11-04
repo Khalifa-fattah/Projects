@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceFlow – Personal Finance Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ================================================================
+     Toast notifications
+================================================================ -->
+<div id="toast-container"></div>
+
+<!-- ================================================================
+     Main App
+================================================================ -->
+<div id="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1>FinanceFlow</h1>
+        <p>Personal Finance</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <label>Main Menu</label>
+
+      <div class="nav-item active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Dashboard</span>
+        <div class="nav-dot"></div>
+      </div>
+
+      <div class="nav-item" data-page="transactions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/>
+        </svg>
+        <span>Transactions</span>
+      </div>
+
+      <div class="nav-item" data-page="budgets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+        </svg>
+        <span>Budgets</span>
+      </div>
+
+      <div class="nav-item" data-page="accounts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+        </svg>
+        <span>Accounts</span>
+      </div>
+
+      <div class="nav-item" data-page="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+        </svg>
+        <span>Reports</span>
+      </div>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="sidebar-bottom">
+      <div class="sidebar-pro">
+        <div class="sidebar-pro-title">
+          <span>⚡</span><span>Pro Features</span>
+        </div>
+        <p>Unlock AI insights, advanced reports & more.</p>
+        <button>Upgrade Now</button>
+      </div>
+
+      <div class="nav-item" data-page="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </div>
+
+      <div class="user-row">
+        <div class="user-avatar">J</div>
+        <div class="user-info">
+          <p>John Doe</p>
+          <small>john@example.com</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle button -->
+    <button class="sidebar-toggle">
+      <span id="sidebar-toggle-icon">‹</span>
+    </button>
+  </aside>
+
+  <!-- ── Main Content ─────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h2 id="header-page-title">Dashboard</h2>
+        <p id="header-greeting">Good morning, John 👋</p>
+      </div>
+      <div class="header-actions">
+        <button id="theme-btn" class="theme-toggle" title="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="btn-primary" data-open-modal="transaction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Transaction
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable page area -->
+    <div class="page-content">
+
+      <!-- ════════════════════════════════════════════════════════
+           DASHBOARD PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-inner">
+
+          <!-- Budget Alerts -->
+          <div id="budget-alerts" class="glass-card budget-alert-wrap" style="display:none">
+            <div class="alert-header">
+              <span>⚠️</span>
+              <span id="alert-count-label">Budget Alerts</span>
+            </div>
+            <div class="alert-list"></div>
+          </div>
+
+          <!-- Stat Cards -->
+          <div class="stats-grid">
+            <div class="stat-card stat-card-income" id="stat-income">
+              <div class="stat-icon">📈</div>
+              <div class="stat-label">Total Income</div>
+              <div class="stat-value">—</div>
+              <div class="stat-change"></div>
+            </div>
+            <div class="stat-card stat-card-expense" id="stat-expense">
+              <div class="stat-icon">💸</div>
+              <div class="stat-label">Total Expenses</div>
+              <div class="stat-value">—</div>
+              <div class="stat-change"></div>
+            </div>
+            <div class="stat-card stat-card-balance" id="stat-balance">
+              <div class="stat-icon">🏦</div>
+              <div class="stat-label">Net Balance</div>
+              <div class="stat-value">—</div>
+              <div class="stat-change"></div>
+            </div>
+            <div class="stat-card stat-card-savings" id="stat-savings">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-label">Savings Rate</div>
+              <div class="stat-value">—</div>
+              <div class="stat-change"></div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <!-- Cash Flow -->
+            <div class="glass-card" style="padding:24px">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Cash Flow</div>
+                  <div class="card-subtitle">Income vs Expenses – last 5 weeks</div>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-dot" style="background:#22c55e"></div>
+                  <span class="legend-label">Income</span>
+                  <div class="legend-dot" style="background:#ef4444"></div>
+                  <span class="legend-label">Expenses</span>
+                </div>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="cashflow-canvas" style="width:100%;height:220px"></canvas>
+              </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="glass-card" style="padding:24px">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Spending by Category</div>
+                  <div class="card-subtitle">Distribution this month</div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:center">
+                <canvas id="pie-canvas"></canvas>
+              </div>
+              <div id="pie-legend" class="pie-legend"></div>
+            </div>
+          </div>
+
+          <!-- Bottom Row -->
+          <div class="bottom-row">
+            <!-- Left: Accounts + Quick Actions -->
+            <div class="section-spacer">
+              <!-- Accounts -->
+              <div class="glass-card" style="padding:20px">
+                <div class="card-header" style="margin-bottom:14px">
+                  <div class="card-title">My Accounts</div>
+                </div>
+                <div id="accounts-list-dash" class="account-list"></div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="glass-card" style="padding:20px">
+                <div class="card-header" style="margin-bottom:12px">
+                  <div class="card-title">Quick Actions</div>
+                </div>
+                <div class="quick-actions">
+                  <button class="quick-action-btn" data-open-modal="transaction"
+                    style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25)">
+                    <span class="emoji">💰</span>
+                    <span class="qlabel" style="color:#16a34a">Add Income</span>
+                  </button>
+                  <button class="quick-action-btn" data-open-modal="transaction"
+                    style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)">
+                    <span class="emoji">💸</span>
+                    <span class="qlabel" style="color:#dc2626">Add Expense</span>
+                  </button>
+                  <button class="quick-action-btn" data-open-modal="transaction"
+                    style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25)">
+                    <span class="emoji">🔄</span>
+                    <span class="qlabel" style="color:#2563eb">Transfer</span>
+                  </button>
+                  <button class="quick-action-btn" onclick="document.querySelector('[data-page=budgets]').click()"
+                    style="background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.25)">
+                    <span class="emoji">🎯</span>
+                    <span class="qlabel" style="color:#7c3aed">Set Budget</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Recent Transactions -->
+            <div id="recent-tx-list" class="glass-card" style="padding:24px">
+              <div class="card-header" style="margin-bottom:14px">
+                <div>
+                  <div class="card-title">Recent Transactions</div>
+                  <div class="card-subtitle tx-count"></div>
+                </div>
+                <button id="view-all-tx" class="view-all-btn">View All ↗</button>
+              </div>
+              <div class="tx-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           TRANSACTIONS PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-transactions" class="page">
+        <div class="glass-card" style="overflow:hidden">
+          <!-- Filter bar -->
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="tx-search" class="search-input" placeholder="Search transactions...">
+            </div>
+            <select id="tx-type-filter" class="filter-select">
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+              <option value="transfer">Transfer</option>
+            </select>
+            <select id="tx-sort" class="filter-select">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest">Highest Amount</option>
+              <option value="lowest">Lowest Amount</option>
+            </select>
+            <button class="btn-primary" data-open-modal="transaction" style="white-space:nowrap">
+              + Add
+            </button>
+          </div>
+          <!-- List -->
+          <div id="tx-page-list" class="tx-table-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           BUDGETS PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-budgets" class="page">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:20px;font-weight:700;color:var(--text-primary)">Budgets</h2>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">Track your spending limits</p>
+          </div>
+          <button id="add-budget-btn" class="btn-primary">🎯 Add Budget</button>
+        </div>
+        <div id="budgets-grid" class="budgets-grid"></div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           ACCOUNTS PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-accounts" class="page">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:20px;font-weight:700;color:var(--text-primary)">Accounts</h2>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">Manage your financial accounts</p>
+        </div>
+        <div id="accounts-grid" class="accounts-grid"></div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           REPORTS PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-reports" class="page">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:20px;font-weight:700;color:var(--text-primary)">Reports</h2>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">Financial insights & analytics</p>
+        </div>
+        <div id="reports-stats" class="reports-stats" style="margin-bottom:24px"></div>
+        <div class="glass-card" style="padding:24px">
+          <div class="card-title" style="margin-bottom:16px">Spending Breakdown</div>
+          <div id="report-cat-list"></div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════
+           SETTINGS PAGE
+      ════════════════════════════════════════════════════════ -->
+      <div id="page-settings" class="page">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:20px;font-weight:700;color:var(--text-primary)">Settings</h2>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:2px">Customize your experience</p>
+        </div>
+
+        <div class="glass-card" style="overflow:hidden">
+          <!-- Appearance -->
+          <div style="padding:20px 20px 0">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px">Appearance</h3>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Theme</div>
+              <div class="setting-desc">Switch between light and dark mode</div>
+            </div>
+            <button id="settings-theme-btn" class="btn-primary" style="padding:8px 16px;font-size:13px">
+              <span id="theme-toggle-setting">☀️ Light</span>
+            </button>
+          </div>
+
+          <!-- Data -->
+          <div style="padding:16px 20px 0">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px">Data</h3>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Reset to Sample Data</div>
+              <div class="setting-desc">Restore all demo transactions and accounts</div>
+            </div>
+            <button id="reset-data-btn" style="padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);font-family:inherit">
+              🔄 Reset
+            </button>
+          </div>
+
+          <!-- About -->
+          <div style="padding:16px 20px 0">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px">About</h3>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">FinanceFlow</div>
+              <div class="setting-desc">Version 1.0 – Static HTML/CSS/JS Edition</div>
+            </div>
+            <span style="font-size:20px">💎</span>
+          </div>
+          <div class="setting-row" style="border:none">
+            <div>
+              <div class="setting-label">Data Storage</div>
+              <div class="setting-desc">All data is saved locally in your browser (localStorage)</div>
+            </div>
+            <span style="font-size:20px">🔒</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- ── FAB (mobile) ─────────────────────────────────────────────── -->
+<button class="fab" title="Add Transaction">+</button>
+
+<!-- ================================================================
+     TRANSACTION MODAL
+================================================================ -->
+<div id="tx-modal" class="modal-backdrop">
+  <div class="modal">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div id="modal-type-icon" class="modal-type-icon">💸</div>
+        <div>
+          <div id="modal-title" class="modal-title">New Transaction</div>
+          <div class="modal-subtitle">Fill in the transaction details below</div>
+        </div>
+      </div>
+      <button id="modal-close-btn" class="modal-close">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <form id="modal-form" onsubmit="return false">
+
+        <!-- Type pills -->
+        <div>
+          <label class="form-label">Transaction Type</label>
+          <div class="type-pills">
+            <button type="button" class="type-pill" data-type="income">📈 Income</button>
+            <button type="button" class="type-pill selected" data-type="expense">💸 Expense</button>
+            <button type="button" class="type-pill" data-type="transfer">🔄 Transfer</button>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label class="form-label">Amount</label>
+          <div class="input-wrap">
+            <span class="input-icon">$</span>
+            <input id="tx-amount" type="number" step="0.01" min="0.01"
+              placeholder="0.00" class="input-field amount-field" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="form-label">Description</label>
+          <div class="input-wrap">
+            <span class="input-icon">✏️</span>
+            <input id="tx-desc" type="text" placeholder="What was this for?"
+              class="input-field" />
+          </div>
+        </div>
+
+        <!-- Date + Account -->
+        <div class="form-row">
+          <div>
+            <label class="form-label">Date</label>
+            <div class="input-wrap">
+              <span class="input-icon">📅</span>
+              <input id="tx-date" type="date" class="input-field" />
+            </div>
+          </div>
+          <div>
+            <label class="form-label">Account</label>
+            <select id="tx-account" class="input-field no-icon"></select>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="form-label">Category</label>
+          <div id="cat-dropdown-wrap" style="position:relative">
+            <button type="button" id="cat-select-btn" class="cat-select-btn">
+              <span class="cat-placeholder">Select category...</span>
+              <span class="cat-chevron">▼</span>
+            </button>
+            <div id="cat-dropdown" class="cat-dropdown">
+              <div id="cat-options"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transfer: to account -->
+        <div id="to-account-row" style="display:none">
+          <label class="form-label">To Account</label>
+          <select id="tx-to-account" class="input-field no-icon"></select>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="form-label">Tags <span style="text-transform:none;font-weight:400;color:var(--text-muted)">(optional, comma separated)</span></label>
+          <div class="input-wrap">
+            <span class="input-icon">🏷️</span>
+            <input id="tx-tags" type="text" placeholder="groceries, work, vacation"
+              class="input-field" />
+          </div>
+        </div>
+
+        <!-- File upload -->
+        <div>
+          <label class="form-label">Receipt / Attachment <span style="text-transform:none;font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" />
+          <button type="button" class="upload-btn" onclick="document.getElementById('file-input').click()">
+            <span>📎</span>
+            <span id="upload-label">Upload receipt or invoice</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-muted)">Max 5MB</span>
+          </button>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions">
+          <button type="button" id="cancel-btn" class="btn-secondary">Cancel</button>
+          <button type="button" id="submit-btn" class="btn-submit">Add Expense</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     BUDGET MODAL
+================================================================ -->
+<div id="budget-modal" class="modal-backdrop">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-type-icon" style="background:rgba(139,92,246,.15)">🎯</div>
+        <div>
+          <div class="modal-title">New Budget</div>
+          <div class="modal-subtitle">Set a monthly spending limit</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeBudgetModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="form-label">Category</label>
+        <select id="budget-cat" class="input-field no-icon"></select>
+      </div>
+      <div>
+        <label class="form-label">Budget Amount</label>
+        <div class="input-wrap">
+          <span class="input-icon">$</span>
+          <input id="budget-amount" type="number" step="1" min="1" placeholder="500"
+            class="input-field" />
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Period</label>
+        <select id="budget-period" class="input-field no-icon">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button id="budget-cancel-btn" class="btn-secondary">Cancel</button>
+        <button id="budget-submit-btn" class="btn-submit"
+          style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">Create Budget</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
