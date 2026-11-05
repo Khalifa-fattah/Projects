@@ -2,38 +2,116 @@
 (function(window) {
   'use strict';
 
+  const { h } = UI;
+  const today = () => LearningUtils.localDate();
+
   const App = {
     currentRoute: 'dashboard',
     currentDomainId: null,
     currentDomainTab: 'plan',
     domainFilter: { status: 'all', search: '' },
+    aiPlanDraft: null,
+    aiRequesting: false,
+    aiForm: { goal: '', currentLevel: 'مبتدئ', targetLevel: '', hoursPerWeek: 5, daysPerWeek: 5, targetDate: '', context: '' },
 
     init() {
+      this.restoreAiState();
+
       // 1. Setup Theme from Store
       const settings = LearningStore.getSettings();
       this.applyTheme(settings.theme || 'light');
 
-      // 2. Setup Navigation listeners
-      this.setupNavigation();
+      // 2. Surface storage problems instead of failing silently
+      LearningStore.onSaveError = () => {
+        UI.showToast('تعذّر حفظ البيانات في المتصفح (المساحة ممتلئة أو التخزين معطّل). صدّر نسخة احتياطية الآن.', 'error', 9000);
+      };
+      if (LearningStore.loadError === 'corrupt-data') {
+        UI.showToast('تعذّرت قراءة البيانات المخزّنة فبدأنا ببيانات جديدة. نسخة التالف محفوظة في المتصفح للاسترجاع اليدوي.', 'error', 10000);
+      } else if (LearningStore.loadError === 'storage-unavailable') {
+        UI.showToast('التخزين المحلي معطّل في هذا المتصفح، لن تُحفظ بياناتك بعد إغلاق الصفحة.', 'error', 10000);
+      }
 
-      // 3. Setup Store reactivity
+      // 3. Navigation, delegated events, global search
+      this.setupNavigation();
+      this.setupDelegatedEvents();
+      this.setupGlobalSearch();
+
+      // 4. Store reactivity
       LearningStore.subscribe(() => {
         this.renderCurrentView();
       });
 
-      // 4. Initial Render
+      // 4b. Cloud sync (Google Drive). Inactive until a Client ID is saved in Settings.
+      CloudSync.subscribe((st) => this.onSyncState(st));
+      CloudSync.attach(LearningStore);
+      this.onSyncState(CloudSync.getState());
+
+      // 5. Focus timer (re-render only the focus page when its state changes)
+      Focus.init();
+      Focus.subscribe(() => {
+        if (this.currentRoute === 'focus') this.renderCurrentView();
+      });
+
+      // 6. Initial Render
       this.renderCurrentView();
 
-      // 5. Close dropdowns when clicking outside
+      // 7. Close dropdowns when clicking outside / Escape
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.dropdown')) {
           document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
         }
       });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
+          this.closeSidebar();
+        }
+      });
+
+      // 8. Offline support (needs http(s) or localhost, ignored on file://)
+      this.registerServiceWorker();
+    },
+
+    // Single listener set replaces all inline on* handlers.
+    // Markup: data-action="methodName" data-arg0=".." data-arg1=".." [data-event="change|input"]
+    // The method receives (...args, element, event).
+    setupDelegatedEvents() {
+      const dispatch = (el, event) => {
+        const name = el.dataset.action;
+        if (typeof this[name] !== 'function') return;
+        const args = [];
+        for (let i = 0; el.dataset['arg' + i] !== undefined; i++) args.push(el.dataset['arg' + i]);
+        this[name](...args, el, event);
+      };
+
+      document.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-action]');
+        if (!el || (el.dataset.event && el.dataset.event !== 'click')) return;
+        if (el.matches('a')) e.preventDefault();
+        dispatch(el, e);
+      });
+
+      ['change', 'input'].forEach(type => {
+        document.addEventListener(type, (e) => {
+          const el = e.target.closest('[data-action]');
+          if (!el || el.dataset.event !== type) return;
+          dispatch(el, e);
+        });
+      });
+
+      // Keyboard activation for non-button elements that act as buttons.
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const el = e.target.closest('[role="button"][data-action]');
+        if (!el || el !== e.target || el.matches('button, a, input')) return;
+        e.preventDefault();
+        dispatch(el, e);
+      });
     },
 
     // ---------------- Router & Navigation ---------------- //
     navigate(route, params = {}) {
+      if (typeof params !== 'object' || params === null || params instanceof Node || params instanceof Event) params = {};
       this.currentRoute = route;
       if (params.domainId) {
         this.currentDomainId = params.domainId;
@@ -41,27 +119,27 @@
       if (params.tab) {
         this.currentDomainTab = params.tab;
       }
+      this.pendingScroll = params.scrollTo || null;
 
       // Update Nav active classes
       document.querySelectorAll('.nav-link').forEach(link => {
-        if (link.dataset.route === route) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
+        const active = link.dataset.route === route;
+        link.classList.toggle('active', active);
+        if (active) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
       });
 
-      // Close mobile sidebar if open
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar) sidebar.classList.remove('sidebar-open');
-
-      this.renderCurrentView();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.closeSidebar();
+      this.renderCurrentView({ moveFocus: true });
+      if (!this.pendingScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
-    renderCurrentView() {
+    renderCurrentView(options = {}) {
       const container = document.getElementById('main-content');
       if (!container) return;
+
+      // Keep keyboard focus (and caret) across re-renders caused by data changes.
+      const focusState = options.moveFocus ? null : this.captureFocus();
 
       switch (this.currentRoute) {
         case 'dashboard':
@@ -76,15 +154,85 @@
         case 'daily':
           Views.renderDailyPlan(container);
           break;
+        case 'focus':
+          Views.renderFocus(container);
+          break;
         case 'stats':
           Views.renderStats(container);
           break;
         case 'settings':
           Views.renderSettings(container);
           break;
+        case 'ai-assistant':
+          this.persistAiState();
+          Views.renderAiAssistant(container, this.aiPlanDraft, this.aiRequesting, this.aiForm);
+          break;
         default:
           Views.renderDashboard(container);
       }
+
+      this.enhanceAccessibility(container);
+      Focus.updateDisplay();
+
+      if (options.moveFocus) {
+        container.focus({ preventScroll: true });
+      } else {
+        this.restoreFocus(focusState);
+      }
+      this.applyPendingScroll();
+    },
+
+    // ---------------- Accessibility helpers ---------------- //
+    enhanceAccessibility(container) {
+      UI.linkLabels(container);
+      container.querySelectorAll('button[title]:not([aria-label]), a[title]:not([aria-label])').forEach(el => {
+        el.setAttribute('aria-label', el.getAttribute('title'));
+      });
+    },
+
+    captureFocus() {
+      const el = document.activeElement;
+      const container = document.getElementById('main-content');
+      if (!el || !container || !container.contains(el) || el === container) return null;
+      let selector = null;
+      if (el.id) {
+        selector = '#' + CSS.escape(el.id);
+      } else if (el.dataset && el.dataset.action) {
+        selector = `[data-action="${CSS.escape(el.dataset.action)}"]`;
+        for (let i = 0; el.dataset['arg' + i] !== undefined; i++) {
+          selector += `[data-arg${i}="${CSS.escape(el.dataset['arg' + i])}"]`;
+        }
+      }
+      if (!selector) return null;
+      const isText = typeof el.selectionStart === 'number' && !['checkbox', 'file'].includes(el.type);
+      return { selector, start: isText ? el.selectionStart : null, end: isText ? el.selectionEnd : null };
+    },
+
+    restoreFocus(state) {
+      if (!state) return;
+      const el = document.querySelector(state.selector);
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      if (state.start !== null && typeof el.setSelectionRange === 'function') {
+        try { el.setSelectionRange(state.start, state.end); } catch (e) { /* ignore */ }
+      }
+    },
+
+    applyPendingScroll() {
+      if (!this.pendingScroll) return;
+      const el = document.getElementById(this.pendingScroll);
+      this.pendingScroll = null;
+      if (!el) return;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('flash-highlight');
+      setTimeout(() => el.classList.remove('flash-highlight'), 2200);
+    },
+
+    closeSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      if (sidebar) sidebar.classList.remove('sidebar-open');
+      if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
     },
 
     setupNavigation() {
@@ -92,8 +240,7 @@
       document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
           e.preventDefault();
-          const route = link.dataset.route;
-          this.navigate(route);
+          this.navigate(link.dataset.route);
         });
       });
 
@@ -102,7 +249,8 @@
       const sidebar = document.getElementById('sidebar');
       if (menuBtn && sidebar) {
         menuBtn.addEventListener('click', () => {
-          sidebar.classList.toggle('sidebar-open');
+          const open = sidebar.classList.toggle('sidebar-open');
+          menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
       }
 
@@ -117,6 +265,122 @@
       }
     },
 
+    // ---------------- Global Search ---------------- //
+    setupGlobalSearch() {
+      const input = document.getElementById('global-search-input');
+      const panel = document.getElementById('global-search-results');
+      if (!input || !panel) return;
+
+      let timer = null;
+      const close = () => {
+        panel.classList.add('hidden');
+        input.setAttribute('aria-expanded', 'false');
+      };
+      this.closeGlobalSearch = close;
+
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => this.runGlobalSearch(input.value), 120);
+      });
+      input.addEventListener('focus', () => {
+        if (input.value.trim().length >= 2) this.runGlobalSearch(input.value);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          const first = panel.querySelector('button');
+          if (first) { e.preventDefault(); first.focus(); }
+        } else if (e.key === 'Escape') {
+          close();
+          input.blur();
+        }
+      });
+      panel.addEventListener('keydown', (e) => {
+        const items = [...panel.querySelectorAll('button')];
+        const i = items.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); (i <= 0 ? input : items[i - 1]).focus(); }
+        else if (e.key === 'Escape') { close(); input.focus(); }
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.global-search')) close();
+      });
+
+      // "/" or Ctrl/Cmd+K focuses the search box.
+      document.addEventListener('keydown', (e) => {
+        const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]');
+        const modalOpen = document.getElementById('app-modal') && document.getElementById('app-modal').open;
+        if (modalOpen) return;
+        if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+          e.preventDefault();
+          input.focus();
+          input.select();
+        }
+      });
+    },
+
+    runGlobalSearch(query) {
+      const panel = document.getElementById('global-search-results');
+      const input = document.getElementById('global-search-input');
+      if (!panel || !input) return;
+
+      if (query.trim().length < 2) {
+        panel.classList.add('hidden');
+        input.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      this.searchResults = LearningStore.searchAll(query);
+      const typeLabels = { domain: 'مجال', stage: 'مرحلة', task: 'مهمة', resource: 'مصدر', project: 'مشروع', note: 'ملاحظة' };
+
+      panel.innerHTML = this.searchResults.length === 0
+        ? h`<p class="search-empty">لا توجد نتائج مطابقة.</p>`
+        : this.searchResults.map((r, i) => h`
+            <button type="button" class="search-result" role="option" data-action="openSearchResult" data-arg0="${i}">
+              <span class="search-result-type" style="border-color: ${r.color}">${typeLabels[r.type]}</span>
+              <span class="search-result-main">
+                <strong>${r.title}</strong>
+                <small>${r.type === 'domain' ? (r.subtitle || '') : r.domainName}</small>
+              </span>
+            </button>`).toString();
+      panel.classList.remove('hidden');
+      input.setAttribute('aria-expanded', 'true');
+    },
+
+    openSearchResult(index) {
+      const r = (this.searchResults || [])[Number(index)];
+      if (!r) return;
+      this.closeGlobalSearch();
+      const input = document.getElementById('global-search-input');
+      if (input) { input.value = ''; input.blur(); }
+      this.navigate('domain-detail', { domainId: r.domainId, tab: r.tab, scrollTo: r.targetId || null });
+    },
+
+    // ---------------- Focus timer actions ---------------- //
+    setFocusMode(mode) { Focus.setMode(mode); },
+    focusStart() { Focus.start(); },
+    focusPause() { Focus.pause(); },
+    focusReset() { Focus.reset(); },
+    focusSkipBreak() { Focus.skipBreak(); },
+    focusSetDomain(el) { Focus.setDomain(el.value); },
+    savePomodoroSettings() {
+      const read = (id) => Math.round(Number(document.getElementById(id).value));
+      const vals = { focus: read('pomo-set-focus'), short: read('pomo-set-short'), long: read('pomo-set-long') };
+      if (Object.values(vals).some(v => !(v >= 1 && v <= 180))) {
+        UI.showToast('أدخل مدداً بين 1 و180 دقيقة', 'error');
+        return;
+      }
+      LearningStore.updateSettings({ pomodoro: vals });
+      Focus.reset();
+      UI.showToast('تم حفظ مدد المؤقت');
+    },
+
+    // ---------------- PWA ---------------- //
+    registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      if (!(location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) return;
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('Service worker registration failed:', err));
+    },
+
     // ---------------- Theme Management ---------------- //
     setTheme(theme) {
       LearningStore.updateSettings({ theme });
@@ -128,7 +392,7 @@
       document.documentElement.setAttribute('data-theme', theme);
       const themeIconSpan = document.getElementById('theme-toggle-icon');
       if (themeIconSpan) {
-        themeIconSpan.innerHTML = theme === 'dark' ? UI.getIcon('sun') : UI.getIcon('moon');
+        themeIconSpan.innerHTML = String(theme === 'dark' ? UI.getIcon('sun') : UI.getIcon('moon'));
       }
     },
 
@@ -148,25 +412,23 @@
       this.renderCurrentView();
     },
 
-    onDomainSearch(query) {
-      this.domainFilter.search = query;
-      this.renderCurrentView();
-      // Keep search input focused and preserve caret
-      const input = document.getElementById('domain-search-input');
-      if (input) {
-        input.focus();
-        input.selectionStart = input.selectionEnd = input.value.length;
-      }
+    onDomainSearch(el) {
+      this.domainFilter.search = el.value;
+      this.renderCurrentView(); // focus and caret are restored by renderCurrentView
     },
 
-    toggleDropdown(event, menuId) {
+    toggleDropdown(menuId, el, event) {
       event.stopPropagation();
       const menu = document.getElementById(menuId);
+      if (!menu) return;
       const isHidden = menu.classList.contains('hidden');
       document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
       if (isHidden) {
         menu.classList.remove('hidden');
+        const firstItem = menu.querySelector('button');
+        if (firstItem) firstItem.focus();
       }
+      if (el) el.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
     },
 
     changeDomainStatus(id, newStatus) {
@@ -175,7 +437,7 @@
     },
 
     openNewDomainModal() {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اسم المجال التعليمي *</label>
           <input type="text" id="m-domain-name" class="form-control" placeholder="مثال: تطوير تطبيقات Flutter، إدارة المنتجات، الذكاء الاصطناعي">
@@ -225,7 +487,7 @@
         <div class="form-row">
           <div class="form-group flex-1">
             <label class="form-label">تاريخ البداية</label>
-            <input type="date" id="m-domain-start-date" class="form-control" value="${new Date().toISOString().slice(0, 10)}">
+            <input type="date" id="m-domain-start-date" class="form-control" value="${today()}">
           </div>
           <div class="form-group flex-1">
             <label class="form-label">تاريخ الانتهاء المستهدف (اختياري)</label>
@@ -263,7 +525,7 @@
       const domain = LearningStore.getDomainById(domainId);
       if (!domain) return;
 
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اسم المجال التعليمي *</label>
           <input type="text" id="m-domain-name" class="form-control" value="${domain.name}">
@@ -371,7 +633,7 @@
 
     // ---------------- Stages Actions ---------------- //
     openAddStageModal(domainId) {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اسم المرحلة *</label>
           <input type="text" id="m-stage-title" class="form-control" placeholder="مثال: 1. أساسيات لغة البرمجة، 2. بناء واجهات المستخدم">
@@ -404,7 +666,7 @@
       const stage = domain ? domain.stages.find(s => s.id === stageId) : null;
       if (!stage) return;
 
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اسم المرحلة *</label>
           <input type="text" id="m-stage-title" class="form-control" value="${stage.title}">
@@ -441,7 +703,7 @@
 
     // ---------------- Tasks Actions ---------------- //
     openAddTaskModal(domainId, stageId) {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">عنوان المهمة *</label>
           <input type="text" id="m-task-title" class="form-control" placeholder="مثال: تطبيق عملي على Async/Await، حل 5 تمارين">
@@ -497,7 +759,12 @@
         }
 
         const linkVal = document.getElementById('m-task-link').value.trim();
-        const links = linkVal ? [linkVal] : [];
+        const safeLink = linkVal ? UI.safeUrl(linkVal) : '';
+        if (linkVal && !safeLink) {
+          UI.showToast('الرابط غير صالح (يُسمح بروابط http/https فقط)', 'error');
+          return false;
+        }
+        const links = safeLink ? [safeLink] : [];
 
         LearningStore.addTask(domainId, stageId, {
           title,
@@ -521,7 +788,7 @@
       const task = stage ? stage.tasks.find(t => t.id === taskId) : null;
       if (!task) return;
 
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">عنوان المهمة *</label>
           <input type="text" id="m-task-title" class="form-control" value="${task.title}">
@@ -577,7 +844,12 @@
         }
 
         const linkVal = document.getElementById('m-task-link').value.trim();
-        const links = linkVal ? [linkVal] : [];
+        const safeLink = linkVal ? UI.safeUrl(linkVal) : '';
+        if (linkVal && !safeLink) {
+          UI.showToast('الرابط غير صالح (يُسمح بروابط http/https فقط)', 'error');
+          return false;
+        }
+        const links = safeLink ? [safeLink] : [];
 
         LearningStore.updateTask(domainId, stageId, taskId, {
           title,
@@ -622,7 +894,7 @@
 
     // ---------------- Resources Actions ---------------- //
     openAddResourceModal(domainId) {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">عنوان المصدر *</label>
           <input type="text" id="m-res-title" class="form-control" placeholder="مثال: دورة JavaScript الكاملة، توثيق React، كتاب Clean Code">
@@ -655,10 +927,15 @@
           UI.showToast('يرجى إدخال العنوان ورابط المصدر', 'error');
           return false;
         }
+        const safeResUrl = UI.safeUrl(url);
+        if (!safeResUrl) {
+          UI.showToast('الرابط غير صالح (يُسمح بروابط http/https فقط)', 'error');
+          return false;
+        }
 
         LearningStore.addResource(domainId, {
           title,
-          url,
+          url: safeResUrl,
           type: document.getElementById('m-res-type').value,
           description: document.getElementById('m-res-desc').value.trim()
         });
@@ -677,7 +954,7 @@
 
     // ---------------- Projects Actions ---------------- //
     openAddProjectModal(domainId) {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اسم المشروع *</label>
           <input type="text" id="m-proj-title" class="form-control" placeholder="مثال: تطبيق لإدارة المصاريف، موقع شخصي">
@@ -723,14 +1000,21 @@
           return false;
         }
 
+        const liveRaw = document.getElementById('m-proj-live').value.trim();
+        const repoRaw = document.getElementById('m-proj-repo').value.trim();
+        if ((liveRaw && !UI.safeUrl(liveRaw)) || (repoRaw && !UI.safeUrl(repoRaw))) {
+          UI.showToast('أحد الروابط غير صالح (يُسمح بروابط http/https فقط)', 'error');
+          return false;
+        }
+
         LearningStore.addProject(domainId, {
           title,
           description: document.getElementById('m-proj-desc').value.trim(),
           skills: document.getElementById('m-proj-skills').value.trim(),
           tasksNeeded: document.getElementById('m-proj-tasks').value.trim(),
           status: document.getElementById('m-proj-status').value,
-          liveUrl: document.getElementById('m-proj-live').value.trim(),
-          repoUrl: document.getElementById('m-proj-repo').value.trim()
+          liveUrl: UI.safeUrl(liveRaw),
+          repoUrl: UI.safeUrl(repoRaw)
         });
 
         UI.showToast('تمت إضافة المشروع بنجاح');
@@ -747,7 +1031,7 @@
 
     // ---------------- Notes Actions ---------------- //
     openAddNoteModal(domainId) {
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">عنوان الملاحظة *</label>
           <input type="text" id="m-note-title" class="form-control" placeholder="مثال: أهم المفاهيم في React Hooks، خلاصة المقال">
@@ -787,7 +1071,7 @@
       if (!task) return;
 
       // Check if already in today's list
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = today();
       const existing = LearningStore.getDailyTasks(todayStr).find(dt => dt.taskId === taskId);
       if (existing) {
         UI.showToast('هذه المهمة موجودة بالفعل في خطة اليوم', 'info');
@@ -814,22 +1098,17 @@
     openAddDailyTaskModal() {
       // Gather incomplete domain tasks as quick-select options
       const domains = LearningStore.getDomains();
-      let domainTasksOptions = `<option value="">-- مهمة مخصصة حرة (ليست من المسارات) --</option>`;
+      const domainTasksOptions = h`
+        <option value="">-- مهمة مخصصة حرة (ليست من المسارات) --</option>
+        ${domains.map(d => d.stages.map(st => st.tasks
+          .filter(t => t.status !== 'completed')
+          .map(t => h`<option value="${d.id + ':::' + st.id + ':::' + t.id}">${d.name} &gt; ${t.title}</option>`)))}
+      `;
 
-      domains.forEach(d => {
-        d.stages.forEach(s => {
-          s.tasks.forEach(t => {
-            if (t.status !== 'completed') {
-              domainTasksOptions += `<option value="${d.id}:::${s.id}:::${t.id}">${d.name} &gt; ${t.title}</option>`;
-            }
-          });
-        });
-      });
-
-      const html = `
+      const html = h`
         <div class="form-group">
           <label class="form-label">اختر من مهام مساراتك التعليمية (اختياري)</label>
-          <select id="m-daily-preset" class="form-control" onchange="App.onDailyPresetSelect(this.value)">
+          <select id="m-daily-preset" class="form-control" data-action="onDailyPresetSelect" data-event="change">
             ${domainTasksOptions}
           </select>
         </div>
@@ -898,7 +1177,8 @@
       }, 'إضافة للخطة');
     },
 
-    onDailyPresetSelect(val) {
+    onDailyPresetSelect(el) {
+      const val = el.value;
       if (!val) return;
       const [domainId, stageId, taskId] = val.split(':::');
       const domain = LearningStore.getDomainById(domainId);
@@ -929,6 +1209,286 @@
       }, 'إزالة', false);
     },
 
+    // ---------------- Cloud sync (Google Drive) ---------------- //
+    onSyncState(st) {
+      const config = CloudSync.getConfig();
+      const chip = document.getElementById('sync-chip');
+      if (chip) {
+        const labels = {
+          syncing: ['⟳', 'جارٍ المزامنة'],
+          idle: ['☁', 'تمت المزامنة'],
+          'needs-auth': ['☁', 'اتصال'],
+          conflict: ['⚠', 'تعارض'],
+          error: ['⚠', 'خطأ في المزامنة']
+        };
+        const label = labels[st.status];
+        chip.classList.toggle('hidden', !config.configured || !label);
+        if (label) {
+          document.getElementById('sync-chip-icon').textContent = label[0];
+          document.getElementById('sync-chip-text').textContent = label[1];
+          chip.dataset.state = st.status;
+          chip.title = st.error || `المزامنة السحابية: ${label[1]}`;
+        }
+      }
+      const statusEl = document.getElementById('sync-status-text');
+      if (statusEl) statusEl.textContent = Views.syncStatusText(st, config);
+      if (st.status === 'conflict' && st.conflict) this.showSyncConflict();
+      // Refresh the buttons (connect vs. sync-now) without touching the typed Client ID.
+      if (this.currentRoute === 'settings' && this._lastSyncStatus !== st.status &&
+          !(document.activeElement && document.activeElement.id === 'sync-client-id')) {
+        this.renderCurrentView();
+      }
+      this._lastSyncStatus = st.status;
+    },
+
+    showSyncConflict() {
+      const st = CloudSync.getState();
+      if (!st.conflict) return;
+      const dialog = document.getElementById('app-modal');
+      if (dialog && dialog.open) {
+        // Never overwrite a form the user is working in; show this when it closes.
+        if (!this._conflictWaiting) {
+          this._conflictWaiting = true;
+          dialog.addEventListener('close', () => { this._conflictWaiting = false; this.showSyncConflict(); }, { once: true });
+        }
+        return;
+      }
+      const fmt = (iso) => (iso ? new Date(iso).toLocaleString('ar-EG') : 'غير معروف');
+      const { local, remote } = st.conflict;
+      const body = h`
+        <p>تغيّرت البيانات على هذا الجهاز وعلى السحابة. اختر ما تريد فعله:</p>
+        <div class="sync-compare">
+          <div><strong>هذا الجهاز</strong><br>${local.domains} مجالات • ${local.tasks} مهمة<br><small>آخر تعديل: ${fmt(local.updated)}</small></div>
+          <div><strong>السحابة</strong><br>${remote.domains} مجالات • ${remote.tasks} مهمة<br><small>آخر تعديل: ${fmt(remote.updated)}</small></div>
+        </div>
+        <fieldset class="sync-choices">
+          <legend class="sr-only">طريقة الحل</legend>
+          <label class="sync-choice"><input type="radio" name="sync-choice" value="merge" checked> <span><strong>دمج الاثنين (الأكثر أمانًا)</strong><br><small>يحتفظ بكل ما في الجهتين. قد يعود عنصر حذفته على جهاز إذا كان لا يزال موجودًا على الآخر.</small></span></label>
+          <label class="sync-choice"><input type="radio" name="sync-choice" value="cloud"> <span><strong>استخدام بيانات السحابة</strong><br><small>تُستبدل بيانات هذا الجهاز (تبقى نسخة منها محفوظة في المتصفح للاسترجاع).</small></span></label>
+          <label class="sync-choice"><input type="radio" name="sync-choice" value="local"> <span><strong>استخدام بيانات هذا الجهاز</strong><br><small>تُستبدل نسخة السحابة ببيانات هذا الجهاز.</small></span></label>
+        </fieldset>`;
+      UI.openModal('تعارض في المزامنة', body, () => {
+        const picked = document.querySelector('input[name="sync-choice"]:checked');
+        CloudSync.resolveConflict(picked ? picked.value : 'merge');
+      }, 'تنفيذ', 'btn-primary');
+    },
+
+    syncChipClick() {
+      const st = CloudSync.getState();
+      if (st.status === 'conflict') this.showSyncConflict();
+      else this.syncNowCloud();
+    },
+
+    saveSyncClientId() {
+      const input = document.getElementById('sync-client-id');
+      if (!input) return;
+      try {
+        CloudSync.setClientId(input.value);
+        UI.showToast('تم حفظ معرّف العميل. اضغط «اتصال ومزامنة».');
+        this.renderCurrentView();
+        this.onSyncState(CloudSync.getState());
+      } catch (error) {
+        UI.showToast(error.message || 'تعذّر حفظ المعرّف.', 'error');
+      }
+    },
+
+    async syncNowCloud(el) {
+      if (el) el.disabled = true;
+      try {
+        const result = await CloudSync.syncNow();
+        if (result === 'uploaded') UI.showToast('تم رفع بياناتك إلى Google Drive.');
+        else if (result === 'downloaded') UI.showToast('تم تحديث بياناتك من السحابة.');
+        else if (result === 'unchanged') UI.showToast('كل شيء محدّث.');
+      } catch (error) {
+        UI.showToast(error && error.message ? error.message : 'تعذّرت المزامنة.', 'error', 8000);
+      } finally {
+        if (el) el.disabled = false;
+      }
+    },
+
+    disconnectCloudSync() {
+      UI.confirmDialog('إيقاف المزامنة', 'ستتوقف المزامنة على هذا الجهاز. تبقى بياناتك المحلية ونسخة السحابة كما هي. هل تريد المتابعة؟', () => {
+        CloudSync.disconnect();
+        this.renderCurrentView();
+        UI.showToast('تم إيقاف المزامنة على هذا الجهاز.');
+      }, 'إيقاف المزامنة', true);
+    },
+
+    // ---------------- Gemini plan assistant ---------------- //
+    // The form and draft survive re-renders and page navigation (sessionStorage, this tab only).
+    persistAiState() {
+      try {
+        sessionStorage.setItem('my_learning_hub_ai_state_v1', JSON.stringify({ form: this.aiForm, draft: this.aiPlanDraft }));
+      } catch (e) { /* best effort */ }
+    },
+
+    restoreAiState() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('my_learning_hub_ai_state_v1') || 'null');
+        if (!saved) return;
+        if (saved.form && typeof saved.form === 'object') {
+          const f = saved.form;
+          this.aiForm = {
+            goal: String(f.goal || '').slice(0, 240),
+            currentLevel: String(f.currentLevel ?? 'مبتدئ').slice(0, 80),
+            targetLevel: String(f.targetLevel || '').slice(0, 80),
+            hoursPerWeek: Number(f.hoursPerWeek) || 5,
+            daysPerWeek: Number(f.daysPerWeek) || 5,
+            targetDate: /^\d{4}-\d{2}-\d{2}$/.test(f.targetDate || '') ? f.targetDate : '',
+            context: String(f.context || '').slice(0, 700)
+          };
+        }
+        if (saved.draft && Array.isArray(saved.draft.stages)) {
+          // Re-validate: sessionStorage is still untrusted input.
+          this.aiPlanDraft = GeminiAssistant.validatePlan(saved.draft, { goal: this.aiForm.goal || 'خطة تعلم', currentLevel: this.aiForm.currentLevel, targetLevel: this.aiForm.targetLevel, targetDate: saved.draft.targetDate });
+        }
+      } catch (e) { /* ignore unusable saved state */ }
+    },
+
+    aiFormInput(field, el) {
+      if (!el || !(field in this.aiForm)) return;
+      this.aiForm[field] = el.value;
+      this.persistAiState();
+    },
+
+    saveGeminiKey() {
+      const input = document.getElementById('setting-gemini-api-key');
+      const modelInput = document.getElementById('setting-gemini-model');
+      if (!input) return;
+      try {
+        const typed = input.value.trim();
+        if (typed) GeminiAssistant.saveKey(typed);
+        else if (!GeminiAssistant.hasKey()) throw new Error('أدخل مفتاح Gemini API صحيحًا.');
+        if (modelInput) GeminiAssistant.saveModel(modelInput.value);
+        input.value = '';
+        UI.showToast('تم حفظ الإعدادات في هذا المتصفح فقط.');
+        this.renderCurrentView();
+      } catch (error) {
+        UI.showToast(error.message || 'تعذّر حفظ الإعدادات.', 'error');
+      }
+    },
+
+    async testGeminiConnection(el) {
+      if (el) el.disabled = true;
+      try {
+        const res = await GeminiAssistant.testConnection();
+        UI.showToast(`الاتصال بـ Gemini ناجح (${res.model}).`);
+      } catch (error) {
+        UI.showToast(error.message || 'فشل اختبار الاتصال.', 'error', 9000);
+      } finally {
+        if (el) el.disabled = false;
+      }
+    },
+
+    removeGeminiKey() {
+      UI.confirmDialog('حذف مفتاح Gemini', 'سيُحذف المفتاح من هذا المتصفح. يمكنك إضافته مجددًا لاحقًا من Google AI Studio. هل تريد المتابعة؟', () => {
+        GeminiAssistant.removeKey();
+        this.renderCurrentView();
+        UI.showToast('تم حذف مفتاح Gemini من هذا المتصفح.');
+      }, 'حذف المفتاح', true);
+    },
+
+    async generateAiPlan() {
+      if (this.aiRequesting) return;
+      const f = this.aiForm;
+      const goal = String(f.goal || '').trim();
+      if (!goal) {
+        UI.showToast('اكتب هدف التعلّم أولًا.', 'error');
+        document.getElementById('ai-goal')?.focus();
+        return;
+      }
+      const inputs = {
+        goal: goal.slice(0, 240),
+        currentLevel: String(f.currentLevel || '').trim().slice(0, 80) || 'مبتدئ',
+        targetLevel: String(f.targetLevel || '').trim().slice(0, 80),
+        hoursPerWeek: Math.min(80, Math.max(1, Number(f.hoursPerWeek) || 5)),
+        daysPerWeek: Math.min(7, Math.max(1, Number(f.daysPerWeek) || 5)),
+        targetDate: f.targetDate || '',
+        context: String(f.context || '').trim().slice(0, 700)
+      };
+      this.aiRequesting = true;
+      this.renderCurrentView();
+      try {
+        this.aiPlanDraft = await GeminiAssistant.generatePlan(inputs);
+        UI.showToast('اكتملت الخطة المقترحة. راجعها وعدّلها قبل الحفظ.');
+      } catch (error) {
+        UI.showToast(error && error.message ? error.message : 'تعذّر إنشاء الخطة.', 'error', 9000);
+      } finally {
+        this.aiRequesting = false;
+        if (this.currentRoute === 'ai-assistant') this.renderCurrentView();
+        else this.persistAiState();
+      }
+    },
+
+    editAiPlanField(field, el) {
+      if (!this.aiPlanDraft || !el) return;
+      if (field === 'domainName' || field === 'targetGoal') { this.aiPlanDraft[field] = el.value; this.persistAiState(); }
+    },
+
+    editAiStageField(stageIndex, field, el) {
+      if (!this.aiPlanDraft || !el) return;
+      const stage = this.aiPlanDraft.stages[Number(stageIndex)];
+      if (stage && (field === 'title' || field === 'description')) { stage[field] = el.value; this.persistAiState(); }
+    },
+
+    editAiTaskField(stageIndex, taskIndex, field, el) {
+      if (!this.aiPlanDraft || !el) return;
+      const task = this.aiPlanDraft.stages[Number(stageIndex)]?.tasks[Number(taskIndex)];
+      if (!task || !['title', 'description', 'priority', 'estimatedHours', 'dueDate'].includes(field)) return;
+      task[field] = field === 'estimatedHours' ? Math.min(40, Math.max(0.25, Number(el.value) || 0.25)) : el.value;
+      this.persistAiState();
+    },
+
+    addAiStage() {
+      if (!this.aiPlanDraft || this.aiPlanDraft.stages.length >= 10) return;
+      this.aiPlanDraft.stages.push({ title: `مرحلة ${this.aiPlanDraft.stages.length + 1}`, description: '', tasks: [] });
+      this.renderCurrentView();
+    },
+
+    removeAiStage(stageIndex) {
+      if (!this.aiPlanDraft) return;
+      this.aiPlanDraft.stages.splice(Number(stageIndex), 1);
+      this.renderCurrentView();
+    },
+
+    addAiTask(stageIndex) {
+      if (!this.aiPlanDraft) return;
+      const stage = this.aiPlanDraft.stages[Number(stageIndex)];
+      if (!stage || stage.tasks.length >= 10) return;
+      stage.tasks.push({ title: 'مهمة جديدة', description: '', priority: 'medium', estimatedHours: 1, dueDate: '' });
+      this.renderCurrentView();
+    },
+
+    removeAiTask(stageIndex, taskIndex) {
+      if (!this.aiPlanDraft) return;
+      const stage = this.aiPlanDraft.stages[Number(stageIndex)];
+      if (!stage) return;
+      stage.tasks.splice(Number(taskIndex), 1);
+      this.renderCurrentView();
+    },
+
+    discardAiPlan() {
+      this.aiPlanDraft = null;
+      this.renderCurrentView();
+      UI.showToast('تم إلغاء مسودة الخطة.');
+    },
+
+    acceptAiPlan() {
+      if (!this.aiPlanDraft || !this.aiPlanDraft.stages.some(stage => stage.tasks.length)) {
+        UI.showToast('أضف مرحلة واحدة على الأقل ومهمة واحدة قبل الحفظ.', 'error');
+        return;
+      }
+      const domain = LearningStore.addGeneratedPlan(this.aiPlanDraft);
+      if (!domain) {
+        UI.showToast('تعذّر حفظ الخطة. راجع البيانات وحاول مجددًا.', 'error');
+        return;
+      }
+      this.aiPlanDraft = null;
+      this.persistAiState();
+      this.navigate('domain-detail', { domainId: domain.id, tab: 'plan' });
+      UI.showToast('تم حفظ خطة التعلّم ومهامها ضمن مجالات التعلم.');
+    },
+
     // ---------------- Settings & Backup ---------------- //
     saveGeneralSettings() {
       const userName = document.getElementById('setting-user-name').value.trim();
@@ -944,25 +1504,45 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `my_learning_journey_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = `my_learning_journey_backup_${today()}.json`;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       UI.showToast('تم تنزيل النسخة الاحتياطية بنجاح');
     },
 
-    importBackup(event) {
-      const file = event.target.files[0];
+    importBackup(el) {
+      const input = el;
+      const file = input.files && input.files[0];
       if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        UI.showToast('الملف كبير جداً (الحد الأقصى 5 ميجابايت)', 'error');
+        input.value = '';
+        return;
+      }
 
       const reader = new FileReader();
+      reader.onerror = () => {
+        UI.showToast('تعذّرت قراءة الملف', 'error');
+        input.value = '';
+      };
       reader.onload = (e) => {
-        const content = e.target.result;
-        const res = LearningStore.importJSON(content);
-        if (res.success) {
-          UI.showToast('تم استيراد البيانات بنجاح واستعادتها!');
-        } else {
-          UI.showToast('فشل في استيراد الملف: ' + res.error, 'error');
-        }
+        input.value = ''; // allow re-selecting the same file later
+        UI.confirmDialog(
+          'استيراد نسخة احتياطية',
+          `سيتم استبدال جميع بياناتك الحالية ببيانات الملف "${file.name}". هل تريد المتابعة؟ (يُنصح بتصدير نسخة من بياناتك الحالية أولاً)`,
+          () => {
+            const res = LearningStore.importJSON(String(e.target.result));
+            if (res.success) {
+              UI.showToast(`تم استيراد البيانات بنجاح (${res.domains} مجال)`);
+            } else {
+              UI.showToast('فشل في استيراد الملف: ' + res.error, 'error', 6000);
+            }
+          },
+          'استبدال البيانات',
+          true
+        );
       };
       reader.readAsText(file);
     },

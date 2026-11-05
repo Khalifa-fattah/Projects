@@ -2,7 +2,37 @@
 (function(window) {
   'use strict';
 
+  // ---- Safe HTML templating ----
+  // `h` is a tagged template that HTML-escapes every interpolated value unless it is
+  // already SafeHtml (the result of another h`...` or UI.getIcon). Arrays are joined.
+  class SafeHtml {
+    constructor(html) { this.html = html; }
+    toString() { return this.html; }
+  }
+  const esc = (value) => String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  function renderValue(v) {
+    if (v == null || v === false || v === true) return '';
+    if (v instanceof SafeHtml) return v.html;
+    if (Array.isArray(v)) return v.map(renderValue).join('');
+    return esc(v);
+  }
+  function h(strings, ...values) {
+    let out = strings[0];
+    for (let i = 0; i < values.length; i++) out += renderValue(values[i]) + strings[i + 1];
+    return new SafeHtml(out);
+  }
+
   const UI = {
+    h,
+    esc,
+    raw: (html) => new SafeHtml(String(html)),
+    safeUrl: (url) => window.LearningUtils.safeUrl(url),
+
     // Icons dictionary using clean inline SVGs
     icons: {
       dashboard: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>`,
@@ -42,32 +72,46 @@
     },
 
     getIcon(name) {
-      return this.icons[name] || this.icons.book;
+      const svg = this.icons[name] || this.icons.book;
+      // Decorative: hide from assistive tech (buttons carry their own labels).
+      return new SafeHtml(svg.replace('<svg ', '<svg aria-hidden="true" focusable="false" '));
     },
 
-    // Toast Notification System
+    // Toast Notification System (message is always rendered as plain text)
     showToast(message, type = 'info', duration = 3500) {
       let container = document.getElementById('toast-container');
       if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
         container.className = 'toast-container';
+        container.setAttribute('role', 'status');
+        container.setAttribute('aria-live', 'polite');
         document.body.appendChild(container);
       }
 
       const toast = document.createElement('div');
       toast.className = `toast-item toast-${type} animate-fade-in`;
-      
-      let icon = this.icons.checkCircle;
-      if (type === 'error') icon = this.icons.close;
-      if (type === 'celebrate') icon = this.icons.award;
 
-      toast.innerHTML = `
-        <span class="toast-icon">${icon}</span>
-        <span class="toast-message">${message}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
-      `;
+      let icon = 'checkCircle';
+      if (type === 'error') icon = 'close';
+      if (type === 'celebrate') icon = 'award';
 
+      const iconEl = document.createElement('span');
+      iconEl.className = 'toast-icon';
+      iconEl.innerHTML = String(this.getIcon(icon));
+
+      const msgEl = document.createElement('span');
+      msgEl.className = 'toast-message';
+      msgEl.textContent = String(message);
+
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'toast-close';
+      closeBtn.setAttribute('aria-label', 'إغلاق الإشعار');
+      closeBtn.textContent = '\u00D7';
+      closeBtn.addEventListener('click', () => toast.remove());
+
+      toast.append(iconEl, msgEl, closeBtn);
       container.appendChild(toast);
 
       setTimeout(() => {
@@ -81,58 +125,92 @@
       this.showToast(`🎉 مبروك! لقد أتممت بنجاح مرحلة: "${stageTitle}"! استمر في الإبداع!`, 'celebrate', 6000);
     },
 
-    // Reusable Modal Component
+    // Reusable Modal Component built on the native <dialog> element
+    // (focus trap, Esc to close, inert background and focus restore come for free).
+    // `bodyHtml` may be SafeHtml (from h``) or a trusted string.
     openModal(title, bodyHtml, onConfirm = null, confirmText = 'حفظ', confirmClass = 'btn-primary') {
-      const modalBackdrop = document.getElementById('app-modal-backdrop');
+      const dialog = document.getElementById('app-modal');
+      const form = document.getElementById('modal-form');
       const modalTitle = document.getElementById('modal-title');
       const modalBody = document.getElementById('modal-body');
       const modalFooter = document.getElementById('modal-footer');
 
       modalTitle.textContent = title;
-      modalBody.innerHTML = bodyHtml;
+      modalBody.innerHTML = String(bodyHtml);
 
-      modalFooter.innerHTML = `
-        <button type="button" class="btn btn-secondary" id="modal-cancel-btn">إلغاء</button>
-        ${onConfirm ? `<button type="button" class="btn ${confirmClass}" id="modal-confirm-btn">${confirmText}</button>` : ''}
-      `;
-
-      modalBackdrop.classList.remove('hidden');
-
-      document.getElementById('modal-cancel-btn').onclick = () => this.closeModal();
-      document.getElementById('modal-close-icon').onclick = () => this.closeModal();
+      modalFooter.innerHTML = '';
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn btn-secondary';
+      cancelBtn.id = 'modal-cancel-btn';
+      cancelBtn.textContent = 'إلغاء';
+      modalFooter.appendChild(cancelBtn);
 
       if (onConfirm) {
-        document.getElementById('modal-confirm-btn').onclick = () => {
-          const result = onConfirm();
-          if (result !== false) {
-            this.closeModal();
-          }
-        };
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'submit';
+        confirmBtn.className = `btn ${confirmClass}`;
+        confirmBtn.id = 'modal-confirm-btn';
+        confirmBtn.textContent = confirmText;
+        modalFooter.appendChild(confirmBtn);
       }
+
+      this.linkLabels(modalBody);
+
+      // Replace handlers each time (the dialog element is reused).
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        if (!onConfirm) return;
+        const result = onConfirm();
+        if (result !== false) this.closeModal();
+      };
+      cancelBtn.onclick = () => this.closeModal();
+      document.getElementById('modal-close-icon').onclick = () => this.closeModal();
+      dialog.onclick = (e) => { if (e.target === dialog) this.closeModal(); };
+
+      if (!dialog.open) dialog.showModal();
+
+      const firstField = modalBody.querySelector('input:not([type="hidden"]), select, textarea');
+      (firstField || cancelBtn).focus();
     },
 
     closeModal() {
-      const modalBackdrop = document.getElementById('app-modal-backdrop');
-      if (modalBackdrop) {
-        modalBackdrop.classList.add('hidden');
-      }
+      const dialog = document.getElementById('app-modal');
+      if (dialog && dialog.open) dialog.close();
     },
 
-    // Confirmation Dialog
+    // Associates each <label> with the first form control that follows it in its group.
+    linkLabels(root) {
+      let n = 0;
+      root.querySelectorAll('.form-group').forEach(group => {
+        const label = group.querySelector('label.form-label');
+        const control = group.querySelector('input, select, textarea');
+        if (!label || !control || label.htmlFor) return;
+        if (!control.id) control.id = `field-${Date.now().toString(36)}-${n++}`;
+        label.htmlFor = control.id;
+      });
+    },
+
+    // Confirmation Dialog (message is plain text)
     confirmDialog(title, message, onConfirmed, confirmText = 'نعم، تأكيد', isDanger = true) {
-      const html = `
+      const html = h`
         <div class="confirm-box">
           <p class="confirm-message">${message}</p>
         </div>
       `;
       this.openModal(title, html, onConfirmed, confirmText, isDanger ? 'btn-danger' : 'btn-primary');
+      // Safer default focus for destructive actions.
+      const cancel = document.getElementById('modal-cancel-btn');
+      if (cancel) cancel.focus();
     },
 
     // Format Arabic dates cleanly
     formatDate(dateStr) {
       if (!dateStr) return 'غير محدد';
       try {
-        const d = new Date(dateStr);
+        // Date-only strings are calendar dates: parse as local time (not UTC).
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+        const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
         return d.toLocaleDateString('ar-EG', {
           year: 'numeric',
@@ -149,7 +227,7 @@
       if (!dateStr) return '';
       const d = new Date(dateStr);
       const now = new Date();
-      const diffSec = Math.floor((now - d) / 1000);
+      const diffSec = Math.max(0, Math.floor((now - d) / 1000));
 
       if (diffSec < 60) return 'منذ لحظات';
       if (diffSec < 3600) return `منذ ${Math.floor(diffSec / 60)} دقيقة`;

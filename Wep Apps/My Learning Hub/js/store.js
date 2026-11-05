@@ -3,22 +3,327 @@
   'use strict';
 
   const STORAGE_KEY = 'my_learning_journey_data_v1';
+  const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+  const TOUCHED_KEY = 'my_learning_journey_touched_v1';
+
+  // ---------------- Pure helpers (no DOM, testable in Node) ---------------- //
+  const DOMAIN_STATUSES = ['active', 'paused', 'completed'];
+  const TASK_STATUSES = ['todo', 'in-progress', 'completed'];
+  const PROJECT_STATUSES = ['planned', 'in-progress', 'completed'];
+  const PRIORITIES = ['urgent', 'high', 'medium', 'low'];
+  const RESOURCE_TYPES = ['youtube', 'course', 'book', 'website', 'article', 'other'];
+  const DOMAIN_ICONS = ['code', 'chart', 'languages', 'book', 'design', 'brain'];
+  const DEFAULT_POMODORO = { focus: 25, short: 5, long: 15 };
+
+  let uidCounter = 0;
+  function uid(prefix) {
+    uidCounter = (uidCounter + 1) % 1679616;
+    const rnd = Math.random().toString(36).slice(2, 8);
+    return `${prefix}-${Date.now().toString(36)}${uidCounter.toString(36)}${rnd}`;
+  }
+
+  // Local calendar date (YYYY-MM-DD). toISOString() would give the UTC date,
+  // which is wrong for users ahead of / behind UTC around midnight.
+  function localDate(d) {
+    const date = d || new Date();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${m}-${day}`;
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Only http(s) links are allowed. Returns '' for anything else (javascript:, data:, ...).
+  function safeUrl(value) {
+    if (typeof value !== 'string') return '';
+    let v = value.trim();
+    if (!v || v.length > 2048) return '';
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+    try {
+      const u = new URL(v);
+      return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Arabic-friendly normalisation for search (diacritics, alef/yeh/teh-marbuta variants).
+  function normalizeText(value) {
+    return String(value == null ? '' : value)
+      .toLowerCase()
+      .replace(/[ً-ٰٟـ]/g, '')
+      .replace(/[آأإ]/g, 'ا')
+      .replace(/ى/g, 'ي')
+      .replace(/ة/g, 'ه')
+      .trim();
+  }
+
+  const cleanStr = (v, max = 2000, def = '') =>
+    typeof v === 'string' ? v.slice(0, max) : (typeof v === 'number' && isFinite(v) ? String(v) : def);
+  const oneOf = (v, list, def) => (list.includes(v) ? v : def);
+  const cleanColor = (v, def = '#3B82F6') => (typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : def);
+  const cleanDate = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
+  const cleanIso = (v) => (typeof v === 'string' && !isNaN(Date.parse(v)) ? v.slice(0, 40) : '');
+  const cleanNum = (v, max = 100000) => {
+    const n = Number(v);
+    return isFinite(n) ? Math.min(max, Math.max(0, n)) : 0;
+  };
+  const cleanId = (v) => (typeof v === 'string' ? v.replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 80) : '');
+  const asArray = (v, max = 5000) => (Array.isArray(v) ? v.filter(x => x && typeof x === 'object').slice(0, max) : []);
+
+  function makeIdAllocator() {
+    const seen = new Set();
+    return (raw, prefix) => {
+      let id = cleanId(raw);
+      if (!id || seen.has(id)) id = uid(prefix);
+      seen.add(id);
+      return id;
+    };
+  }
+
+  // Stable fingerprint of the data, ignoring the volatile lastUpdated stamp (used by cloud sync).
+  function hashData(data) {
+    const text = JSON.stringify({ ...data, lastUpdated: '' });
+    let h1 = 5381, h2 = 52711;
+    for (let i = 0; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      h1 = ((h1 * 33) ^ c) >>> 0;
+      h2 = ((h2 * 31) + c) >>> 0;
+    }
+    return `${text.length}-${h1.toString(36)}-${h2.toString(36)}`;
+  }
+
+  // Union by id: items of `primary` win, items only present in `secondary` are appended.
+  function unionById(primary, secondary) {
+    const seen = new Set((primary || []).map(x => x.id));
+    return [...(primary || []), ...(secondary || []).filter(x => !seen.has(x.id))];
+  }
+
+  // Non-destructive merge of two sanitised datasets (local wins ties). Nothing from either side is lost;
+  // the trade-off is that an item deleted on one device can reappear if the other device still has it.
+  function mergeData(local, remote) {
+    const time = (d) => Date.parse(d && d.updatedAt) || 0;
+    const remoteById = new Map(remote.domains.map(d => [d.id, d]));
+    const domains = local.domains.map(ld => {
+      const rd = remoteById.get(ld.id);
+      if (!rd) return ld;
+      const [a, b] = time(rd) > time(ld) ? [rd, ld] : [ld, rd];
+      const stages = unionById(a.stages, b.stages).map(st => {
+        const other = (a === ld ? rd : ld).stages.find(x => x.id === st.id);
+        return other && other !== st ? { ...st, tasks: unionById(st.tasks, other.tasks) } : st;
+      });
+      return {
+        ...a,
+        stages,
+        resources: unionById(a.resources, b.resources),
+        projects: unionById(a.projects, b.projects),
+        notes: unionById(a.notes, b.notes)
+      };
+    });
+    const merged = {
+      ...local,
+      domains: unionById(domains, remote.domains),
+      dailyTasks: unionById(local.dailyTasks, remote.dailyTasks),
+      activityLog: unionById(local.activityLog, remote.activityLog)
+        .sort((x, y) => (Date.parse(y.timestamp) || 0) - (Date.parse(x.timestamp) || 0)).slice(0, 100),
+      focusSessions: unionById(local.focusSessions, remote.focusSessions),
+      settings: {
+        ...local.settings,
+        studyHoursTracked: Math.max(local.settings.studyHoursTracked || 0, remote.settings.studyHoursTracked || 0)
+      }
+    };
+    return sanitizeData(merged);
+  }
+
+  function defaultData() {
+    return {
+      version: '1.1.0',
+      lastUpdated: new Date().toISOString(),
+      settings: { theme: 'light', userName: 'متعلم', studyHoursTracked: 0, pomodoro: { ...DEFAULT_POMODORO } },
+      domains: [],
+      dailyTasks: [],
+      activityLog: [],
+      focusSessions: []
+    };
+  }
+
+  // Validates and normalises untrusted data (imported file or corrupted storage).
+  // Throws an Error with an Arabic message when the structure is unusable.
+  function sanitizeData(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      throw new Error('ملف البيانات غير صالح: الجذر ليس كائناً');
+    }
+    if (!Array.isArray(raw.domains)) {
+      throw new Error('ملف البيانات غير صالح: مصفوفة المجالات مفقودة');
+    }
+
+    const out = defaultData();
+    const rs = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+    const rp = rs.pomodoro && typeof rs.pomodoro === 'object' ? rs.pomodoro : {};
+    const mins = (v, def) => { const n = Math.round(Number(v)); return n >= 1 && n <= 180 ? n : def; };
+    out.version = cleanStr(raw.version, 20, out.version);
+    out.lastUpdated = cleanIso(raw.lastUpdated) || out.lastUpdated;
+    out.settings = {
+      theme: oneOf(rs.theme, ['light', 'dark'], 'light'),
+      userName: cleanStr(rs.userName, 60, 'متعلم'),
+      studyHoursTracked: cleanNum(rs.studyHoursTracked, 100000),
+      pomodoro: {
+        focus: mins(rp.focus, DEFAULT_POMODORO.focus),
+        short: mins(rp.short, DEFAULT_POMODORO.short),
+        long: mins(rp.long, DEFAULT_POMODORO.long)
+      }
+    };
+
+    const domainId = makeIdAllocator();
+    const stageIds = new Set();
+    out.domains = asArray(raw.domains, 500).map(d => {
+      const stageId = makeIdAllocator();
+      const taskId = makeIdAllocator();
+      const resId = makeIdAllocator();
+      const projId = makeIdAllocator();
+      const noteId = makeIdAllocator();
+      const domain = {
+        id: domainId(d.id, 'domain'),
+        name: cleanStr(d.name, 200, 'مجال تعليمي'),
+        icon: oneOf(d.icon, DOMAIN_ICONS, 'book'),
+        color: cleanColor(d.color),
+        description: cleanStr(d.description, 2000),
+        targetGoal: cleanStr(d.targetGoal, 1000),
+        startDate: cleanDate(d.startDate),
+        targetDate: cleanDate(d.targetDate),
+        currentLevel: cleanStr(d.currentLevel, 100),
+        targetLevel: cleanStr(d.targetLevel, 100),
+        status: oneOf(d.status, DOMAIN_STATUSES, 'active'),
+        createdAt: cleanIso(d.createdAt) || new Date().toISOString(),
+        stages: asArray(d.stages, 200).map(st => {
+          const stage = {
+            id: stageId(st.id, 'stage'),
+            title: cleanStr(st.title, 200, 'مرحلة'),
+            description: cleanStr(st.description, 2000),
+            status: oneOf(st.status, TASK_STATUSES, 'todo'),
+            tasks: asArray(st.tasks, 1000).map(t => {
+              const task = {
+                id: taskId(t.id, 'task'),
+                title: cleanStr(t.title, 300, 'مهمة'),
+                description: cleanStr(t.description, 2000),
+                priority: oneOf(t.priority, PRIORITIES, 'medium'),
+                status: oneOf(t.status, TASK_STATUSES, 'todo'),
+                dueDate: cleanDate(t.dueDate),
+                estimatedHours: cleanNum(t.estimatedHours, 10000),
+                notes: cleanStr(t.notes, 2000),
+                links: (Array.isArray(t.links) ? t.links : []).map(safeUrl).filter(Boolean).slice(0, 10),
+                createdAt: cleanIso(t.createdAt) || new Date().toISOString()
+              };
+              const done = cleanIso(t.completedAt);
+              if (done) task.completedAt = done;
+              return task;
+            })
+          };
+          stageIds.add(stage.id);
+          return stage;
+        }),
+        resources: asArray(d.resources, 1000).map(r => ({
+          id: resId(r.id, 'res'),
+          title: cleanStr(r.title, 300, 'مصدر تعليمي'),
+          url: safeUrl(r.url),
+          type: oneOf(r.type, RESOURCE_TYPES, 'other'),
+          description: cleanStr(r.description, 2000)
+        })),
+        projects: asArray(d.projects, 500).map(p => ({
+          id: projId(p.id, 'proj'),
+          title: cleanStr(p.title, 300, 'مشروع'),
+          description: cleanStr(p.description, 2000),
+          skills: cleanStr(p.skills, 500),
+          tasksNeeded: cleanStr(p.tasksNeeded, 2000),
+          status: oneOf(p.status, PROJECT_STATUSES, 'planned'),
+          liveUrl: safeUrl(p.liveUrl),
+          repoUrl: safeUrl(p.repoUrl)
+        })),
+        notes: asArray(d.notes, 1000).map(n => ({
+          id: noteId(n.id, 'note'),
+          title: cleanStr(n.title, 300, 'ملاحظة'),
+          content: cleanStr(n.content, 20000),
+          updatedAt: cleanDate(n.updatedAt) || localDate()
+        }))
+      };
+      const upd = cleanIso(d.updatedAt);
+      if (upd) domain.updatedAt = upd;
+      return domain;
+    });
+
+    const dailyId = makeIdAllocator();
+    out.dailyTasks = asArray(raw.dailyTasks, 5000).map(t => ({
+      id: dailyId(t.id, 'daily'),
+      domainId: cleanId(t.domainId) || null,
+      stageId: cleanId(t.stageId) || null,
+      taskId: cleanId(t.taskId) || null,
+      title: cleanStr(t.title, 300, 'مهمة اليوم'),
+      domainName: cleanStr(t.domainName, 200, 'مهمة حرة'),
+      domainColor: cleanColor(t.domainColor),
+      priority: oneOf(t.priority, PRIORITIES, 'medium'),
+      estimatedHours: cleanNum(t.estimatedHours, 1000),
+      date: cleanDate(t.date),
+      completed: !!t.completed,
+      notes: cleanStr(t.notes, 2000)
+    }));
+
+    const actId = makeIdAllocator();
+    out.activityLog = asArray(raw.activityLog, 100).map(a => ({
+      id: actId(a.id, 'act'),
+      type: cleanStr(a.type, 40),
+      domainId: cleanId(a.domainId) || null,
+      domainName: cleanStr(a.domainName, 200, 'عام'),
+      title: cleanStr(a.title, 500),
+      timestamp: cleanIso(a.timestamp) || new Date().toISOString()
+    }));
+
+    const sesId = makeIdAllocator();
+    out.focusSessions = asArray(raw.focusSessions, 20000).map(f => ({
+      id: sesId(f.id, 'focus'),
+      date: cleanDate(f.date) || localDate(),
+      minutes: cleanNum(f.minutes, 600),
+      domainId: cleanId(f.domainId) || null,
+      domainName: cleanStr(f.domainName, 200)
+    }));
+
+    return out;
+  }
 
   class DataStore {
     constructor() {
       this.data = null;
       this.listeners = [];
+      this.loadError = null;   // set when stored data was corrupt (shown once by the app)
+      this.touched = false;    // true once the user changed anything (used by cloud sync)
+      this.onSaveError = null; // optional hook: (error) => void
       this.init();
     }
 
     init() {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      let stored = null;
+      try {
+        this.touched = localStorage.getItem(TOUCHED_KEY) === '1';
+        stored = localStorage.getItem(STORAGE_KEY);
+      } catch (e) {
+        // Storage blocked (private mode, disabled cookies...). App still works in memory.
+        this.loadError = 'storage-unavailable';
+      }
+
       if (stored) {
         try {
-          this.data = JSON.parse(stored);
-          this.ensureSchemaIntegrity();
+          this.data = sanitizeData(JSON.parse(stored));
         } catch (e) {
-          console.error('Failed to parse stored learning data, fallback to initial:', e);
+          console.error('Failed to read stored learning data:', e);
+          // Keep the unreadable payload so it can be recovered manually, then start fresh.
+          try { localStorage.setItem(STORAGE_KEY + '_corrupt', stored); } catch (err) { /* ignore */ }
+          this.loadError = 'corrupt-data';
           this.loadInitial();
         }
       } else {
@@ -27,47 +332,26 @@
     }
 
     loadInitial() {
-      if (typeof INITIAL_DATA !== 'undefined') {
-        this.data = JSON.parse(JSON.stringify(INITIAL_DATA));
-      } else {
-        this.data = {
-          version: "1.0.0",
-          lastUpdated: new Date().toISOString(),
-          settings: { theme: "light", userName: "متعلم", studyHoursTracked: 0 },
-          domains: [],
-          dailyTasks: [],
-          activityLog: []
-        };
-      }
-      this.save();
+      this.data = typeof INITIAL_DATA !== 'undefined' ? sanitizeData(INITIAL_DATA) : defaultData();
+      this.save({ system: true });
     }
 
-    ensureSchemaIntegrity() {
-      if (!this.data.domains) this.data.domains = [];
-      if (!this.data.dailyTasks) this.data.dailyTasks = [];
-      if (!this.data.activityLog) this.data.activityLog = [];
-      if (!this.data.settings) this.data.settings = { theme: "light", userName: "متعلم", studyHoursTracked: 0 };
-      
-      // Ensure each domain has sub-arrays
-      this.data.domains.forEach(d => {
-        if (!d.stages) d.stages = [];
-        if (!d.resources) d.resources = [];
-        if (!d.projects) d.projects = [];
-        if (!d.notes) d.notes = [];
-        d.stages.forEach(s => {
-          if (!s.tasks) s.tasks = [];
-        });
-      });
-    }
-
-    save() {
+    save(options = {}) {
       this.data.lastUpdated = new Date().toISOString();
+      let ok = true;
+      if (!options.system && !this.touched) {
+        this.touched = true;
+        try { localStorage.setItem(TOUCHED_KEY, '1'); } catch (e) { /* ignore */ }
+      }
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-        this.notify();
       } catch (err) {
+        ok = false;
         console.error('LocalStorage save error:', err);
+        if (typeof this.onSaveError === 'function') this.onSaveError(err);
       }
+      this.notify();
+      return ok;
     }
 
     subscribe(callback) {
@@ -94,7 +378,7 @@
     }
 
     getSettings() {
-      return this.data.settings || { theme: "light", userName: "متعلم", studyHoursTracked: 0 };
+      return this.data.settings || defaultData().settings;
     }
 
     updateSettings(newSettings) {
@@ -109,31 +393,42 @@
 
     importJSON(jsonString) {
       try {
-        const parsed = JSON.parse(jsonString);
-        if (!parsed.domains || !Array.isArray(parsed.domains)) {
-          throw new Error('ملف البيانات غير صالح: مصفوفة المجالات مفقودة');
+        if (typeof jsonString !== 'string' || jsonString.length > MAX_IMPORT_BYTES) {
+          throw new Error('حجم الملف كبير جداً أو غير صالح');
         }
-        this.data = parsed;
-        this.ensureSchemaIntegrity();
+        let parsed;
+        try {
+          parsed = JSON.parse(jsonString);
+        } catch (e) {
+          throw new Error('الملف ليس بصيغة JSON صحيحة');
+        }
+        // Validate everything first; the current data is replaced only if this succeeds.
+        const clean = sanitizeData(parsed);
+        this.data = clean;
         this.save();
-        return { success: true };
+        return { success: true, domains: clean.domains.length };
       } catch (e) {
         return { success: false, error: e.message };
       }
     }
 
+    isTouched() { return this.touched; }
+
+    // Used by cloud sync. The previous local copy is kept once in storage so it can be recovered.
+    replaceData(clean) {
+      try {
+        const prev = localStorage.getItem(STORAGE_KEY);
+        if (prev) localStorage.setItem(STORAGE_KEY + '_presync', prev);
+      } catch (e) { /* ignore */ }
+      this.data = clean;
+      this.save({ system: true });
+    }
+
     resetData(useSample = true) {
       if (useSample && typeof INITIAL_DATA !== 'undefined') {
-        this.data = JSON.parse(JSON.stringify(INITIAL_DATA));
+        this.data = sanitizeData(INITIAL_DATA);
       } else {
-        this.data = {
-          version: "1.0.0",
-          lastUpdated: new Date().toISOString(),
-          settings: { theme: "light", userName: "متعلم", studyHoursTracked: 0 },
-          domains: [],
-          dailyTasks: [],
-          activityLog: []
-        };
+        this.data = defaultData();
       }
       this.save();
     }
@@ -145,10 +440,10 @@
         list = list.filter(d => d.status === filter.status);
       }
       if (filter.search && filter.search.trim()) {
-        const q = filter.search.trim().toLowerCase();
-        list = list.filter(d => 
-          (d.name && d.name.toLowerCase().includes(q)) || 
-          (d.description && d.description.toLowerCase().includes(q))
+        const q = normalizeText(filter.search);
+        list = list.filter(d =>
+          normalizeText(d.name).includes(q) ||
+          normalizeText(d.description).includes(q)
         );
       }
       return list;
@@ -172,13 +467,13 @@
       } else {
         // Add new
         const newDomain = {
-          id: 'domain-' + Date.now(),
+          id: uid('domain'),
           name: domainData.name || 'مجال تعليمي جديد',
           icon: domainData.icon || 'book',
           color: domainData.color || '#3B82F6',
           description: domainData.description || '',
           targetGoal: domainData.targetGoal || '',
-          startDate: domainData.startDate || new Date().toISOString().slice(0, 10),
+          startDate: domainData.startDate || localDate(),
           targetDate: domainData.targetDate || '',
           currentLevel: domainData.currentLevel || 'مبتدئ',
           targetLevel: domainData.targetLevel || 'متقدم',
@@ -196,6 +491,54 @@
       }
       this.save();
       return this.getDomainById(domainData.id);
+    }
+
+    addGeneratedPlan(plan) {
+      if (!plan || typeof plan !== 'object' || !Array.isArray(plan.stages)) return null;
+      const newDomain = {
+        id: uid('domain'),
+        name: cleanStr(plan.domainName, 120, 'خطة تعلم جديدة'),
+        icon: 'brain',
+        color: '#7c3aed',
+        description: cleanStr(plan.description, 800),
+        targetGoal: cleanStr(plan.targetGoal, 1000),
+        startDate: localDate(),
+        targetDate: cleanDate(plan.targetDate),
+        currentLevel: cleanStr(plan.currentLevel, 80, 'مبتدئ'),
+        targetLevel: cleanStr(plan.targetLevel, 80, 'متقدم'),
+        status: 'active',
+        stages: [],
+        resources: [],
+        projects: [],
+        notes: [],
+        createdAt: new Date().toISOString()
+      };
+      newDomain.stages = plan.stages.slice(0, 10).map((stage) => {
+        const newStage = {
+          id: uid('stage'),
+          title: cleanStr(stage && stage.title, 140, 'مرحلة تعلم'),
+          description: cleanStr(stage && stage.description, 800),
+          status: 'todo',
+          tasks: []
+        };
+        newStage.tasks = (Array.isArray(stage && stage.tasks) ? stage.tasks : []).slice(0, 10).map((task) => ({
+          id: uid('task'),
+          title: cleanStr(task && task.title, 160, 'مهمة جديدة'),
+          description: cleanStr(task && task.description, 800),
+          priority: oneOf(task && task.priority, PRIORITIES, 'medium'),
+          status: 'todo',
+          dueDate: cleanDate(task && task.dueDate),
+          estimatedHours: cleanNum(task && task.estimatedHours, 40),
+          notes: '',
+          links: [],
+          createdAt: new Date().toISOString()
+        }));
+        return newStage;
+      });
+      this.data.domains.push(newDomain);
+      this.logActivity('domain_created', newDomain.id, newDomain.name, `تم إنشاء خطة تعلم بالذكاء الاصطناعي: ${newDomain.name}`);
+      this.save();
+      return newDomain;
     }
 
     deleteDomain(id) {
@@ -226,7 +569,7 @@
       if (!domain) return null;
 
       const newStage = {
-        id: 'stage-' + Date.now(),
+        id: uid('stage'),
         title: stageData.title || `المرحلة ${domain.stages.length + 1}`,
         description: stageData.description || '',
         status: stageData.status || 'todo',
@@ -279,7 +622,7 @@
       if (!stage) return null;
 
       const newTask = {
-        id: 'task-' + Date.now(),
+        id: uid('task'),
         title: taskData.title || 'مهمة جديدة',
         description: taskData.description || '',
         priority: taskData.priority || 'medium', // 'urgent', 'high', 'medium', 'low'
@@ -287,7 +630,7 @@
         dueDate: taskData.dueDate || '',
         estimatedHours: Number(taskData.estimatedHours) || 0,
         notes: taskData.notes || '',
-        links: taskData.links || [],
+        links: (Array.isArray(taskData.links) ? taskData.links : []).map(safeUrl).filter(Boolean),
         createdAt: new Date().toISOString()
       };
 
@@ -312,6 +655,9 @@
       if (!task) return false;
 
       const prevStatus = task.status;
+      if (Array.isArray(updateData.links)) {
+        updateData = { ...updateData, links: updateData.links.map(safeUrl).filter(Boolean) };
+      }
       Object.assign(task, updateData);
 
       // Status change logic
@@ -389,9 +735,9 @@
       if (!domain) return null;
 
       const newRes = {
-        id: 'res-' + Date.now(),
+        id: uid('res'),
         title: resData.title || 'مصدر تعليمي',
-        url: resData.url || '',
+        url: safeUrl(resData.url),
         type: resData.type || 'website',
         description: resData.description || ''
       };
@@ -414,14 +760,14 @@
       if (!domain) return null;
 
       const newProj = {
-        id: 'proj-' + Date.now(),
+        id: uid('proj'),
         title: projData.title || 'مشروع جديد',
         description: projData.description || '',
         skills: projData.skills || '',
         tasksNeeded: projData.tasksNeeded || '',
         status: projData.status || 'planned',
-        liveUrl: projData.liveUrl || '',
-        repoUrl: projData.repoUrl || ''
+        liveUrl: safeUrl(projData.liveUrl),
+        repoUrl: safeUrl(projData.repoUrl)
       };
       domain.projects.push(newProj);
       this.save();
@@ -452,10 +798,10 @@
       if (!domain) return null;
 
       const newNote = {
-        id: 'note-' + Date.now(),
+        id: uid('note'),
         title: noteData.title || 'ملاحظة',
         content: noteData.content || '',
-        updatedAt: new Date().toISOString().slice(0, 10)
+        updatedAt: localDate()
       };
       domain.notes.push(newNote);
       this.save();
@@ -467,7 +813,7 @@
       if (!domain) return false;
       const note = domain.notes.find(n => n.id === noteId);
       if (!note) return false;
-      Object.assign(note, updateData, { updatedAt: new Date().toISOString().slice(0, 10) });
+      Object.assign(note, updateData, { updatedAt: localDate() });
       this.save();
       return true;
     }
@@ -482,13 +828,13 @@
 
     // ---------------- Daily Tasks Operations ---------------- //
     getDailyTasks(dateString) {
-      const date = dateString || new Date().toISOString().slice(0, 10);
+      const date = dateString || localDate();
       return this.data.dailyTasks.filter(t => !t.date || t.date === date);
     }
 
     addDailyTask(taskData) {
       const newTask = {
-        id: 'daily-' + Date.now(),
+        id: uid('daily'),
         domainId: taskData.domainId || null,
         stageId: taskData.stageId || null,
         taskId: taskData.taskId || null,
@@ -497,7 +843,7 @@
         domainColor: taskData.domainColor || '#3B82F6',
         priority: taskData.priority || 'medium',
         estimatedHours: Number(taskData.estimatedHours) || 1,
-        date: taskData.date || new Date().toISOString().slice(0, 10),
+        date: taskData.date || localDate(),
         completed: !!taskData.completed,
         notes: taskData.notes || ''
       };
@@ -543,10 +889,82 @@
       return true;
     }
 
+    // ---------------- Focus (Pomodoro) Sessions ---------------- //
+    addFocusSession({ minutes, domainId }) {
+      const domain = domainId ? this.getDomainById(domainId) : null;
+      const session = {
+        id: uid('focus'),
+        date: localDate(),
+        minutes: cleanNum(minutes, 600),
+        domainId: domain ? domain.id : null,
+        domainName: domain ? domain.name : ''
+      };
+      if (session.minutes <= 0) return null;
+      this.data.focusSessions.push(session);
+      if (this.data.focusSessions.length > 20000) this.data.focusSessions.shift();
+      this.logActivity('focus_session', session.domainId, session.domainName,
+        `جلسة تركيز ${Math.round(session.minutes)} دقيقة`);
+      this.save();
+      return session;
+    }
+
+    getFocusSessions(dateString) {
+      const list = this.data.focusSessions || [];
+      return dateString ? list.filter(f => f.date === dateString) : list;
+    }
+
+    getPomodoroSettings() {
+      return { ...DEFAULT_POMODORO, ...(this.data.settings.pomodoro || {}) };
+    }
+
+    // ---------------- Global search ---------------- //
+    // Returns [{type, domainId, tab, targetId, title, subtitle, domainName, color}]
+    searchAll(query, limit = 30) {
+      const q = normalizeText(query);
+      if (q.length < 2) return [];
+      const hit = (...fields) => fields.some(f => normalizeText(f).includes(q));
+      const results = [];
+      const push = (r) => { if (results.length < limit) results.push(r); };
+
+      for (const d of this.data.domains) {
+        const base = { domainId: d.id, domainName: d.name, color: d.color };
+        if (hit(d.name, d.description, d.targetGoal)) {
+          push({ ...base, type: 'domain', tab: 'plan', targetId: '', title: d.name, subtitle: d.description });
+        }
+        for (const s of d.stages) {
+          if (hit(s.title, s.description)) {
+            push({ ...base, type: 'stage', tab: 'plan', targetId: 'stage-card-' + s.id, title: s.title, subtitle: s.description });
+          }
+          for (const t of s.tasks) {
+            if (hit(t.title, t.description, t.notes)) {
+              push({ ...base, type: 'task', tab: 'plan', targetId: 'task-' + t.id, title: t.title, subtitle: t.description || t.notes });
+            }
+          }
+        }
+        for (const r of d.resources) {
+          if (hit(r.title, r.description)) {
+            push({ ...base, type: 'resource', tab: 'resources', targetId: 'res-' + r.id, title: r.title, subtitle: r.description });
+          }
+        }
+        for (const p of d.projects) {
+          if (hit(p.title, p.description, p.skills)) {
+            push({ ...base, type: 'project', tab: 'projects', targetId: 'proj-' + p.id, title: p.title, subtitle: p.description });
+          }
+        }
+        for (const n of d.notes) {
+          if (hit(n.title, n.content)) {
+            push({ ...base, type: 'note', tab: 'notes', targetId: 'note-' + n.id, title: n.title, subtitle: n.content });
+          }
+        }
+        if (results.length >= limit) break;
+      }
+      return results;
+    }
+
     // ---------------- Activities & Stats ---------------- //
     logActivity(type, domainId, domainName, title) {
       const act = {
-        id: 'act-' + Date.now(),
+        id: uid('act'),
         type,
         domainId: domainId || null,
         domainName: domainName || 'عام',
@@ -573,7 +991,7 @@
       let inProgressTasks = 0;
       let todoTasks = 0;
       let overdueTasks = 0;
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = localDate();
 
       const domainStats = domains.map(d => {
         let dTotal = 0;
@@ -614,6 +1032,12 @@
         };
       });
 
+      const sessions = this.data.focusSessions || [];
+      const focusMinutes = sessions.reduce((sum, f) => sum + (f.minutes || 0), 0);
+      const focusToday = sessions.filter(f => f.date === todayStr).reduce((sum, f) => sum + (f.minutes || 0), 0);
+      const manualHours = this.data.settings?.studyHoursTracked || 0;
+      const hoursTracked = Math.round((manualHours + focusMinutes / 60) * 10) / 10;
+
       const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       // Daily plan stats for today
@@ -638,7 +1062,9 @@
         dailyDone,
         dailyProgress,
         domainStats,
-        hoursTracked: this.data.settings?.studyHoursTracked || 0,
+        hoursTracked: hoursTracked,
+        focusMinutesTotal: focusMinutes,
+        focusMinutesToday: focusToday,
         activityLog: this.data.activityLog || []
       };
     }
@@ -646,5 +1072,9 @@
 
   // Expose store globally
   window.LearningStore = new DataStore();
+  window.LearningUtils = {
+    escapeHtml, safeUrl, normalizeText, localDate, uid, sanitizeData, defaultData, hashData, mergeData,
+    DEFAULT_POMODORO
+  };
 
 })(window);
