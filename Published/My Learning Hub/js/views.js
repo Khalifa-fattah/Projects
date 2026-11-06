@@ -29,7 +29,7 @@
         </div>
 
         <!-- Metric KPI Cards -->
-        <div class="stats-grid">
+        <div class="stats-grid dashboard-stats-grid">
           <div class="stat-card">
             <div class="stat-icon-wrapper color-blue">
               ${UI.getIcon('domains')}
@@ -81,6 +81,17 @@
             </div>
           </div>
         </div>
+
+        ${(() => { const week = LearningStore.getWeeklyReview(); const streak = LearningStore.getLearningStreak(); const next = stats.domainStats.find(d => d.status === 'active' && d.progress < 100); return h`
+          <section class="card dashboard-week-card mt-4">
+            <div class="card-body dashboard-week-row">
+              <div><span class="text-muted">ساعات هذا الأسبوع</span><strong>${week.current.hours} س</strong></div>
+              <div><span class="text-muted">أيام النشاط</span><strong>${week.current.activeDays}/7</strong></div>
+              <div><span class="text-muted">سلسلة الالتزام</span><strong>🔥 ${streak} يوم</strong></div>
+              <div class="dashboard-continue"><span class="text-muted">${next ? 'تابع تقدمك' : 'ابدأ مجالاً جديداً'}</span>
+                <button class="btn btn-primary btn-sm" data-action="${next ? 'openDomain' : 'openNewDomainModal'}" ${next ? `data-arg0="${next.id}"` : ''}>${next ? 'متابعة التعلم' : 'إضافة مجال'}</button></div>
+            </div>
+          </section>`; })()}
 
         <!-- Main Dashboard Split Sections -->
         <div class="dashboard-grid">
@@ -225,6 +236,14 @@
             </div>
           </div>
         </div>
+
+        <section class="dashboard-chat-entry" aria-label="ابدأ محادثة مع Gemini">
+          <div class="dashboard-chat-copy"><strong>لديك سؤال أو فكرة؟</strong><span>ابدأ محادثة مع Gemini مباشرة.</span></div>
+          <form class="dashboard-chat-form" data-action="openChatFromDashboard" data-event="submit">
+            <input class="form-control" type="text" name="dashboard-chat-prompt" maxlength="4000" placeholder="اكتب رسالتك هنا…" aria-label="اكتب رسالة إلى Gemini" required>
+            <button class="btn btn-primary" type="submit" aria-label="فتح المحادثة">➤ إرسال</button>
+          </form>
+        </section>
       `;
     },
 
@@ -379,6 +398,8 @@
               <button class="btn btn-outline btn-sm" data-action="openEditDomainModal" data-arg0="${domain.id}">
                 ${UI.getIcon('edit')} تعديل البيانات
               </button>
+              <button class="btn btn-outline btn-sm" data-action="runGeminiCoach" data-arg0="${domain.id}">✨ مدرب Gemini</button>
+              <button class="btn btn-outline btn-sm" data-action="replanDomain" data-arg0="${domain.id}">↻ إعادة التخطيط</button>
               <button class="btn btn-danger-outline btn-sm" data-action="deleteDomain" data-arg0="${domain.id}">
                 ${UI.getIcon('trash')} حذف
               </button>
@@ -820,6 +841,33 @@
           </div>
         </div>
 
+        ${(() => { const w = LearningStore.getWeeklyReview(); const streak = LearningStore.getLearningStreak(); return h`
+          <section class="card weekly-review-card mb-4">
+            <div class="card-header"><h3 class="card-title">مراجعة الأسبوع</h3><button class="btn btn-outline btn-sm" data-action="printWeeklyReview">تصدير التقرير / PDF</button></div>
+            <div class="card-body">
+              <div class="stats-grid compact-stats">
+                <div class="stat-card"><div class="stat-info"><span class="stat-label">وقت التعلم</span><span class="stat-value">${w.current.hours} س</span></div></div>
+                <div class="stat-card"><div class="stat-info"><span class="stat-label">أيام النشاط</span><span class="stat-value">${w.current.activeDays}/7</span></div></div>
+                <div class="stat-card"><div class="stat-info"><span class="stat-label">مهام خطة اليوم</span><span class="stat-value">${w.current.completed}/${w.current.total}</span></div></div>
+                <div class="stat-card"><div class="stat-info"><span class="stat-label">سلسلة الالتزام</span><span class="stat-value">🔥 ${streak} يوم</span></div></div>
+              </div>
+              <p class="form-hint">مقارنة بالأسبوع السابق: ${w.hoursChange > 0 ? '+' : ''}${w.hoursChange} ساعة.</p>
+            </div>
+          </section>`; })()}
+
+        <section class="card learning-log-form mb-4">
+          <div class="card-header"><h3 class="card-title">تسجيل جلسة تعلم</h3></div>
+          <div class="card-body">
+            <form data-action="addLearningLog" data-event="submit" class="learning-log-fields">
+              <div class="form-group"><label class="form-label" for="log-domain">المجال</label><select class="form-control" id="log-domain"><option value="">تعلم عام</option>${LearningStore.getDomains().map(d=>h`<option value="${d.id}">${d.name}</option>`)}</select></div>
+              <div class="form-group"><label class="form-label" for="log-minutes">المدة بالدقائق</label><input class="form-control" id="log-minutes" type="number" min="1" max="1440" value="30" required></div>
+              <div class="form-group"><label class="form-label" for="log-focus">التركيز</label><select class="form-control" id="log-focus"><option value="high">مرتفع</option><option value="medium" selected>متوسط</option><option value="low">منخفض</option></select></div>
+              <div class="form-group log-summary-field"><label class="form-label" for="log-summary">ماذا تعلمت؟ (اختياري)</label><input class="form-control" id="log-summary" maxlength="1200" placeholder="ملخص قصير لما أنجزته"></div>
+              <button class="btn btn-primary" type="submit">حفظ الجلسة</button>
+            </form>
+          </div>
+        </section>
+
         <!-- Metric summary -->
         <div class="stats-grid">
           <div class="stat-card">
@@ -851,6 +899,16 @@
             </div>
           </div>
         </div>
+
+        ${(() => { const a = LearningStore.getAnalytics(); const streak = LearningStore.getLearningStreak(); const badges = [
+          {label:'أول إنجاز',ok:a.completedTasks>=1,icon:'🎯'}, {label:'10 مهام مكتملة',ok:a.completedTasks>=10,icon:'🏅'},
+          {label:'5 ساعات تعلم',ok:a.hoursTracked>=5,icon:'⏱️'}, {label:'3 أيام التزام',ok:streak>=3,icon:'🔥'},
+          {label:'أول مجال مكتمل',ok:a.completedDomains>=1,icon:'🏆'}]; return h`<section class="card mt-4"><div class="card-header"><h3 class="card-title">إنجازاتك</h3></div><div class="card-body achievement-list">${badges.map(b=>h`<div class="achievement-badge ${b.ok?'is-earned':'is-locked'}"><span>${b.icon}</span><strong>${b.label}</strong><small>${b.ok?'تم فتحها':'لم تُفتح بعد'}</small></div>`)}</div></section>`; })()}
+
+        <section class="card mt-4">
+          <div class="card-header"><h3 class="card-title">سجل جلسات التعلم</h3><span class="badge badge-neutral">${LearningStore.getLearningLogs().length} جلسة</span></div>
+          <div class="card-body">${LearningStore.getLearningLogs().slice(0,12).length ? h`<div class="learning-log-list">${LearningStore.getLearningLogs().slice(0,12).map(x=>h`<div class="learning-log-item"><div><strong>${x.domainName}</strong><p class="text-muted">${x.summary || 'جلسة تعلم مسجلة'} · ${UI.formatDate(x.date)}</p></div><span class="badge badge-primary">${x.minutes} دقيقة</span></div>`)}</div>` : h`<p class="text-muted">سجّل جلساتك لتكوين سجل واضح لتقدمك.</p>`}</div>
+        </section>
 
         <div class="grid-2-cols mt-4">
           <!-- Domain breakdown table -->
@@ -1014,6 +1072,30 @@
     },
 
     // ---------------- 6. SETTINGS VIEW ---------------- //
+    renderFreeChat(container, messages = [], busy = false) {
+      const hasKey = window.GeminiAssistant.hasKey();
+      container.innerHTML = h`
+        <div class="view-header free-chat-header">
+          <div><h1 class="page-title">محادثة حرة مع Gemini</h1><p class="page-subtitle">اسأل عمّا تريد، وتابع الحوار في نفس المحادثة.</p></div>
+          <div class="header-actions"><button class="btn btn-outline" data-action="clearFreeChat" ${messages.length ? '' : 'disabled'}>محادثة جديدة</button></div>
+        </div>
+        ${!hasKey ? h`<div class="card"><div class="card-body"><p>أضف مفتاح Gemini API أولاً لتفعيل المحادثة.</p><button class="btn btn-primary" data-action="navigate" data-arg0="settings">فتح إعدادات Gemini</button></div></div>` : h`
+          <section class="card free-chat-card" aria-label="محادثة Gemini">
+            <div class="free-chat-messages" id="free-chat-messages" aria-live="polite">
+              ${messages.length ? messages.map(m => h`<article class="free-chat-message ${m.role === 'user' ? 'from-user' : 'from-model'}"><div class="free-chat-role">${m.role === 'user' ? 'أنت' : 'Gemini'}</div><div class="free-chat-text">${m.text}</div></article>`) : h`<div class="free-chat-empty"><span>✦</span><strong>ابدأ سؤالك الأول</strong><p>يمكنك السؤال عن التعلم أو العمل أو البرمجة أو أي موضوع آخر.</p></div>`}
+              ${busy ? h`<article class="free-chat-message from-model"><div class="free-chat-role">Gemini</div><div class="free-chat-text typing-indicator">يفكر الآن…</div></article>` : ''}
+            </div>
+            <form class="free-chat-composer" data-action="sendFreeChat" data-event="submit">
+              <textarea id="free-chat-input" class="form-control" rows="2" maxlength="4000" placeholder="اكتب رسالتك هنا…" aria-label="رسالتك إلى Gemini" ${busy ? 'disabled' : ''} required></textarea>
+              <button type="submit" class="btn btn-primary" ${busy ? 'disabled' : ''}>${busy ? 'جارٍ الإرسال…' : 'إرسال'}</button>
+            </form>
+            <p class="free-chat-note">قد يخطئ النموذج؛ تحقّق من المعلومات المهمة. تُرسل رسائلك إلى Google Gemini لمعالجتها.</p>
+          </section>`}
+      `;
+      const box = document.getElementById('free-chat-messages');
+      if (box) box.scrollTop = box.scrollHeight;
+    },
+
     renderAiAssistant(container, draft, requesting = false, form = {}) {
       const usage = window.GeminiAssistant.getUsage();
       const hasKey = window.GeminiAssistant.hasKey();
@@ -1023,7 +1105,7 @@
           <div>
             <h1 class="page-title">مساعد إنشاء خطة تعلّم</h1>
             <p class="page-subtitle">اكتب هدفك، وسيقترح Gemini مراحل ومهامًا عملية يمكنك مراجعتها وتعديلها قبل حفظها.</p>
-            <p class="form-hint ai-privacy-note">سيُرسل هدفك ومستواك ووقتك المتاح إلى Google Gemini. وفق شروط الخطة المجانية قد تستخدم Google البيانات لتحسين منتجاتها؛ لا تدخل معلومات حساسة.</p>
+            <p class="form-hint ai-privacy-note">عند استخدام المساعد أو المدرب، تُرسل إلى Google Gemini بيانات الهدف والمهام والتقدم وسجل التعلم اللازم للتحليل. لا تُرسل معلومات حساسة؛ وقد تُستخدم البيانات وفق شروط Google وخطتك.</p>
           </div>
         </div>
 
@@ -1054,10 +1136,16 @@
                 <input id="ai-target-level" class="form-control" maxlength="80" placeholder="اتركه فارغًا ليقترحه المساعد" value="${form.targetLevel || ''}" data-action="aiFormInput" data-event="input" data-arg0="targetLevel">
               </div>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="ai-purpose">ما الذي تريد تحقيقه من تعلم هذه المهارة؟</label>
+              <input id="ai-purpose" class="form-control" maxlength="240" placeholder="مثال: استخدامها في عملي أو بناء مشروع مستقل" value="${form.purpose || ''}" data-action="aiFormInput" data-event="input" data-arg0="purpose">
+            </div>
             <div class="form-row">
               <div class="form-group flex-1">
-                <label class="form-label" for="ai-hours-week">الساعات المتاحة أسبوعيًا</label>
-                <input id="ai-hours-week" type="number" class="form-control" min="1" max="80" value="${form.hoursPerWeek ?? 5}" data-action="aiFormInput" data-event="input" data-arg0="hoursPerWeek">
+                <label class="form-label" for="ai-learning-style">ما أسلوب التعلم الذي تفضله؟</label>
+                <select id="ai-learning-style" class="form-control" data-action="aiFormInput" data-event="change" data-arg0="learningStyle">
+                  ${['متوازن (شرح وتطبيق)','مشاريع عملية','دروس وفيديوهات','قراءة ومراجع','تمارين واختبارات'].map(x => h`<option value="${x}" ${(form.learningStyle || 'متوازن (شرح وتطبيق)') === x ? 'selected' : ''}>${x}</option>`)}
+                </select>
               </div>
               <div class="form-group flex-1">
                 <label class="form-label" for="ai-days-week">أيام الدراسة أسبوعيًا</label>
@@ -1069,8 +1157,8 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="ai-context">تفضيلات أو معلومات إضافية (اختياري)</label>
-              <textarea id="ai-context" class="form-control" rows="3" maxlength="700" placeholder="مثلًا: أفضّل المشاريع العملية، أو لدي معرفة مسبقة بـ HTML و CSS" data-action="aiFormInput" data-event="input" data-arg0="context">${form.context || ''}</textarea>
+              <label class="form-label" for="ai-context">ما معرفتك السابقة أو القيود التي ينبغي مراعاتها؟ (اختياري)</label>
+              <textarea id="ai-context" class="form-control" rows="2" maxlength="700" placeholder="مثال: أعرف أساسيات Python، وأستخدم هاتفًا فقط حاليًا." data-action="aiFormInput" data-event="input" data-arg0="context">${form.context || ''}</textarea>
             </div>
             <button type="button" class="btn btn-primary" data-action="generateAiPlan" ${(hasKey && !requesting) ? '' : 'disabled'}>
               ${UI.getIcon('brain')} ${requesting ? 'جارٍ إنشاء الخطة…' : (draft ? 'إنشاء اقتراح جديد' : 'أنشئ خطة بالذكاء الاصطناعي')}
@@ -1170,7 +1258,7 @@
         <div class="view-header">
           <div>
             <h1 class="page-title">إدارة البيانات والإعدادات</h1>
-            <p class="page-subtitle">تحكم في حفظ البيانات محلياً، وتصدير واستيراد النسخ الاحتياطية وتخصيص المظهر.</p>
+            <p class="page-subtitle">إدارة المظهر والمزامنة والنسخ الاحتياطية والذكاء الاصطناعي.</p>
           </div>
         </div>
 
@@ -1189,7 +1277,7 @@
               <div class="form-group">
                 <label class="form-label">إجمالي ساعات التعلم التقديرية</label>
                 <input type="number" id="setting-hours" class="form-control" value="${settings.studyHoursTracked || 0}" step="0.5">
-                <span class="form-hint">رقم يدوي يُضاف إليه تلقائياً وقت جلسات مؤقت التركيز المكتملة.</span>
+                <span class="form-hint">تُضاف جلسات التركيز المكتملة تلقائياً.</span>
               </div>
 
               <div class="form-group">
@@ -1213,7 +1301,7 @@
               <h3 class="card-title">☁ المزامنة السحابية (Google Drive)</h3>
             </div>
             <div class="card-body">
-              <p class="text-muted mb-3">تُحفظ بياناتك في ملف داخل مجلد التطبيق المخفي في Google Drive الخاص بك، فتظهر على كل أجهزتك. لا يستطيع التطبيق الوصول إلى أي ملف آخر في Drive. مفتاح Gemini ومؤقت التركيز لا يُزامَنان أبدًا.</p>
+              <p class="text-muted mb-3">زامن بيانات التعلم بين أجهزتك عبر Google Drive.</p>
               ${location.protocol === 'file:' ? h`<p class="form-hint sync-warning" role="alert">أنت تفتح الملف مباشرة من الجهاز (file://). تسجيل الدخول بـ Google يحتاج أن يعمل الموقع من عنوان https (مثل GitHub Pages) أو من http://localhost.</p>` : ''}
               <details class="sync-setup">
                 <summary>خطوات الإعداد لمرة واحدة</summary>
@@ -1237,7 +1325,7 @@
                   <button type="button" class="btn btn-primary" data-action="syncNowCloud">${syncConfig.connected ? 'مزامنة الآن' : 'اتصال ومزامنة'}</button>
                   <button type="button" class="btn btn-outline" data-action="disconnectCloudSync">إيقاف المزامنة على هذا الجهاز</button>` : ''}
               </div>
-              <p class="form-hint mt-3">تحتاج إلى تسجيل الدخول مرة كل ساعة تقريبًا عند فتح الموقع. عند تعارض التغييرات بين جهازين سيُطلب منك الاختيار، ولن يُحذف شيء دون موافقتك.</p>
+              <p class="form-hint mt-3">قد يُطلب تسجيل الدخول مجدداً. لن تُحذف بيانات عند تعارض المزامنة دون موافقتك.</p>
             </div>
           </div>
 
@@ -1246,7 +1334,7 @@
               <h3 class="card-title">${UI.getIcon('brain')} إعداد Gemini API</h3>
             </div>
             <div class="card-body">
-              <p class="text-muted mb-3">أدخل مفتاحك الشخصي لتفعيل إنشاء الخطط. يُحفظ المفتاح محليًا في هذا المتصفح فقط، ولا يُضاف إلى النسخ الاحتياطية أو ملفات المشروع. تُرسل مدخلات الخطة إلى Google، وقد تُستخدم بيانات الخطة لتحسين منتجاتها في الطبقة المجانية.</p>
+              <p class="text-muted mb-3">أدخل مفتاح API لإنشاء الخطط. يُحفظ على هذا الجهاز ولا يدخل في النسخ الاحتياطية.</p>
               <div class="form-group">
                 <label class="form-label" for="setting-gemini-api-key">مفتاح Gemini API</label>
                 <input type="password" id="setting-gemini-api-key" class="form-control" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="ألصق المفتاح هنا">
@@ -1256,14 +1344,14 @@
                 <label class="form-label" for="setting-gemini-model">اسم النموذج</label>
                 <input type="text" id="setting-gemini-model" class="form-control" list="gemini-model-list" dir="ltr" autocomplete="off" spellcheck="false" value="${window.GeminiAssistant.model}" placeholder="${window.GeminiAssistant.defaultModel}">
                 <datalist id="gemini-model-list">${window.GeminiAssistant.modelSuggestions.map(m => h`<option value="${m}"></option>`)}</datalist>
-                <span class="form-hint">إن ظهر خطأ «النموذج غير متاح» جرّب اسمًا آخر من القائمة. اتركه فارغًا للعودة للافتراضي.</span>
+                <span class="form-hint">النموذج الافتراضي: gemini-3.5-flash-lite.</span>
               </div>
               <div class="backup-actions">
                 <button type="button" class="btn btn-primary" data-action="saveGeminiKey">حفظ الإعدادات على هذا الجهاز</button>
                 ${window.GeminiAssistant.hasKey() ? h`<button type="button" class="btn btn-outline" data-action="testGeminiConnection">اختبار الاتصال</button>` : ''}
                 ${window.GeminiAssistant.hasKey() ? h`<button type="button" class="btn btn-outline" data-action="removeGeminiKey">حذف المفتاح المحفوظ</button>` : ''}
               </div>
-              <p class="form-hint mt-3">مفتاح API سرّ مثل كلمة المرور؛ لا تشاركه ولا تضعه في نسخة المشروع. الاتصال المباشر مناسب للاستخدام الشخصي، لكنه ليس إعدادًا آمنًا لموقع عام.</p>
+              <p class="form-hint mt-3">لا تشارك المفتاح أو تضعه داخل ملفات المشروع.</p>
               <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">إنشاء أو إدارة مفتاح Gemini في Google AI Studio</a>
             </div>
           </div>
@@ -1274,7 +1362,7 @@
               <h3 class="card-title">${UI.getIcon('download')} النسخ الاحتياطي ونقل البيانات</h3>
             </div>
             <div class="card-body">
-              <p class="text-muted mb-3">جميع بياناتك محفوظة في متصفحك (LocalStorage). يمكنك تحميل نسخة JSON احتياطية للاحتفاظ بها أو نقلها لجهاز آخر.</p>
+              <p class="text-muted mb-3">صدّر بياناتك أو استورد نسخة احتياطية بصيغة JSON.</p>
 
               <div class="backup-actions">
                 <button class="btn btn-outline" data-action="exportBackup">
@@ -1290,7 +1378,7 @@
               <hr class="divider">
 
               <h4 class="sub-heading text-danger">إعادة ضبط البيانات</h4>
-              <p class="text-muted mb-3">يمكنك إعادة تعيين البيانات للوضع الافتراضي مع بيانات تجريبية استرشادية، أو تفريغ البيانات بالكامل.</p>
+              <p class="text-muted mb-3">إجراءات نهائية؛ تأكد من وجود نسخة احتياطية أولاً.</p>
 
               <div class="reset-buttons">
                 <button class="btn btn-outline" data-action="resetWithSampleData">

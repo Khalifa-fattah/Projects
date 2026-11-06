@@ -134,6 +134,7 @@
       activityLog: unionById(local.activityLog, remote.activityLog)
         .sort((x, y) => (Date.parse(y.timestamp) || 0) - (Date.parse(x.timestamp) || 0)).slice(0, 100),
       focusSessions: unionById(local.focusSessions, remote.focusSessions),
+      learningLogs: unionById(local.learningLogs || [], remote.learningLogs || []).slice(-5000),
       settings: {
         ...local.settings,
         studyHoursTracked: Math.max(local.settings.studyHoursTracked || 0, remote.settings.studyHoursTracked || 0)
@@ -150,7 +151,8 @@
       domains: [],
       dailyTasks: [],
       activityLog: [],
-      focusSessions: []
+      focusSessions: [],
+      learningLogs: []
     };
   }
 
@@ -282,6 +284,15 @@
       domainName: cleanStr(a.domainName, 200, 'عام'),
       title: cleanStr(a.title, 500),
       timestamp: cleanIso(a.timestamp) || new Date().toISOString()
+    }));
+
+    const logId = makeIdAllocator();
+    out.learningLogs = asArray(raw.learningLogs, 5000).map(l => ({
+      id: logId(l.id, 'learn'), date: cleanDate(l.date) || localDate(),
+      domainId: cleanId(l.domainId) || null, domainName: cleanStr(l.domainName, 200, 'تعلم عام'),
+      minutes: Math.max(1, Math.min(1440, Math.round(cleanNum(l.minutes, 1440)))),
+      summary: cleanStr(l.summary, 1200), concentration: oneOf(l.concentration, ['low','medium','high'], 'medium'),
+      createdAt: cleanIso(l.createdAt) || new Date().toISOString()
     }));
 
     const sesId = makeIdAllocator();
@@ -913,6 +924,57 @@
       return dateString ? list.filter(f => f.date === dateString) : list;
     }
 
+    // ---------------- Learning journal & weekly review ---------------- //
+    addLearningLog(data) {
+      const domain = data.domainId ? this.getDomainById(data.domainId) : null;
+      const minutes = Math.round(Number(data.minutes));
+      if (!Number.isFinite(minutes) || minutes < 1 || minutes > 1440) return null;
+      const entry = { id: uid('learn'), date: cleanDate(data.date) || localDate(),
+        domainId: domain ? domain.id : null, domainName: domain ? domain.name : 'تعلم عام',
+        minutes, summary: cleanStr(data.summary, 1200),
+        concentration: oneOf(data.concentration, ['low','medium','high'], 'medium'),
+        createdAt: new Date().toISOString() };
+      this.data.learningLogs = this.data.learningLogs || [];
+      this.data.learningLogs.push(entry);
+      if (this.data.learningLogs.length > 5000) this.data.learningLogs.shift();
+      this.logActivity('learning_log', entry.domainId, entry.domainName, `سجل تعلم: ${entry.minutes} دقيقة`);
+      this.save(); return entry;
+    }
+
+    getLearningLogs(dateString) {
+      const list = this.data.learningLogs || [];
+      return (dateString ? list.filter(x => x.date === dateString) : [...list])
+        .sort((a,b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
+    }
+
+    getWeeklyReview(referenceDate = new Date()) {
+      const end = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+      const day = (end.getDay() + 6) % 7; // Monday start
+      const start = new Date(end); start.setDate(end.getDate() - day);
+      const prevStart = new Date(start); prevStart.setDate(start.getDate() - 7);
+      const fmt = d => localDate(d);
+      const logs = this.data.learningLogs || [];
+      const sessions = this.data.focusSessions || [];
+      const daily = this.data.dailyTasks || [];
+      const range = (a,b) => ({ logs: logs.filter(x=>x.date>=fmt(a)&&x.date<=fmt(b)), sessions:sessions.filter(x=>x.date>=fmt(a)&&x.date<=fmt(b)), tasks:daily.filter(x=>x.date>=fmt(a)&&x.date<=fmt(b)) });
+      const summarize = r => ({ minutes:r.logs.reduce((n,x)=>n+x.minutes,0)+r.sessions.reduce((n,x)=>n+x.minutes,0),
+        entries:r.logs.length, completed:r.tasks.filter(x=>x.completed).length, total:r.tasks.length,
+        activeDays:new Set([...r.logs.map(x=>x.date),...r.sessions.map(x=>x.date)]).size });
+      const current = summarize(range(start,end)), previous = summarize(range(prevStart,new Date(start.getTime()-86400000)));
+      current.hours = Math.round(current.minutes/60*10)/10; previous.hours=Math.round(previous.minutes/60*10)/10;
+      current.completion = current.total ? Math.round(current.completed/current.total*100) : 0;
+      return { start:fmt(start), end:fmt(end), current, previous, hoursChange:Math.round((current.hours-previous.hours)*10)/10 };
+    }
+
+    getLearningStreak() {
+      const dates = new Set([...(this.data.learningLogs||[]).map(x=>x.date), ...(this.data.focusSessions||[]).map(x=>x.date),
+        ...(this.data.dailyTasks||[]).filter(x=>x.completed).map(x=>x.date)]);
+      let cursor = new Date(); cursor.setHours(0,0,0,0);
+      if (!dates.has(localDate(cursor))) cursor.setDate(cursor.getDate()-1);
+      let streak=0; while (dates.has(localDate(cursor)) && streak<3660) { streak++; cursor.setDate(cursor.getDate()-1); }
+      return streak;
+    }
+
     getPomodoroSettings() {
       return { ...DEFAULT_POMODORO, ...(this.data.settings.pomodoro || {}) };
     }
@@ -1036,7 +1098,8 @@
       const focusMinutes = sessions.reduce((sum, f) => sum + (f.minutes || 0), 0);
       const focusToday = sessions.filter(f => f.date === todayStr).reduce((sum, f) => sum + (f.minutes || 0), 0);
       const manualHours = this.data.settings?.studyHoursTracked || 0;
-      const hoursTracked = Math.round((manualHours + focusMinutes / 60) * 10) / 10;
+      const journalMinutes = (this.data.learningLogs || []).reduce((sum, item) => sum + (item.minutes || 0), 0);
+      const hoursTracked = Math.round((manualHours + (focusMinutes + journalMinutes) / 60) * 10) / 10;
 
       const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 

@@ -6,8 +6,8 @@
   const KEY_STORAGE = 'my_learning_hub_gemini_key_v1';
   const USAGE_STORAGE = 'my_learning_hub_gemini_usage_v1';
   const MODEL_STORAGE = 'my_learning_hub_gemini_model_v1';
-  const DEFAULT_MODEL = 'gemini-3.8-flash';
-  const MODEL_SUGGESTIONS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
+  const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+  const MODEL_SUGGESTIONS = ['gemini-3.5-flash-lite', 'gemini-flash-latest'];
   // Thinking tokens count toward the output limit, so keep this generous or JSON gets cut off.
   const MAX_OUTPUT_TOKENS = 16384;
   const API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models/';
@@ -138,11 +138,12 @@
       `الهدف/المهارة: ${inputs.goal}`,
       `المستوى الحالي: ${inputs.currentLevel}`,
       `المستوى المستهدف: ${inputs.targetLevel || 'يقترحه المدرب بما يناسب الهدف'}`,
-      `الوقت المتاح أسبوعيًا: ${inputs.hoursPerWeek} ساعة تقريبًا`,
       `أيام الدراسة أسبوعيًا: ${inputs.daysPerWeek} أيام`,
+      `الغرض من التعلم: ${inputs.purpose || 'غير محدد؛ اقترح تطبيقات عملية مناسبة'}`,
+      `أسلوب التعلم المفضل: ${inputs.learningStyle || 'متوازن (شرح وتطبيق)'}`,
       `الموعد المستهدف: ${inputs.targetDate || 'غير محدد'}`,
       `تاريخ اليوم: ${localDate()}`,
-      inputs.context ? `معلومات إضافية أو تفضيلات: ${inputs.context}` : ''
+      inputs.context ? `المعرفة السابقة والقيود والتفضيلات: ${inputs.context}` : ''
     ].filter(Boolean).join('\n');
   }
 
@@ -217,7 +218,7 @@
     saveModel(value) {
       const name = cleanText(value, 60).replace(/^models\//, '');
       if (!name) { try { localStorage.removeItem(MODEL_STORAGE); } catch (_) { /* no-op */ } return DEFAULT_MODEL; }
-      if (!/^[a-z0-9][a-z0-9._-]{2,60}$/i.test(name)) throw new Error('اسم النموذج غير صالح. مثال: gemini-3.8-flash');
+      if (!/^[a-z0-9][a-z0-9._-]{2,60}$/i.test(name)) throw new Error('اسم النموذج غير صالح. مثال: gemini-3.5-flash-lite');
       localStorage.setItem(MODEL_STORAGE, name);
       return name;
     },
@@ -236,6 +237,57 @@
       }, 20000);
       if (!res.ok) throw new Error(explainApiError(res.status, res.payload && res.payload.error && res.payload.error.message));
       return { model: getModel() };
+    },
+
+    async chat(messages) {
+      const key = localStorage.getItem(KEY_STORAGE) || '';
+      if (!key) throw new Error('أضف مفتاح Gemini API من الإعدادات أولًا.');
+      const history = (Array.isArray(messages) ? messages : []).slice(-20).map(m => ({
+        role: m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: cleanText(m.text || '', 4000) }]
+      })).filter(m => m.parts[0].text);
+      if (!history.length || history[history.length - 1].role !== 'user') throw new Error('اكتب رسالة أولًا.');
+      recordRequest();
+      const res = await callGemini(key, getModel(), {
+        systemInstruction: { parts: [{ text: 'أنت مساعد ذكي ودود ودقيق. أجب بلغة المستخدم، واجعل الإجابة واضحة ومنظمة ومباشرة. إذا لم تعرف معلومة فصرّح بذلك ولا تخترعها. في المسائل المتخصصة وضّح حدود اليقين.' }] },
+        contents: history,
+        generationConfig: { temperature: 0.65, maxOutputTokens: 1800 }
+      }, 60000);
+      if (!res.ok) throw new Error(explainApiError(res.status, res.payload?.error?.message));
+      const answer = readText(res.payload || {});
+      if (!answer) throw new Error('لم يُرجع Gemini إجابة نصية. أعد المحاولة.');
+      return answer;
+    },
+
+    async coachProgress(snapshot) {
+      const key = localStorage.getItem(KEY_STORAGE) || '';
+      if (!key) throw new Error('أضف مفتاح Gemini API من الإعدادات أولًا.');
+      const prompt = `أنت مدرب تعلم شخصي. حلل بيانات المتعلم التالية وقدّم تقريرًا عربيًا عمليًا ومختصرًا: ملخص التقدم، 3 نقاط قوة/تعثر مدعومة بالبيانات، أهم عائق محتمل، وثلاث خطوات محددة للأسبوع القادم. لا تخترع معلومات ولا توبّخ المتعلم.
+
+البيانات:
+${JSON.stringify(snapshot).slice(0, 14000)}`;
+      recordRequest();
+      const res = await callGemini(key, getModel(), { contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4,maxOutputTokens:1400} }, 60000);
+      if (!res.ok) throw new Error(explainApiError(res.status, res.payload?.error?.message));
+      const text = readText(res.payload || {});
+      if (!text) throw new Error('لم يُرجع Gemini تقريرًا. أعد المحاولة.');
+      return text;
+    },
+
+    async replanTasks(snapshot) {
+      const key = localStorage.getItem(KEY_STORAGE) || '';
+      if (!key) throw new Error('أضف مفتاح Gemini API من الإعدادات أولًا.');
+      const prompt = `أعد توزيع المهام غير المكتملة في خطة التعلم التالية على تواريخ واقعية ابتداءً من اليوم ${localDate()}. حافظ على ترتيب المراحل وأولوية المهام، لا تحذف أو تضف مهامًا ولا تغيّر عناوينها. وزّع الحمل حسب الساعات المتاحة أسبوعيًا. أخرج JSON فقط بهذا الشكل: {"schedule":[{"taskId":"المعرف كما هو","dueDate":"YYYY-MM-DD"}],"note":"ملاحظة عربية قصيرة"}. أدرج كل معرف مهمة غير مكتملة مرة واحدة فقط.
+
+${JSON.stringify(snapshot).slice(0, 14000)}`;
+      recordRequest();
+      const res = await callGemini(key, getModel(), { contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.2,maxOutputTokens:1800,responseMimeType:'application/json'} }, 60000);
+      if (!res.ok) throw new Error(explainApiError(res.status, res.payload?.error?.message));
+      const text = readText(res.payload || {});
+      if (!text) throw new Error('لم يُرجع Gemini جدولًا لإعادة التخطيط.');
+      let parsed; try { parsed = parseJsonText(text); } catch (_) { throw new Error('تعذر قراءة جدول إعادة التخطيط. أعد المحاولة.'); }
+      if (!parsed || !Array.isArray(parsed.schedule)) throw new Error('صيغة جدول إعادة التخطيط غير صحيحة.');
+      return { schedule: parsed.schedule.filter(x => x && typeof x.taskId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.dueDate || '')).slice(0,100), note: cleanText(parsed.note || '', 500) };
     },
 
     async generatePlan(inputs) {

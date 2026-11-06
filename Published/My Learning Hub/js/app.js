@@ -12,10 +12,13 @@
     domainFilter: { status: 'all', search: '' },
     aiPlanDraft: null,
     aiRequesting: false,
-    aiForm: { goal: '', currentLevel: 'مبتدئ', targetLevel: '', hoursPerWeek: 5, daysPerWeek: 5, targetDate: '', context: '' },
+    freeChatMessages: [],
+    freeChatBusy: false,
+    aiForm: { goal: '', currentLevel: 'مبتدئ', targetLevel: '', daysPerWeek: 5, targetDate: '', purpose: '', learningStyle: 'متوازن (شرح وتطبيق)', context: '' },
 
     init() {
       this.restoreAiState();
+      this.restoreFreeChat();
 
       // 1. Setup Theme from Store
       const settings = LearningStore.getSettings();
@@ -91,10 +94,11 @@
         dispatch(el, e);
       });
 
-      ['change', 'input'].forEach(type => {
+      ['change', 'input', 'submit'].forEach(type => {
         document.addEventListener(type, (e) => {
           const el = e.target.closest('[data-action]');
           if (!el || el.dataset.event !== type) return;
+          if (type === 'submit') e.preventDefault();
           dispatch(el, e);
         });
       });
@@ -166,6 +170,9 @@
         case 'ai-assistant':
           this.persistAiState();
           Views.renderAiAssistant(container, this.aiPlanDraft, this.aiRequesting, this.aiForm);
+          break;
+        case 'ai-chat':
+          Views.renderFreeChat(container, this.freeChatMessages, this.freeChatBusy);
           break;
         default:
           Views.renderDashboard(container);
@@ -1314,6 +1321,123 @@
       }, 'إيقاف المزامنة', true);
     },
 
+    // ---------------- Gemini Coach & adaptive replanning ---------------- //
+    buildDomainLearningSnapshot(domain) {
+      const review = LearningStore.getWeeklyReview();
+      const stages = (domain.stages || []).map(stage => ({
+        id: stage.id, title: stage.title, status: stage.status,
+        tasks: (stage.tasks || []).map(task => ({ id: task.id, title: task.title, status: task.status,
+          priority: task.priority, dueDate: task.dueDate || '', estimatedHours: task.estimatedHours || 0 }))
+      }));
+      const allTasks = stages.flatMap(stage => stage.tasks);
+      const logs = (LearningStore.getLearningLogs() || []).filter(x => x.domainId === domain.id).slice(0,40)
+        .map(x => ({ date:x.date, minutes:x.minutes, concentration:x.concentration, summary:x.summary }));
+      return { domain:{ name:domain.name, goal:domain.targetGoal, currentLevel:domain.currentLevel, targetLevel:domain.targetLevel, targetDate:domain.targetDate },
+        stages, stats:{ total:allTasks.length, completed:allTasks.filter(t=>t.status==='completed').length,
+          overdue:allTasks.filter(t=>t.status!=='completed' && t.dueDate && t.dueDate < today()).length },
+        weeklyReview:review.current, weeklyHoursAvailable:5, learningLogs:logs };
+    },
+
+    async runGeminiCoach(domainId, el) {
+      const domain = LearningStore.getDomainById(domainId); if (!domain) return;
+      if (!GeminiAssistant.hasKey()) { UI.showToast('أضف مفتاح Gemini API من الإعدادات أولًا.', 'error'); return; }
+      if (el) el.disabled = true;
+      UI.showToast('يجري Gemini تحليل تقدمك…');
+      try {
+        const report = await GeminiAssistant.coachProgress(this.buildDomainLearningSnapshot(domain));
+        const safe = String(report).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])).replace(/\n/g,'<br>');
+        UI.openModal('تقرير مدرب Gemini', `<div class="gemini-coach-report">${safe}</div>`, null);
+      } catch (error) { UI.showToast(error.message || 'تعذر تحليل التقدم.', 'error', 7000); }
+      finally { if (el) el.disabled = false; }
+    },
+
+    async replanDomain(domainId, el) {
+      const domain = LearningStore.getDomainById(domainId); if (!domain) return;
+      if (!GeminiAssistant.hasKey()) { UI.showToast('أضف مفتاح Gemini API من الإعدادات أولًا.', 'error'); return; }
+      const tasks = (domain.stages || []).flatMap(stage => (stage.tasks || []).filter(t=>t.status!=='completed').map(t=>({ id:t.id, title:t.title, status:t.status, priority:t.priority, dueDate:t.dueDate||'', estimatedHours:t.estimatedHours||0 })));
+      if (!tasks.length) { UI.showToast('لا توجد مهام غير مكتملة لإعادة جدولتها.'); return; }
+      if (el) el.disabled = true;
+      UI.showToast('يجري Gemini إعادة توزيع المهام…');
+      try {
+        const result = await GeminiAssistant.replanTasks({ domainName:domain.name, goal:domain.targetGoal, tasks,
+          hoursPerWeek:5, daysPerWeek:5, today:today() });
+        const taskMap = new Map(tasks.map(t=>[t.id,t]));
+        const valid = result.schedule.filter(item=>taskMap.has(item.taskId));
+        if (!valid.length) throw new Error('لم ينتج Gemini تواريخ صالحة للمهام.');
+        const rows = valid.map(item=>`<li>${taskMap.get(item.taskId).title}: <strong>${UI.formatDate(item.dueDate)}</strong></li>`).join('');
+        const note = String(result.note||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        UI.openModal('مراجعة إعادة التخطيط', `<p>سيتم تحديث مواعيد ${valid.length} من ${tasks.length} مهمة غير مكتملة. لن تتغير عناوين المهام أو حالات إنجازها.</p><ul class="replan-preview-list">${rows}</ul><p class="text-muted">${note}</p>`, () => {
+          let updated=0;
+          for (const item of valid) {
+            for (const stage of domain.stages) {
+              if ((stage.tasks||[]).some(t=>t.id===item.taskId)) {
+                if (LearningStore.updateTask(domain.id, stage.id, item.taskId, { dueDate:item.dueDate })) updated++;
+                break;
+              }
+            }
+          }
+          this.renderCurrentView(); UI.showToast(`تم تحديث مواعيد ${updated} مهمة.`);
+        }, 'اعتماد الجدول');
+      } catch (error) { UI.showToast(error.message || 'تعذرت إعادة التخطيط.', 'error', 7000); }
+      finally { if (el) el.disabled = false; }
+    },
+
+    // ---------------- Free Gemini conversation ---------------- //
+    persistFreeChat() {
+      try { sessionStorage.setItem('my_learning_hub_free_chat_v1', JSON.stringify(this.freeChatMessages.slice(-40))); } catch (_) {}
+    },
+    restoreFreeChat() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('my_learning_hub_free_chat_v1') || '[]');
+        if (Array.isArray(saved)) this.freeChatMessages = saved.filter(m => m && ['user','model'].includes(m.role) && typeof m.text === 'string').slice(-40).map(m => ({ role:m.role, text:m.text.slice(0,5000) }));
+      } catch (_) { this.freeChatMessages = []; }
+    },
+    openChatFromDashboard(form) {
+      const field = form?.querySelector('[name="dashboard-chat-prompt"]');
+      const prompt = String(field?.value || '').trim();
+      if (!prompt) return;
+      if (!GeminiAssistant.hasKey()) {
+        UI.showToast('أضف مفتاح Gemini API من الإعدادات أولًا.', 'error');
+        this.navigate('settings');
+        return;
+      }
+      this.navigate('ai-chat');
+      const chatInput = document.getElementById('free-chat-input');
+      if (chatInput) { chatInput.value = prompt; this.sendFreeChat(); }
+    },
+
+    async sendFreeChat(form) {
+      if (this.freeChatBusy) return;
+      const input = document.getElementById('free-chat-input');
+      const text = String(input?.value || '').trim();
+      if (!text) return;
+      if (!GeminiAssistant.hasKey()) { UI.showToast('أضف مفتاح Gemini API من الإعدادات أولًا.', 'error'); return; }
+      this.freeChatMessages.push({ role:'user', text:text.slice(0,4000) });
+      this.freeChatMessages = this.freeChatMessages.slice(-40);
+      this.freeChatBusy = true;
+      this.persistFreeChat();
+      this.renderCurrentView();
+      try {
+        const answer = await GeminiAssistant.chat(this.freeChatMessages);
+        this.freeChatMessages.push({ role:'model', text:answer });
+        this.persistFreeChat();
+      } catch (error) {
+        // Keep the user's message so it can be retried, but show the API error clearly.
+        UI.showToast(error?.message || 'تعذر إرسال الرسالة إلى Gemini.', 'error', 9000);
+      } finally {
+        this.freeChatBusy = false;
+        if (this.currentRoute === 'ai-chat') this.renderCurrentView();
+      }
+    },
+    clearFreeChat() {
+      if (!this.freeChatMessages.length) return;
+      UI.confirmDialog('بدء محادثة جديدة', 'سيتم مسح سجل المحادثة الحالية من جلسة هذا المتصفح. هل تريد المتابعة؟', () => {
+        this.freeChatMessages = [];
+        this.persistFreeChat();
+        this.renderCurrentView();
+      }, 'محادثة جديدة');
+    },
+
     // ---------------- Gemini plan assistant ---------------- //
     // The form and draft survive re-renders and page navigation (sessionStorage, this tab only).
     persistAiState() {
@@ -1332,7 +1456,8 @@
             goal: String(f.goal || '').slice(0, 240),
             currentLevel: String(f.currentLevel ?? 'مبتدئ').slice(0, 80),
             targetLevel: String(f.targetLevel || '').slice(0, 80),
-            hoursPerWeek: Number(f.hoursPerWeek) || 5,
+            purpose: String(f.purpose || '').slice(0, 240),
+            learningStyle: String(f.learningStyle || 'متوازن (شرح وتطبيق)').slice(0, 80),
             daysPerWeek: Number(f.daysPerWeek) || 5,
             targetDate: /^\d{4}-\d{2}-\d{2}$/.test(f.targetDate || '') ? f.targetDate : '',
             context: String(f.context || '').slice(0, 700)
@@ -1401,7 +1526,8 @@
         goal: goal.slice(0, 240),
         currentLevel: String(f.currentLevel || '').trim().slice(0, 80) || 'مبتدئ',
         targetLevel: String(f.targetLevel || '').trim().slice(0, 80),
-        hoursPerWeek: Math.min(80, Math.max(1, Number(f.hoursPerWeek) || 5)),
+        purpose: String(f.purpose || '').trim().slice(0, 240),
+        learningStyle: String(f.learningStyle || 'متوازن (شرح وتطبيق)').slice(0, 80),
         daysPerWeek: Math.min(7, Math.max(1, Number(f.daysPerWeek) || 5)),
         targetDate: f.targetDate || '',
         context: String(f.context || '').trim().slice(0, 700)
@@ -1487,6 +1613,27 @@
       this.persistAiState();
       this.navigate('domain-detail', { domainId: domain.id, tab: 'plan' });
       UI.showToast('تم حفظ خطة التعلّم ومهامها ضمن مجالات التعلم.');
+    },
+
+    addLearningLog(form, event) {
+      if (event) event.preventDefault();
+      const entry = LearningStore.addLearningLog({
+        domainId: document.getElementById('log-domain').value || null,
+        minutes: document.getElementById('log-minutes').value,
+        concentration: document.getElementById('log-focus').value,
+        summary: document.getElementById('log-summary').value.trim()
+      });
+      if (!entry) { UI.showToast('أدخل مدة صحيحة بين دقيقة و24 ساعة.', 'error'); return; }
+      UI.showToast('تم تسجيل جلسة التعلم.');
+    },
+
+    printWeeklyReview() {
+      const w = LearningStore.getWeeklyReview();
+      const title = `تقرير التعلم الأسبوعي ${w.start} — ${w.end}`;
+      const report = `<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#172033;line-height:1.8}h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:20px}td,th{border:1px solid #ddd;padding:12px;text-align:right}.muted{color:#64748b}</style></head><body><h1>${title}</h1><p>ملخص أدائك خلال الأسبوع الحالي</p><table><tr><th>المؤشر</th><th>النتيجة</th></tr><tr><td>ساعات التعلم المسجلة</td><td>${w.current.hours} ساعة</td></tr><tr><td>أيام النشاط</td><td>${w.current.activeDays} من 7</td></tr><tr><td>المهام المنجزة</td><td>${w.current.completed} من ${w.current.total}</td></tr><tr><td>التغير عن الأسبوع السابق</td><td>${w.hoursChange} ساعة</td></tr></table><p class="muted">تم إنشاء التقرير من My Learning Hub.</p><script>window.onload=()=>window.print()<\/script></body></html>`;
+      const win = window.open('', '_blank');
+      if (!win) { UI.showToast('اسمح بالنوافذ المنبثقة لتصدير التقرير.', 'error'); return; }
+      win.document.open(); win.document.write(report); win.document.close();
     },
 
     // ---------------- Settings & Backup ---------------- //

@@ -230,6 +230,35 @@ console.log('\nBusiness logic');
   });
 }
 
+console.log('\nLearning journal and weekly insights');
+{
+  const w = loadApp();
+  const S = w.LearningStore;
+  S.resetData(false);
+  test('learning journal entries validate and persist', () => {
+    const item = S.addLearningLog({ minutes: 45, summary: 'قرأت أساسيات المكامن', concentration: 'high' });
+    assert.ok(item && item.minutes === 45);
+    assert.strictEqual(S.getLearningLogs().length, 1);
+    assert.strictEqual(S.getAnalytics().hoursTracked, 0.8);
+    assert.strictEqual(S.addLearningLog({ minutes: 0 }), null);
+  });
+  test('weekly review aggregates journal, focus, and daily tasks', () => {
+    const today = w.LearningUtils.localDate();
+    S.addLearningLog({ minutes: 60, date: today });
+    const review = S.getWeeklyReview(new Date());
+    assert.ok(review.current.minutes >= 60);
+    assert.ok(review.current.activeDays >= 1);
+    assert.ok(review.start <= review.end);
+  });
+  test('learning streak counts consecutive activity days', () => {
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    S.addLearningLog({ minutes: 20, date: w.LearningUtils.localDate(today) });
+    S.addLearningLog({ minutes: 20, date: w.LearningUtils.localDate(yesterday) });
+    assert.strictEqual(S.getLearningStreak(), 2);
+  });
+}
+
 console.log('\nGemini assistant and generated plans');
 {
   const loadWithGemini = () => {
@@ -296,7 +325,7 @@ console.log('\nGemini request robustness');
 
   test('request uses documented REST fields (upper-case schema types, no responseFormat)', () => {
     const w = mk(); let body;
-    w.fetch = async (url, opt) => { body = JSON.parse(opt.body); assert.ok(url.includes('/gemini-3.8-flash:generateContent')); assert.ok(!url.includes('key=')); return ok(JSON.stringify(plan)); };
+    w.fetch = async (url, opt) => { body = JSON.parse(opt.body); assert.ok(url.includes('/gemini-3.5-flash-lite:generateContent')); assert.ok(!url.includes('key=')); return ok(JSON.stringify(plan)); };
     return w.GeminiAssistant.generatePlan(inputs).then(() => {
       const g = body.generationConfig;
       assert.strictEqual(g.responseMimeType, 'application/json');
@@ -335,12 +364,12 @@ console.log('\nGemini request robustness');
   });
   test('model can be changed and validated', () => {
     const w = mk();
-    assert.strictEqual(w.GeminiAssistant.model, 'gemini-3.8-flash');
+    assert.strictEqual(w.GeminiAssistant.model, 'gemini-3.5-flash-lite');
     w.GeminiAssistant.saveModel('models/gemini-flash-latest');
     assert.strictEqual(w.GeminiAssistant.model, 'gemini-flash-latest');
     assert.throws(() => w.GeminiAssistant.saveModel('bad name/../x'));
     w.GeminiAssistant.saveModel('');
-    assert.strictEqual(w.GeminiAssistant.model, 'gemini-3.8-flash');
+    assert.strictEqual(w.GeminiAssistant.model, 'gemini-3.5-flash-lite');
   });
 }
 

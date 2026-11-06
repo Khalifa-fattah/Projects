@@ -1,6 +1,6 @@
 /* sw.js - offline support for My Learning Journey.
    Bump CACHE_VERSION whenever you deploy changed files so users get the update. */
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = `learning-hub-${CACHE_VERSION}`;
 const APP_SHELL = [
   './',
