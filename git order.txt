@@ -1,5 +1,16 @@
 أوامر Git - Projects
 
+رفع مشروع الى GitHub
+
+cd "e:\Projects\مجلد المشروع"
+git init
+git add .
+git commit -m "Initial commit of Shortcuts Master PWA"
+git branch -M main
+git remote add origin https://github.com/khalifa-fattah/اسم المستودع.git
+git push -u origin main
+
+
 📱 الهاتف - Termux
 
 1. رفع تعديلات الهاتف إلى GitHub
