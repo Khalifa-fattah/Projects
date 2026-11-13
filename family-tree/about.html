@@ -11,31 +11,44 @@
     <header class="header">
         <div class="container">
             <h1 class="main-title">قصة عائلتنا</h1>
-            <p class="subtitle">جذور تمتد عبر الزمن</p>
+            <p class="subtitle">جذور تمتد عبر الزمن والأجيال</p>
+            <div class="header-buttons" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                <a href="index.html" class="btn-tree">قائمة الأجيال</a>
+                <a href="tree.html" class="btn-tree">الشجرة المرئية</a>
+                <a href="about.html" class="btn-tree" style="background-color: #3498db; color: white;">عن العائلة</a>
+                <a href="edit.html" class="btn-tree" style="background-color: #e74c3c; color: white;">تعديل البيانات</a>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
-            <div class="about-section" style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: var(--shadow ); text-align: center;">
-                <h2 style="font-family: 'Amiri', serif; color: var(--primary-color); margin-bottom: 1.5rem;">
-                    تاريخ العائلة
+            <div class="about-section" style="background: #fff; padding: 2.5rem 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; max-width: 800px; margin: 2rem auto;">
+                <h2 style="font-family: 'Amiri', serif; color: var(--primary-color); margin-bottom: 1.5rem; font-size: 2rem;">
+                    تاريخ وجذور العائلة
                 </h2>
-                <p style="line-height: 1.8; margin-bottom: 1rem;">
-                    بدأت جزور العائلة من مدينة مروي 
+                <p style="line-height: 2; margin-bottom: 1.25rem; font-size: 1.1rem; color: #444;">
+                    بدأت جذور العائلة العريقة من مدينة مروي بالولاية الشمالية، حاملة معها إرثاً غنياً من القيم والتكافل والمحبة الممتدة عبر الأجيال.
                 </p>
-                <p style="line-height: 1.8;">
-                    هذا المشروع هو محاولة لتوثيق هذه الروابط العريقة والحفاظ على إرث الأجيال القادمة. كل فرد في هذه الشجرة هو جزء من قصة كبيرة وممتدة.
+                <p style="line-height: 2; font-size: 1.1rem; color: #444; margin-bottom: 2rem;">
+                    هذا المشروع هو مبادرة لتوثيق هذه الروابط الأسرية العريقة، وتيسير صلة الرحم والتعارف بين أبناء وبنات العائلة، وحفظ هذا الإرث للأجيال القادمة. كل فرد في هذه الشجرة هو لبنة أساسية في قصة العائلة المباركة.
                 </p>
-                <a href="index.html" class="btn-tree" style="margin-top: 2rem;">العودة للصفحة الرئيسية</a>
+                <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                    <a href="index.html" class="btn-tree">تصفح قائمة الأجيال</a>
+                    <a href="tree.html" class="btn-tree" style="background-color: var(--secondary-color); color: white;">عرض الشجرة الرسومية</a>
+                </div>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 شجرة العائلة. جميع الحقوق محفوظة.</p>
+            <p>&copy; <span id="currentYear"></span> شجرة العائلة. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>

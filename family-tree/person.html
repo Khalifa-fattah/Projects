@@ -3,25 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">شجرة العائلة</title>
+    <title id="pageTitle">الملف الشخصي - شجرة العائلة</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .ancestor-chain {
+            background: #ffffff;
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .ancestor-chain .chain-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-left: 0.5rem;
+        }
+        .ancestor-chain a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .ancestor-chain a:hover {
+            text-decoration: underline;
+        }
+        .ancestor-chain .separator {
+            color: #95a5a6;
+        }
+        .ancestor-chain .current-person {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .person-actions {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .btn-edit-person {
+            background-color: #27ae60;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+        .btn-edit-person:hover {
+            background-color: #219653;
+            transform: translateY(-2px);
+        }
+        .siblings-section {
+            background: #ffffff;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .siblings-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .sibling-badge {
+            background: #f4f6f9;
+            border: 1px solid #e1e8ed;
+            padding: 8px 14px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sibling-badge:hover {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+    </style>
 </head>
 <body>
     <header class="header">
         <div class="container">
-            <nav class="navigation">
-                <a href="index.html" class="back-link">← العودة للصفحة الرئيسية</a>
-            </nav>
+            <h1 class="main-title">شجرة العائلة</h1>
+            <p class="subtitle">الملف التعريفي للفرد</p>
+            <div class="header-buttons" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                <a href="index.html" class="btn-tree">قائمة الأجيال</a>
+                <a href="tree.html" class="btn-tree">الشجرة المرئية</a>
+                <a href="about.html" class="btn-tree">عن العائلة</a>
+                <a href="edit.html" class="btn-tree" style="background-color: #e74c3c; color: white;">تعديل البيانات</a>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
+            <!-- مسار سلسلة النسب -->
+            <div id="ancestorChain" class="ancestor-chain">
+                <span class="chain-title">سلسلة النسب:</span>
+                <span id="ancestorLinks"></span>
+            </div>
+
             <div class="person-profile">
                 <!-- صورة الشخص -->
                 <div class="person-image-container">
-                    <img id="personImage" src="" alt="" class="person-image">
+                    <img id="personImage" src="images/default-avatar.svg" alt="" class="person-image">
                 </div>
 
                 <!-- معلومات الشخص -->
@@ -37,23 +138,35 @@
                             <span id="personGeneration" class="detail-value"></span>
                         </div>
                         <div class="detail-item">
-    <span class="detail-label">الوالد:</span>
-    <span id="personParent" class="detail-value"></span>
-</div>
+                            <span class="detail-label">الوالد:</span>
+                            <span id="personParent" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item" id="partnerItem" style="display: none;">
+                            <span class="detail-label">الزوج / الزوجة:</span>
+                            <span id="personPartner" class="detail-value"></span>
+                        </div>
                     </div>
                     <div class="person-bio">
                         <h3>نبذة شخصية</h3>
                         <p id="personBio"></p>
                     </div>
+
+                    <div class="person-actions">
+                        <a id="editPersonBtn" href="#" class="btn-edit-person">✏️ تعديل بيانات هذا الشخص</a>
+                    </div>
                 </div>
+            </div>
+
+            <!-- قائمة الإخوة والأخوات -->
+            <div id="siblingsSection" class="siblings-section hidden">
+                <h2 class="section-title">الإخوة والأخوات</h2>
+                <div id="siblingsContainer" class="siblings-container"></div>
             </div>
 
             <!-- قائمة الأبناء -->
             <div id="childrenSection" class="children-section">
                 <h2 class="section-title">الأبناء</h2>
-                <div id="childrenContainer" class="children-container">
-                    <!-- سيتم ملء هذا القسم ديناميكياً -->
-                </div>
+                <div id="childrenContainer" class="children-container"></div>
             </div>
 
             <!-- رسالة في حالة عدم وجود أبناء -->
@@ -65,7 +178,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 شجرة العائلة. جميع الحقوق محفوظة.</p>
+            <p>&copy; <span id="currentYear"></span> شجرة العائلة. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
 

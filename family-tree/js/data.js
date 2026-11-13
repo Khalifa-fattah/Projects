@@ -1,5 +1,5 @@
 // بيانات شجرة العائلة
-const familyData = [
+const defaultFamilyData = [
     {
         generation_number: 1,
         generation_name: "الجيل الأول - الأجداد",
@@ -97,7 +97,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person2_8",
@@ -433,7 +433,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_31",
@@ -453,7 +453,7 @@ const familyData = [
                 image: "",
                 bio: "له الرحمه",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_33",
@@ -513,7 +513,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_39",
@@ -523,7 +523,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_40",
@@ -533,7 +533,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_41",
@@ -543,7 +543,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_42",
@@ -553,7 +553,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_43",
@@ -563,7 +563,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_44",
@@ -573,7 +573,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_45",
@@ -583,7 +583,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_46",
@@ -593,7 +593,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_47",
@@ -603,7 +603,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             {
                 id: "person3_48",
@@ -613,7 +613,7 @@ const familyData = [
                 image: "",
                 bio: "",
                 birth_date: "",
-                children: [""]
+                children: []
             },
             // أضف باقي الجيل الثالث بنفس الطريقة مع parentId الصحيح
         ]
@@ -1139,13 +1139,85 @@ const familyData = [
     }
 ];
 
+// المتغير النشط لبيانات العائلة
+let familyData = defaultFamilyData;
+
+// التحقق من وجود بيانات معدلة ومحفوظة في المتصفح
+try {
+    const savedData = typeof localStorage !== 'undefined' ? localStorage.getItem('family_tree_data') : null;
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            familyData = parsed;
+        }
+    }
+} catch (e) {
+    console.warn('تعذر تحميل البيانات من localStorage:', e);
+}
+
 // فهرس للبحث السريع
-const personIndex = {};
-familyData.forEach(generation => {
-    generation.members.forEach(person => {
-        personIndex[person.id] = person;
+let personIndex = {};
+
+function rebuildPersonIndex() {
+    personIndex = {};
+    familyData.forEach(generation => {
+        if (generation.members) {
+            generation.members.forEach(person => {
+                personIndex[person.id] = person;
+            });
+        }
     });
-});
+}
+rebuildPersonIndex();
+
+// حفظ البيانات في localStorage
+function saveFamilyData(data) {
+    familyData = data;
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('family_tree_data', JSON.stringify(data));
+        }
+    } catch (e) {
+        console.error('فشل حفظ البيانات في المتصفح:', e);
+        return false;
+    }
+    rebuildPersonIndex();
+    return true;
+}
+
+// استعادة البيانات الأصلية
+function resetFamilyData() {
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('family_tree_data');
+        }
+    } catch (e) {}
+    familyData = JSON.parse(JSON.stringify(defaultFamilyData));
+    rebuildPersonIndex();
+    return true;
+}
+
+// فحص هل البيانات المعروضة معدلة محلياً
+function isCustomDataLoaded() {
+    try {
+        return typeof localStorage !== 'undefined' && !!localStorage.getItem('family_tree_data');
+    } catch (e) {
+        return false;
+    }
+}
+
+// تطبيع النصوص العربية لتسهيل البحث وتجاهل الفروق في الهمزات والياء والتاء المربوطة
+function normalizeArabicText(text) {
+    if (!text) return '';
+    return text
+        .toString()
+        .toLowerCase()
+        .replace(/[\u064B-\u065F\u0670]/g, '') // إزالة التشكيل
+        .replace(/[إأآا]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .trim();
+}
 
 // دالة للحصول على شخص بواسطة ID
 function getPersonById(id) {
@@ -1156,20 +1228,57 @@ function getPersonById(id) {
 function getPersonChildren(personId) {
     const person = getPersonById(personId);
     if (!person || !person.children) return [];
-    
-    return person.children.map(childId => getPersonById(childId)).filter(child => child);
+    return person.children
+        .map(childId => getPersonById(childId))
+        .filter(child => Boolean(child));
 }
 
-// دالة للبحث في الأسماء
+// الحصول على إخوة شخص معين (أبناء نفس الأب)
+function getPersonSiblings(personId) {
+    const person = getPersonById(personId);
+    if (!person || !person.parentId) return [];
+    const parent = getPersonById(person.parentId);
+    if (!parent || !parent.children) return [];
+    return parent.children
+        .filter(cId => cId !== personId)
+        .map(cId => getPersonById(cId))
+        .filter(Boolean);
+}
+
+// الحصول على سلسلة النسب لأعلى (من الجد الأكبر وصولاً للشخص)
+function getPersonAncestors(personId) {
+    const ancestors = [];
+    let current = getPersonById(personId);
+    while (current && current.parentId) {
+        const parent = getPersonById(current.parentId);
+        if (parent) {
+            ancestors.unshift(parent);
+            current = parent;
+        } else {
+            break;
+        }
+    }
+    return ancestors;
+}
+
+// دالة متقدمة للبحث في الأسماء والنبذة والوالد
 function searchPeople(query) {
     if (!query || query.trim() === '') return [];
-    
-    const searchTerm = query.trim().toLowerCase();
+    const normalizedQuery = normalizeArabicText(query);
     const results = [];
     
     familyData.forEach(generation => {
+        if (!generation.members) return;
         generation.members.forEach(person => {
-            if (person.name.toLowerCase().includes(searchTerm)) {
+            const normalizedName = normalizeArabicText(person.name);
+            const normalizedBio = normalizeArabicText(person.bio || '');
+            let parentName = '';
+            if (person.parentId && personIndex[person.parentId]) {
+                parentName = normalizeArabicText(personIndex[person.parentId].name);
+            }
+            if (normalizedName.includes(normalizedQuery) ||
+                normalizedBio.includes(normalizedQuery) ||
+                parentName.includes(normalizedQuery)) {
                 results.push({
                     ...person,
                     generation_name: generation.generation_name
@@ -1184,6 +1293,7 @@ function searchPeople(query) {
 // دالة للحصول على اسم الجيل لشخص معين
 function getPersonGeneration(personId) {
     for (let generation of familyData) {
+        if (!generation.members) continue;
         for (let member of generation.members) {
             if (member.id === personId) {
                 return generation.generation_name;
@@ -1191,4 +1301,12 @@ function getPersonGeneration(personId) {
         }
     }
     return 'غير محدد';
+}
+
+// توليد كود ملف data.js كامل للتحميل أو الحفظ الخارجي
+function generateDataJsFileString(dataToExport) {
+    const targetData = dataToExport || familyData;
+    const jsonStr = JSON.stringify(targetData, null, 4);
+    const helpers = "// المتغير النشط لبيانات العائلة\nlet familyData = defaultFamilyData;\n\n// التحقق من وجود بيانات معدلة ومحفوظة في المتصفح\ntry {\n    const savedData = typeof localStorage !== 'undefined' ? localStorage.getItem('family_tree_data') : null;\n    if (savedData) {\n        const parsed = JSON.parse(savedData);\n        if (Array.isArray(parsed) && parsed.length > 0) {\n            familyData = parsed;\n        }\n    }\n} catch (e) {\n    console.warn('تعذر تحميل البيانات من localStorage:', e);\n}\n\n// فهرس للبحث السريع\nlet personIndex = {};\n\nfunction rebuildPersonIndex() {\n    personIndex = {};\n    familyData.forEach(generation => {\n        if (generation.members) {\n            generation.members.forEach(person => {\n                personIndex[person.id] = person;\n            });\n        }\n    });\n}\nrebuildPersonIndex();\n\n// حفظ البيانات في localStorage\nfunction saveFamilyData(data) {\n    familyData = data;\n    try {\n        if (typeof localStorage !== 'undefined') {\n            localStorage.setItem('family_tree_data', JSON.stringify(data));\n        }\n    } catch (e) {\n        console.error('فشل حفظ البيانات في المتصفح:', e);\n        return false;\n    }\n    rebuildPersonIndex();\n    return true;\n}\n\n// استعادة البيانات الأصلية\nfunction resetFamilyData() {\n    try {\n        if (typeof localStorage !== 'undefined') {\n            localStorage.removeItem('family_tree_data');\n        }\n    } catch (e) {}\n    familyData = JSON.parse(JSON.stringify(defaultFamilyData));\n    rebuildPersonIndex();\n    return true;\n}\n\n// فحص هل البيانات المعروضة معدلة محلياً\nfunction isCustomDataLoaded() {\n    try {\n        return typeof localStorage !== 'undefined' && !!localStorage.getItem('family_tree_data');\n    } catch (e) {\n        return false;\n    }\n}\n\n// تطبيع النصوص العربية لتسهيل البحث وتجاهل الفروق في الهمزات والياء والتاء المربوطة\nfunction normalizeArabicText(text) {\n    if (!text) return '';\n    return text\n        .toString()\n        .toLowerCase()\n        .replace(/[\\u064B-\\u065F\\u0670]/g, '') // إزالة التشكيل\n        .replace(/[إأآا]/g, 'ا')\n        .replace(/ة/g, 'ه')\n        .replace(/ى/g, 'ي')\n        .trim();\n}\n\n// دالة للحصول على شخص بواسطة ID\nfunction getPersonById(id) {\n    return personIndex[id];\n}\n\n// دالة للحصول على أطفال شخص معين\nfunction getPersonChildren(personId) {\n    const person = getPersonById(personId);\n    if (!person || !person.children) return [];\n    return person.children\n        .map(childId => getPersonById(childId))\n        .filter(child => Boolean(child));\n}\n\n// الحصول على إخوة شخص معين (أبناء نفس الأب)\nfunction getPersonSiblings(personId) {\n    const person = getPersonById(personId);\n    if (!person || !person.parentId) return [];\n    const parent = getPersonById(person.parentId);\n    if (!parent || !parent.children) return [];\n    return parent.children\n        .filter(cId => cId !== personId)\n        .map(cId => getPersonById(cId))\n        .filter(Boolean);\n}\n\n// الحصول على سلسلة النسب لأعلى (من الجد الأكبر وصولاً للشخص)\nfunction getPersonAncestors(personId) {\n    const ancestors = [];\n    let current = getPersonById(personId);\n    while (current && current.parentId) {\n        const parent = getPersonById(current.parentId);\n        if (parent) {\n            ancestors.unshift(parent);\n            current = parent;\n        } else {\n            break;\n        }\n    }\n    return ancestors;\n}\n\n// دالة متقدمة للبحث في الأسماء والنبذة والوالد\nfunction searchPeople(query) {\n    if (!query || query.trim() === '') return [];\n    const normalizedQuery = normalizeArabicText(query);\n    const results = [];\n    \n    familyData.forEach(generation => {\n        if (!generation.members) return;\n        generation.members.forEach(person => {\n            const normalizedName = normalizeArabicText(person.name);\n            const normalizedBio = normalizeArabicText(person.bio || '');\n            let parentName = '';\n            if (person.parentId && personIndex[person.parentId]) {\n                parentName = normalizeArabicText(personIndex[person.parentId].name);\n            }\n            if (normalizedName.includes(normalizedQuery) ||\n                normalizedBio.includes(normalizedQuery) ||\n                parentName.includes(normalizedQuery)) {\n                results.push({\n                    ...person,\n                    generation_name: generation.generation_name\n                });\n            }\n        });\n    });\n    \n    return results;\n}\n\n// دالة للحصول على اسم الجيل لشخص معين\nfunction getPersonGeneration(personId) {\n    for (let generation of familyData) {\n        if (!generation.members) continue;\n        for (let member of generation.members) {\n            if (member.id === personId) {\n                return generation.generation_name;\n            }\n        }\n    }\n    return 'غير محدد';\n}\n\n";
+    return "// بيانات شجرة العائلة\nconst defaultFamilyData = " + jsonStr + ";\n\n" + helpers + "\n" + generateDataJsFileString.toString() + "\n";
 }

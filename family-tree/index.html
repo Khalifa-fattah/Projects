@@ -3,31 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شجرة العائلة</title>
+    <title>شجرة العائلة - قائمة الأجيال</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .custom-data-alert {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .custom-data-alert a {
+            color: #533f03;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+        .search-clear-btn {
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 8px;
+            display: none;
+        }
+        .search-clear-btn:hover {
+            color: #e74c3c;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <h1 class="main-title">شجرة العائلة</h1>
-            <p class="subtitle">تاريخ عائلتنا عبر الأجيال</p>
-<div class="header-buttons" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-    <a href="index.html" class="btn-tree">قائمة الأجيال</a>
-    <a href="tree.html" class="btn-tree">الشجرة المرئية</a>
-    <a href="about.html" class="btn-tree">عن العائلة</a>
-    <a href="edit.html" class="btn-tree" style="background-color: #e74c3c; color: white;">تعديل البيانات (أوفلاين)</a>
-</div>
-
+            <p class="subtitle">تاريخ عائلتنا وتوثيق الأنساب عبر الأجيال</p>
+            <div class="header-buttons" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                <a href="index.html" class="btn-tree" style="background-color: #3498db; color: white;">قائمة الأجيال</a>
+                <a href="tree.html" class="btn-tree">الشجرة المرئية</a>
+                <a href="about.html" class="btn-tree">عن العائلة</a>
+                <a href="edit.html" class="btn-tree" style="background-color: #e74c3c; color: white;">تعديل البيانات</a>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
+            <!-- تنبيه البيانات المعدلة محلياً -->
+            <div id="customDataNotice" class="custom-data-alert" style="display: none;">
+                <span>ℹ️ أنت تشاهد بيانات تم تعديلها وحفظها محلياً في هذا المتصفح.</span>
+                <div>
+                    <a href="edit.html">لوحة التعديل والتصدير</a> | 
+                    <a href="#" id="resetDataLink">استعادة البيانات الأصلية</a>
+                </div>
+            </div>
+
             <!-- حقل البحث -->
             <div class="search-section">
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="ابحث عن اسم..." class="search-input">
+                <div class="search-container" style="position: relative;">
+                    <input type="text" id="searchInput" placeholder="ابحث عن أي اسم أو لقب في العائلة..." class="search-input">
                     <button id="searchBtn" class="search-btn">بحث</button>
                 </div>
                 <div id="searchResults" class="search-results hidden"></div>
@@ -42,7 +83,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 شجرة العائلة. جميع الحقوق محفوظة.</p>
+            <p>&copy; <span id="currentYear"></span> شجرة العائلة. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
 

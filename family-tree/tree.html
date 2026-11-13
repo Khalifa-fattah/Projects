@@ -3,29 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الشجرة الرسومية</title>
+  <title>الشجرة الرسومية - شجرة العائلة</title>
   <link rel="stylesheet" href="css/tree.css">
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- تمت إضافة هذا السطر لجلب مكتبة رسم الشجرة -->
+  <!-- مكتبة رسم الشجرة OrgChart -->
   <script src="https://balkan.app/js/OrgChart.js"></script>
 </head>
 <body>
   <header class="header">
     <div class="container">
       <h1 class="main-title">الشجرة الرسومية</h1>
-      <p class="subtitle">عرض شجرة العائلة</p>
-      <a href="index.html" style="color: white; border: 1px solid white; padding: 5px 10px; border-radius: 5px; text-decoration: none; margin-top: 10px; display: inline-block;">العودة للصفحة الرئيسية</a>
+      <p class="subtitle">تصفح الشجرة المرئية لجميع الأجيال</p>
+      <div class="header-buttons">
+        <a href="index.html" class="btn-tree-nav">قائمة الأجيال</a>
+        <a href="tree.html" class="btn-tree-nav" style="background-color: #3498db; color: white;">الشجرة المرئية</a>
+        <a href="about.html" class="btn-tree-nav">عن العائلة</a>
+        <a href="edit.html" class="btn-tree-nav" style="background-color: #e74c3c; color: white;">تعديل البيانات</a>
+      </div>
     </div>
   </header>
 
+  <!-- شريط التحكم والتكبير -->
+  <div class="tree-toolbar">
+    <button id="zoomInBtn" class="tree-btn" title="تكبير">+</button>
+    <button id="zoomOutBtn" class="tree-btn" title="تصغير">-</button>
+    <button id="fitBtn" class="tree-btn" title="ملاءمة الشاشة">⛶ ملاءمة الشاشة</button>
+    <button id="centerRootBtn" class="tree-btn" title="العودة للجد الأكبر">🏠 رأس الشجرة</button>
+    <span class="tree-hint">💡 انقر فوق أي شخص لفتح ملفه الشخصي</span>
+  </div>
+
   <main>
-    <!-- هذا العنصر سيحتوي على الشجرة التي سيتم رسمها -->
-    <div style="width:100%; height:calc(100vh - 150px);" id="tree"></div>
+    <!-- حاوية الشجرة -->
+    <div id="tree"></div>
   </main>
 
   <footer class="footer">
     <div class="container">
-      <p>&copy; 2025 شجرة العائلة. جميع الحقوق محفوظة.</p>
+      <p>&copy; <span id="currentYear"></span> شجرة العائلة. جميع الحقوق محفوظة.</p>
     </div>
   </footer>
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bgGradMale" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3498db" />
+      <stop offset="100%" stop-color="#2c3e50" />
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bgGradMale)" stroke="#ffffff" stroke-width="3"/>
+  <!-- Head -->
+  <circle cx="60" cy="45" r="22" fill="#f5d6ba"/>
+  <!-- Hair -->
+  <path d="M38,45 C38,30 46,23 60,23 C74,23 82,30 82,45 C78,38 72,35 60,35 C48,35 42,38 38,45 Z" fill="#2c3e50"/>
+  <!-- Shoulders & Body -->
+  <path d="M24,104 C24,84 40,74 60,74 C80,74 96,84 96,104 Z" fill="#ffffff" opacity="0.95"/>
+  <!-- Suit / Collar -->
+  <polygon points="60,86 50,74 70,74" fill="#2980b9"/>
+</svg>
