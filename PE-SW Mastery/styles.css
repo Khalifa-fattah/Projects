@@ -144,3 +144,50 @@ body.has-compare-bar .toast{bottom:100px}
 @media(max-width:700px){.taxonomy-note{grid-template-columns:1fr;gap:4px}}
 .application-case .spec-list{grid-template-columns:minmax(140px,190px) 1fr}
 @media(max-width:700px){.application-case .spec-list{grid-template-columns:1fr}}
+
+/* Custom adjustments for domain cards and license badges */
+.domain-card{
+  background: var(--surface-2);
+  border: 1px solid var(--green-2);
+  border-radius: 20px;
+  padding: 22px 20px;
+  min-height: 170px;
+  transition: .3s;
+  cursor: pointer;
+}
+.domain-card:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  border-color: var(--green);
+}
+.domain-card .domain-icon{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--green-2);
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+.domain-card .arrow{
+  right: 12px;
+  left: auto;
+  color: var(--green-2);
+}
+
+/* License badge style adjustments */
+.license{
+  font-size:10px;
+  border-radius:20px;
+  padding:5px 12px;
+  background:#e5f7e5;
+  color:#2b6e4f;
+}
+.license.commercial{
+  background:#f9e5e5;
+  color:#b04a4a;
+}
+.license.mixed{
+  background:#f0f0fa;
+  color:#5a5a9d;
+}
