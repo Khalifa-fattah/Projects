@@ -1,5 +1,5 @@
 /* Service worker: يعمل التطبيق دون اتصال بعد الزيارة الأولى */
-const VERSION = 'pe-v2';
+const VERSION = 'pe-v3';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const SHELL_FILES = [

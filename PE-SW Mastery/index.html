@@ -30,7 +30,8 @@
       <a href="#map">خريطة المجالات</a>
       <a href="#toolbox">مكتبة الأدوات</a>
       <a href="#learning">مسار التعلم</a>
-      <a href="#resources">مصادر التعلم</a>
+      <a href="#career-roadmaps">المسارات المهنية</a>
+      <a href="#downloads">التنزيلات والبيانات</a>
     </nav>
     <div class="header-actions">
       <button class="install-btn" id="installBtn" type="button" hidden>⬇ تثبيت</button>
@@ -79,8 +80,10 @@
     <section class="section toolbox-section" id="toolbox">
       <div class="section-heading">
         <div><span class="section-kicker">02 / TOOLBOX</span><h2>مكتبة البرامج والأدوات</h2></div>
-        <p>ابحث بالعربية أو الإنجليزية أو باسم البرنامج أو المفهوم الهندسي، ثم افتح الشرح وسير العمل والمثال التطبيقي.</p>
+        <p>اختر تخصصاً من الخريطة أولاً لعرض أدواته فقط، أو استخدم البحث للعثور على أداة بعينها. بيانات المتطلبات تظهر بحالة توثيقها.</p>
       </div>
+      <div class="selection-prompt" id="selectionPrompt"><span class="selection-mark">01</span><div><b>ابدأ باختيار تخصص من الخريطة</b><p>لن تُعرض بطاقات الأدوات حتى تختار مجالاً، أو تبدأ بحثاً صريحاً. يمكنك تغيير التخصص من القائمة أدناه.</p></div></div>
+      <div class="selected-domain" id="selectedDomain" hidden></div>
       <div class="toolbar">
         <label class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" autocomplete="off" aria-label="بحث في الأدوات" placeholder="ابحث عن برنامج، مثل Petrel أو Python..." /><button type="button" class="clear-btn" id="clearSearch" aria-label="مسح البحث" hidden>×</button></label>
         <select id="domainFilter" aria-label="تصفية حسب المجال"><option value="all">كل المجالات</option></select>
@@ -90,6 +93,40 @@
       </div>
       <div class="tool-grid" id="toolGrid"></div>
       <div class="empty-state" id="emptyState" hidden><p id="emptyText">لا توجد نتائج مطابقة. جرّب كلمة بحث أخرى أو غيّر عوامل التصفية.</p><button type="button" class="btn btn-ghost" id="resetFilters">إعادة ضبط الفلاتر</button></div>
+    </section>
+
+    <section class="section learning-resources" id="career-roadmaps">
+      <div class="section-heading"><div><span class="section-kicker">05 / CAREER ROADMAPS</span><h2>مسارات تعلم حسب الوظيفة</h2></div><p>مسارات بداية عملية، وليست بديلاً عن متطلبات جهة العمل أو الخبرة الميدانية.</p></div>
+      <div class="roadmap-grid">
+        <article class="roadmap-card"><span class="roadmap-index">RESERVOIR</span><h3>مهندس مكامن</h3><p>أساسيات المكامن وPVT ← تحليل الإنتاج والضغط ← Material Balance وRTA ← محاكاة مكمنية ← مطابقة تاريخية وسيناريوهات.</p><div class="roadmap-tools">Python · MBAL · MRST/OPM · ECLIPSE/CMG*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">DRILLING</span><h3>مهندس حفر</h3><p>هندسة الآبار وسلامتها ← هيدروليكا الحفر وسوائل الحفر ← تخطيط المسار والـBHA ← تحليل المخاطر والعمليات.</p><div class="roadmap-tools">Excel · Python · COMPASS · WELLPLAN*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">PRODUCTION</span><h3>مهندس إنتاج</h3><p>جريان متعدد الأطوار ورفع اصطناعي ← تحليل عقدي وبيانات الآبار ← تشخيص القيود ← تحسين الإنتاج وإدارة عدم اليقين.</p><div class="roadmap-tools">Python · PROSPER · PIPESIM · OFM*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">DATA</span><h3>مهندس بيانات الطاقة</h3><p>Python وSQL ← تنظيف بيانات الإنتاج والآبار ← تصور وتحليل إحصائي ← نماذج تنبؤية مع تحقق هندسي.</p><div class="roadmap-tools">Python · pandas · SQL · scikit-learn</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">GEOLOGY</span><h3>جيولوجي / نمذجة جيولوجية</h3><p>الطباقية والبنية ← ربط الآبار والخرائط ← تفسير الصدوع والآفاق ← بناء نموذج ثلاثي الأبعاد ومراجعة عدم اليقين.</p><div class="roadmap-tools">QGIS · GemPy · Petrel*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">PETROPHYSICS</span><h3>مهندس بتروفيزياء</h3><p>جودة السجلات والوحدات ← تحديد الطبقات ← تقدير Vsh والمسامية وSw ← معايرة التفسير باللباب والاختبارات.</p><div class="roadmap-tools">Python + LASIO · QGIS · Techlog*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">FACILITIES</span><h3>مهندس منشآت وعمليات</h3><p>موازين المادة والطاقة ← مخططات العمليات ← اتزان الأطوار ← محاكاة الفصل والمعالجة ومراجعة قيود التشغيل.</p><div class="roadmap-tools">DWSIM · Python · Aspen HYSYS*</div></article>
+        <article class="roadmap-card"><span class="roadmap-index">WELL INTEGRITY</span><h3>مهندس سلامة / تكامل آبار</h3><p>الحواجز ومكوّنات البئر ← تحديد المخاطر ← تقييم الأدلة التشغيلية ← توثيق خطط الفحص والاستجابة وفق معايير الجهة.</p><div class="roadmap-tools">Excel · BowTieXP* · Wellbarrier*</div></article>
+      </div>
+      <p class="fine-print">* أسماء برامج تجارية؛ التوفر والترخيص والتكلفة تختلف حسب الشركة والجهة والإصدار. تحقّق من الموقع الرسمي قبل التنزيل أو الشراء.</p>
+    </section>
+
+    <section class="section knowledge-hub" id="downloads">
+      <div class="section-heading"><div><span class="section-kicker">06 / OFFICIAL ACCESS</span><h2>مركز التنزيلات والبيانات</h2></div><p>روابط تنزيل أو وصول رسمية فقط عندما أمكن التحقق منها. المتطلبات غير المؤكدة موضّحة صراحةً ولا تُستنتج بالتخمين.</p></div>
+      <div class="download-panel" id="downloadCenter"></div>
+      <div class="taxonomy-note"><b>كيف نصنّف العناصر؟</b><span><strong>Commercial Software</strong> و<strong>Open-source Software</strong> تطبيقات/حزم مستقلة؛ <strong>Python/MATLAB Libraries</strong> حزم تستدعى داخل بيئة برمجية؛ <strong>Online Platforms</strong> خدمات أو بيئات عبر الإنترنت. أما <strong>Engineering Standards</strong> فهي مواصفات/معايير وليست برامج، و<strong>Data Sources</strong> مجموعات بيانات وليست أدوات تنفيذية؛ لذلك تُعرض الأخيرة في مكتبة البيانات منفصلة. أي تصنيف أولي غير مؤكد يظل بحاجة إلى مراجعة مصدر المطوّر.</span></div>
+      <div class="section-heading compact-heading"><div><span class="section-kicker">OPEN DATASETS</span><h2>مكتبة بيانات للتدريب</h2></div><p>ابدأ بحالات معيارية صغيرة، ثم انتقل إلى بيانات الحقول الأكبر حجماً.</p></div>
+      <div class="dataset-grid" id="datasetLibrary"></div>
+    </section>
+
+    <section class="section project-lab" id="practical-projects">
+      <div class="section-heading"><div><span class="section-kicker">07 / PRACTICAL PROJECTS</span><h2>مختبر المشاريع التطبيقية</h2></div><p>مشاريع صغيرة قابلة للتوثيق؛ ملفات البيانات والأكواد والنتائج تُربط بمصدرها الرسمي عندما تكون متاحة.</p></div>
+      <div class="project-card">
+        <div class="project-head"><span class="project-label">نموذج موثق · MRST + SPE1</span><h3>محاكاة حقن غاز مبسطة ومراجعة استجابة الضغط والإنتاج</h3><p>تمرين تعليمي مستند إلى مثال benchmark العام في وثائق MRST. النتيجة المعروضة هنا وصف متوقع، وليست تشغيلًا فعليًا من الموقع.</p></div>
+        <ol class="project-steps"><li><b>جهّز البيئة:</b> نزّل MRST من SINTEF، فك الضغط، افتح MATLAB أو GNU Octave، ثم شغّل <code>startup.m</code>.</li><li><b>حمّل الحالة:</b> استخدم MRST Dataset GUI أو مثال SPE1 الموثق. تحقق أن ملفات الشبكة والصخر والمائع موجودة.</li><li><b>افحص المدخلات:</b> راجع أبعاد الشبكة، النفاذية والمسامية، خواص PVT، الضغط الابتدائي، ومعدلات/قيود البئرين.</li><li><b>شغّل الحالة الأساسية:</b> نفّذ مثال MRST خطوة بخطوة وسجّل حالات الضغط والتشبع ومعدلات الآبار عبر الزمن.</li><li><b>غيّر متغيراً واحداً:</b> عدّل ضغط قاع البئر للمنتج أو معدل الحقن ضمن حدود المثال، ثم أعد التشغيل وسجّل الفرق.</li><li><b>فسّر النتيجة:</b> قارن الضغط ومعدل النفط/الغاز والتشبع. تحقّق من اتزان الكتلة وتقارب الحل؛ لا تعتبر الرسوم وحدها دليلاً على صحة النموذج.</li></ol>
+        <div class="expected-result"><b>المتوقع:</b> ملفات سجل ورسوم زمنية للضغط والمعدلات والتشبع. أثر تغيير التحكم يعتمد على إعداد الحالة؛ لا نثبت أرقاماً قبل تنفيذها والتحقق من نسخة البيانات.</div>
+        <div class="project-links"><a href="https://www.sintef.no/projectweb/mrst/documentation/" target="_blank" rel="noopener noreferrer">وثائق MRST الرسمية ↗</a><a href="https://www.sintef.no/projectweb/mrst/modules/mrst-core/data-sets/" target="_blank" rel="noopener noreferrer">بيانات MRST العامة ↗</a><a href="https://github.com/SINTEF-AppliedCompSci/MRST" target="_blank" rel="noopener noreferrer">مستودع MRST ↗</a></div>
+      </div>
+      <p class="fine-print">هذا مثال بدء موثق وليس حزمة مشروع تضم ملفات نتائج منفذة. عند إضافة ملفات بيانات/كود للموقع، يجب حفظ الترخيص ورقم الإصدار ومصدر التنزيل معها.</p>
     </section>
 
     <section class="feature-banner">

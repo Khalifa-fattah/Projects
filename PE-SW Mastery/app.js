@@ -67,7 +67,8 @@
     compareBar: $('compareBar'), compareChips: $('compareChips'), compareGo: $('compareGo'), compareClear: $('compareClear'),
     compareDialog: $('compareDialog'), compareContent: $('compareContent'), compareClose: $('compareClose'),
     toast: $('toast'), menuToggle: $('menuToggle'), mainNav: $('mainNav'), themeToggle: $('themeToggle'),
-    installBtn: $('installBtn'), progressBar: $('progressBar')
+    installBtn: $('installBtn'), progressBar: $('progressBar'),
+    selectionPrompt: $('selectionPrompt'), selectedDomain: $('selectedDomain')
   };
 
   /* ---------- إشعار مؤقت ---------- */
@@ -181,22 +182,30 @@
   };
 
   const renderTools = () => {
-    const filtered = filterTools();
+    const exploring = state.domain !== 'all' || Boolean(state.q.trim()) || state.favOnly || state.license !== 'all';
+    const filtered = exploring ? filterTools() : [];
     const q = state.q;
+    el.selectionPrompt.hidden = exploring;
+    el.selectedDomain.hidden = !exploring;
+    if (exploring) {
+      const current = domainByName.get(state.domain);
+      el.selectedDomain.textContent = current ? `${current.name} · ${current.en}` : state.q.trim() ? `نتائج البحث عن: ${state.q.trim()}` : 'نتائج المكتبة';
+    }
     const frag = document.createDocumentFragment();
     filtered.forEach((t) => {
       const card = document.createElement('article');
       card.className = 'tool-card';
       card.dataset.id = t.id;
       card.innerHTML = `<div class="tool-top"><span class="tool-category">${esc(t.domain)}</span><span class="card-actions">${favButtonHTML(t.id)}${compareButtonHTML(t.id)}</span></div>
+        <span class="tool-kind">${esc(t.kind || 'بحاجة إلى تصنيف')}</span>
         <span class="license ${esc(t.license)}">${esc(licenseLabel(t.license))}</span>
         <h3>${highlight(t.name, q)}</h3><p>${highlight(t.desc, q)}</p>
         <div class="tool-foot"><span>${t.uses.length} استخدامات رئيسية</span><button type="button" class="details-btn" data-open="${esc(t.id)}" aria-label="شرح ومثال تطبيقي: ${esc(t.name)}">شرح ومثال تطبيقي ←</button></div>`;
       frag.appendChild(card);
     });
     el.toolGrid.replaceChildren(frag);
-    el.resultCount.textContent = `${filtered.length} أداة`;
-    el.emptyState.hidden = filtered.length !== 0;
+    el.resultCount.textContent = exploring ? `${filtered.length} أداة` : 'اختر تخصصاً لعرض الأدوات';
+    el.emptyState.hidden = !exploring || filtered.length !== 0;
     if (!filtered.length) {
       el.emptyText.textContent = state.favOnly && !state.favs.size
         ? 'لم تضف أي أداة إلى المفضلة بعد. اضغط على ♡ في أي بطاقة لحفظها هنا.'
@@ -324,6 +333,7 @@
     const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(t.course)}`;
     el.dialogContent.innerHTML = `
       <span class="dialog-kicker">${esc(t.domain)}</span><h2 id="dialogTitle">${esc(t.name)}</h2><span class="license ${esc(t.license)}">${esc(licenseLabel(t.license))}</span>
+      <div class="spec-meta"><span class="tool-kind">${esc(t.kind || 'بحاجة إلى تصنيف')}</span><span class="verification-badge ${t.systemRequirements ? 'verified' : ''}">${esc(t.factStatus || 'بحاجة إلى تحقق من المطوّر')}</span></div>
       <div class="dialog-actions top">
         <button type="button" class="btn btn-ghost small" id="dialogFav" aria-pressed="false"></button>
         <button type="button" class="btn btn-ghost small" id="dialogCmp" aria-pressed="false"></button>
@@ -334,7 +344,9 @@
       <div class="dialog-section"><h3>أهم الاستخدامات</h3><ul>${t.uses.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
       <div class="dialog-section"><h3>سير عمل هندسي مقترح</h3><p class="dialog-desc">${esc(t.workflow)}</p></div>
       <div class="dialog-section"><h3>مثال تطبيقي تتعلم منه</h3><div class="example-box">${esc(t.example)}</div></div>
-      <div class="dialog-section"><h3>روابط مباشرة</h3><div class="link-list"><a href="${esc(safeUrl(t.url))}" target="_blank" rel="noopener noreferrer">الموقع الرسمي / صفحة المنتج ↗</a><a href="${esc(youtube)}" target="_blank" rel="noopener noreferrer">ابحث عن دروس على YouTube ↗</a></div><small class="link-note">تحقق من الترخيص والتوفر ومتطلبات النظام من الجهة المطورة؛ روابط YouTube تفتح نتائج بحث وليست اعتماداً لدورة بعينها.</small></div>`;
+      ${t.engineeringProblem ? `<div class="dialog-section application-case"><h3>تفاصيل التمرين العملي</h3><dl class="spec-list"><dt>المشكلة الهندسية</dt><dd>${esc(t.engineeringProblem)}</dd><dt>المدخلات</dt><dd>${esc(t.requiredInputs)}</dd><dt>بدء التشغيل والخطوات</dt><dd>${esc(t.startSteps)}</dd><dt>النتائج المتوقعة</dt><dd>${esc(t.expectedOutputs)}</dd><dt>كيف تفسرها؟</dt><dd>${esc(t.interpretation)}</dd></dl>${t.datasetUrl ? `<a class="spec-source" href="${esc(safeUrl(t.datasetUrl))}" target="_blank" rel="noopener noreferrer">Dataset ومثال رسمي ↗</a>` : ''}</div>` : ''}
+      <div class="dialog-section"><h3>متطلبات التشغيل والتوافق</h3><dl class="spec-list"><dt>نظام التشغيل</dt><dd>${esc(t.supportedOS || 'غير موثق بعد؛ راجع وثائق المطوّر حسب الإصدار قبل التثبيت.')}</dd><dt>متطلبات النظام</dt><dd>${esc(t.systemRequirements || 'لم تُتحقق متطلبات المعالج والذاكرة والمساحة من مصدر رسمي لهذا السجل بعد.')}</dd><dt>الترخيص والتكلفة</dt><dd>${esc(t.costInfo || 'التصنيف الأولي لا يغني عن التحقق من شروط الترخيص والتكلفة الحالية من المطوّر.')}</dd></dl>${t.factSource ? `<a class="spec-source" href="${esc(safeUrl(t.factSource))}" target="_blank" rel="noopener noreferrer">مصدر المواصفات ↗</a>` : ''}</div>
+      <div class="dialog-section"><h3>روابط مباشرة</h3><div class="link-list"><a href="${esc(safeUrl(t.officialUrl || t.url))}" target="_blank" rel="noopener noreferrer">${t.systemRequirements ? 'الموقع الرسمي / صفحة المنتج' : 'الرابط المسجل — يحتاج تحقق'} ↗</a>${t.downloadUrl ? `<a href="${esc(safeUrl(t.downloadUrl))}" target="_blank" rel="noopener noreferrer">تنزيل / صفحة التثبيت ↗</a>` : ''}<a href="${esc(youtube)}" target="_blank" rel="noopener noreferrer">ابحث عن دروس على YouTube ↗</a></div><small class="link-note">متطلبات التشغيل والروابط التجارية لا تُعد موثقة حتى يظهر مصدر رسمي لهذه الأداة. نتائج YouTube روابط بحث وليست اعتماداً لدورة بعينها.</small></div>`;
     attachImageFallback(el.dialogContent);
     $('dialogFav').addEventListener('click', () => toggleFav(t.id));
     $('dialogCmp').addEventListener('click', () => toggleCompare(t.id));
@@ -408,6 +420,22 @@
     set('statTools', tools.length);
   };
 
+  const renderKnowledgeHub = () => {
+    const downloadItems = [
+      {name:'MRST 2026a',kind:'Python/MATLAB Libraries',url:'https://www.sintef.no/globalassets/project/mrst/mrst-2026a.zip',label:'تنزيل مباشر من SINTEF',note:'ملف ZIP رسمي. فك الضغط ثم شغّل startup.m من MATLAB أو GNU Octave. لا يحتاج إلى MATLAB toolboxes إضافية بحسب المطوّر.'},
+      {name:'OPM Flow',kind:'Open-source Software',url:'https://opm-project.org/?page_id=36',label:'صفحة طرق التثبيت',note:'ليست رابط ملف تثبيت موحداً؛ اختر حزمة/توزيعة من تعليمات OPM وتحقق من المتطلبات الخاصة بنظامك.'},
+      {name:'QGIS',kind:'Open-source Software',url:'https://qgis.org/download/',label:'صفحة التنزيل الرسمية',note:'راجع خيارات التثبيت المدعومة لنظام التشغيل والإصدار قبل التنزيل.'}
+    ];
+    $('downloadCenter').innerHTML = downloadItems.map(x => `<article class="download-card"><div><span class="tool-kind">${esc(x.kind)}</span><h3>${esc(x.name)}</h3><p>${esc(x.note)}</p></div><a href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener noreferrer">${esc(x.label)} ↗</a></article>`).join('');
+    const datasets = [
+      {name:'SPE1 / SPE9 Benchmarks',discipline:'محاكاة المكامن · حالات معيارية صغيرة',license:'تنزيل من مستودع OPM المفتوح — ODbL',url:'https://github.com/OPM/opm-data',detail:'حالتا black-oil للحقن/الإنتاج؛ مناسبتان لفحص سير العمل والتعلم قبل النماذج الكبيرة.',tag:'بداية موصى بها'},
+      {name:'Norne Field Benchmark',discipline:'محاكاة مكمنية · نموذج حقل واقعي',license:'ODbL حسب صفحة OPM',url:'https://opm-project.org/?page_id=559',detail:'حالة حقل نفطي حقيقية ببيانات شبكية وخواص مكمنية؛ توجد نسخة مبسطة reduced_norne لتجارب أولية.',tag:'متوسط'},
+      {name:'SPE10 Model 2',discipline:'عدم التجانس · upscaling',license:'توافر/شروط عبر مستودع ومراجع المشروع',url:'https://www.sintef.no/projectweb/mrst/modules/mrst-core/data-sets/',detail:'حالة كبيرة شديدة التغاير؛ يذكر مصدر OPM شبكة تقارب 1.122 مليون خلية. ليست نقطة بداية مناسبة للحواسيب المحدودة.',tag:'متقدم'},
+      {name:'Volve Field Open Dataset',discipline:'بيانات الحقول · سجلات وإنتاج وزلازل',license:'ترخيص Equinor للبحث والدراسة؛ راجع الشروط والوصول الرسمي',url:'https://www.equinor.com/energy/volve-data-sharing',detail:'مجموعة واسعة تقارب 40 ألف ملف من حقل أنتج بين 2008 و2016؛ الوصول عبر بوابة البيانات التي يحددها Equinor.',tag:'بيانات حقل'}
+    ];
+    $('datasetLibrary').innerHTML = datasets.map(x => `<article class="dataset-card"><span class="dataset-tag">${esc(x.tag)}</span><h3>${esc(x.name)}</h3><b>${esc(x.discipline)}</b><p>${esc(x.detail)}</p><small>${esc(x.license)}</small><a href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener noreferrer">المصدر / الوصول الرسمي ↗</a></article>`).join('');
+  };
+
   /* ---------- الأحداث ---------- */
   const bindEvents = () => {
     el.searchInput.addEventListener('input', debounce(applyFilters));
@@ -447,6 +475,7 @@
   initNav();
   initPwa();
   initStats();
+  renderKnowledgeHub();
   bindEvents();
   renderTools();
   refreshToolButtons();

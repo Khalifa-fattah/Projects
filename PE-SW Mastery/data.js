@@ -156,3 +156,46 @@ const PE_TOOLS = [
   {"name":"DELFI Environment","domain":"إدارة البيانات ومنصات التكامل","desc":"بيئة سحابية للتعاون بين التخصصات وإدارة البيانات وتشغيل تطبيقات الاستكشاف والإنتاج.","license":"commercial","uses":["Cloud collaboration","Data access","Digital workflows","Multidisciplinary work"],"url":"https://www.software.slb.com/","course":"SLB DELFI environment overview","why":"القرار الهندسي الجيد يحتاج بيانات موثوقة وقابلة للتتبع. تقلّل هذه المنصات التكرار وتوحّد الصيغ وتسهّل تبادل البيانات بين التخصصات.","workflow":"جرد مصادر البيانات؛ حدّد الصيغ والمعايير؛ نظّف وتحقق من الجودة؛ اربط التطبيقات بالمصدر الموحد؛ ثم ضع سياسات الصلاحيات والنسخ الاحتياطي.","example":"مثال: صف سير عمل مشترك بين الجيولوجي والمهندس يعتمد على نفس مصدر البيانات.","id":"delfi-environment"},
   {"name":"DecisionSpace 365","domain":"إدارة البيانات ومنصات التكامل","desc":"منصة سحابية تجمع تطبيقات تفسير وتخطيط وتشغيل في بيئة واحدة.","license":"commercial","uses":["Cloud E&P applications","Well planning","Subsurface workflows","Data integration"],"url":"https://www.halliburton.com/","course":"Halliburton DecisionSpace 365 overview","why":"القرار الهندسي الجيد يحتاج بيانات موثوقة وقابلة للتتبع. تقلّل هذه المنصات التكرار وتوحّد الصيغ وتسهّل تبادل البيانات بين التخصصات.","workflow":"جرد مصادر البيانات؛ حدّد الصيغ والمعايير؛ نظّف وتحقق من الجودة؛ اربط التطبيقات بالمصدر الموحد؛ ثم ضع سياسات الصلاحيات والنسخ الاحتياطي.","example":"مثال: قارن مزايا العمل على بيانات مركزية مقابل نسخ محلية متفرقة في مشروع صغير.","id":"decisionspace-365"}
 ];
+
+/* طبقة توثيق وتصنيف — لا تُعرض المواصفات كحقائق إلا إذا كانت مدعومة بمصدر رسمي. */
+const PE_KIND = {
+  'python-lasio':'Python/MATLAB Libraries','mrst':'Python/MATLAB Libraries','mrst-co2lab':'Python/MATLAB Libraries','gempy':'Python/MATLAB Libraries','opm-flow':'Open-source Software','qgis':'Open-source Software','opendtect':'Open-source Software','seismic-unix':'Open-source Software','madagascar':'Open-source Software','obspy':'Python/MATLAB Libraries','opengeosys':'Open-source Software','dwsim':'Open-source Software','python':'Open-source Software','jupyter-notebook':'Online Platforms','numpy':'Python/MATLAB Libraries','pandas':'Python/MATLAB Libraries','scipy':'Python/MATLAB Libraries','matplotlib':'Python/MATLAB Libraries','scikit-learn':'Python/MATLAB Libraries','tensorflow':'Python/MATLAB Libraries','pytorch':'Python/MATLAB Libraries','gnu-octave':'Open-source Software','r-rstudio':'Open-source Software','julia':'Open-source Software','streamlit':'Python/MATLAB Libraries','xgboost':'Python/MATLAB Libraries','sql-postgresql':'Open-source Software','power-bi-desktop':'Commercial Software','git':'Open-source Software','github':'Online Platforms','paraview':'Open-source Software','overleaf-latex':'Online Platforms','visual-studio-code':'Open-source Software','docker':'Open-source Software','wsl-windows-subsystem-for-linux':'Online Platforms','zotero':'Open-source Software','diagrams-net-draw-io':'Online Platforms','osdu-data-platform':'Online Platforms'
+};
+for (const t of PE_TOOLS) {
+  t.kind = PE_KIND[t.id] || (t.license === 'commercial' ? 'Commercial Software' : t.license === 'mixed' ? 'Online Platforms' : 'Open-source Software');
+  t.officialUrl = t.url || '';
+  t.downloadUrl = '';
+  t.supportedOS = '';
+  t.systemRequirements = '';
+  t.costInfo = '';
+  t.factStatus = 'بحاجة إلى تحقق من وثائق المطوّر';
+  t.factSource = '';
+}
+const mrst = PE_TOOLS.find(t => t.id === 'mrst');
+Object.assign(mrst, {
+  kind:'Python/MATLAB Libraries', officialUrl:'https://www.sintef.no/projectweb/mrst/',
+  why:'يوفر MRST بيئة بحثية لبناء النماذج العددية وتجربة طرق المحاكاة بسرعة. يستخدمه المهندس/الباحث لاختبار أثر الشبكة وخواص الصخور والموائع والتحكم بالآبار على سلوك الجريان، وليس بديلاً تلقائياً عن مراجعة صحة النموذج.',
+  workflow:'نزّل الحزمة وفكّها؛ شغّل startup.m في MATLAB أو GNU Octave؛ افتح مثالاً رسمياً؛ افحص الشبكة وبيانات الصخر والمائع والآبار؛ شغّل الحالة الأساسية؛ ثم غيّر فرضية واحدة وأعد التشغيل وقارن النتائج.',
+  example:'حالة SPE1 القياسية تتضمن حقن غاز في مكمن نفط حي مع بئر منتج. افحص استجابة الضغط ومعدلات الآبار والتشبع مع الزمن، ثم قارن الحالة الأساسية بتغيير تحكم بئر واحد. استخدم نسخة المثال من وثائق MRST، ولا تنقل أرقاماً إلى تقريرك قبل تنفيذ الحالة والتحقق منها.',
+  engineeringProblem:'كيف تتغير استجابة نموذج حقن غاز مكمني مع الزمن عند تعديل تحكم البئر؟',
+  requiredInputs:'ملفات نموذج SPE1: الشبكة، خواص الصخر، خواص المائع PVT، الحالة الابتدائية، مواقع/ضوابط الآبار وجدول التشغيل.',
+  startSteps:'1) نزّل MRST وفك الضغط. 2) شغّل startup.m من MATLAB/Octave. 3) استخدم مثال SPE1 الرسمي أو Dataset GUI. 4) افحص المدخلات والوحدات والقيود. 5) شغّل الحالة الأساسية. 6) غيّر متغير تحكم واحد ثم أعد التشغيل وقارن.',
+  expectedOutputs:'حالات ضغط وتشبع موزعة على الشبكة، ومعدلات/ضغوط الآبار عبر الزمن؛ تتحدد الأرقام الفعلية من نسخة المثال والبيئة التي شغّلتهما.',
+  interpretation:'تحقق من اتجاه الاستجابة وموازنة الكتلة وتقارب المحاكاة. قارن منحنيات الآبار مع توزيع الضغط/التشبع؛ لا تفسر اختلافاً واحداً كدليل فيزيائي قبل فحص الوحدات والقيود والفرضيات.',
+  datasetUrl:'https://www.sintef.no/projectweb/mrst/modules/mrst-core/data-sets/',
+  downloadUrl:'https://www.sintef.no/globalassets/project/mrst/mrst-2026a.zip',
+  supportedOS:'يعتمد على MATLAB أو GNU Octave؛ صفحة المطوّر لا تحصر نظام تشغيل محدداً. تحقق من توافق بيئة MATLAB/Octave لديك.',
+  systemRequirements:'MRST 2026a؛ لا يحتاج إلى MATLAB toolboxes إضافية بحسب SINTEF. اختُبر مع إصدارات MATLAB من السنوات الخمس الأخيرة. شغّل startup.m بعد فك الضغط في كل جلسة.',
+  costInfo:'مجاني ومفتوح المصدر؛ GPL-3.0. قد يلزم شراء MATLAB، أو استخدام GNU Octave.',
+  factStatus:'موثق من المطوّر — MRST 2026a، مراجعة 2026-11-17',
+  factSource:'https://www.sintef.no/projectweb/mrst/download/'
+});
+const opm = PE_TOOLS.find(t => t.id === 'opm-flow');
+Object.assign(opm, {
+  officialUrl:'https://opm-project.org/', downloadUrl:'https://opm-project.org/?page_id=36',
+  supportedOS:'حزم ثنائية 64-bit مذكورة لـUbuntu وRed Hat Enterprise Linux؛ Windows عبر WSL2 أو آلة افتراضية. البناء من المصدر موثق لـLinux وmacOS. تحقق من صفحة التثبيت للتفاصيل الحالية.',
+  systemRequirements:'لا تنشر صفحة التثبيت رقماً موحداً للحد الأدنى للذاكرة أو المعالج؛ تعتمد المتطلبات على التوزيعة وطريقة التثبيت وحجم النموذج.',
+  costInfo:'المحاكي مفتوح المصدر؛ مجموعات بيانات OPM منشورة بترخيص ODbL بحسب صفحة المشروع.',
+  factStatus:'الوظائف وطرق تثبيت الأنظمة مدعومة من الوثائق الرسمية؛ لا حد أدنى موحد للموارد',
+  factSource:'https://opm-project.org/?page_id=19'
+});

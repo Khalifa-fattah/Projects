@@ -105,3 +105,42 @@ body.has-compare-bar .toast{bottom:100px}
 .domain-card{color:var(--ink);text-align:right}
 .dark .main-nav a{color:#c9d8cd}
 .dark .tool-card h3,.dark .domain-card h3{color:var(--ink)}
+
+/* Expanded research catalog */
+[hidden]{display:none!important}
+.selection-prompt{display:flex;align-items:flex-start;gap:16px;margin:18px 0 22px;padding:22px 24px;border:1px dashed #97b8a2;border-radius:16px;background:var(--surface);color:var(--ink)}
+.selection-mark{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:12px;background:var(--green);color:#fff;font:600 14px 'IBM Plex Mono',monospace}
+.selection-prompt b{font-size:16px}.selection-prompt p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.8}
+.selected-domain{margin:18px 0;padding:14px 18px;border-inline-start:4px solid var(--green);background:var(--surface);border-radius:8px;font-weight:800;color:var(--ink)}
+.tool-kind{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 9px;border-radius:999px;background:#e8f2eb;color:#245d43;font-size:10px;font-weight:800;line-height:1.5}
+.dark .tool-kind{background:#263e30;color:#c5e8d0}.tool-card .tool-kind{margin-top:10px}
+.spec-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.verification-badge{display:inline-flex;padding:5px 9px;border-radius:8px;background:#fff3d8;color:#755414;font-size:10px;font-weight:700}
+.verification-badge.verified{background:#e6f5eb;color:#21643c}
+.dark .verification-badge{background:#40351d;color:#f4d792}.dark .verification-badge.verified{background:#203a2a;color:#b5e4c1}
+.spec-list{display:grid;grid-template-columns:minmax(100px,150px) 1fr;gap:8px 14px;font-size:12px;line-height:1.8}
+.spec-list dt{font-weight:800;color:var(--ink)}.spec-list dd{margin:0;color:var(--muted)}.spec-source{display:inline-block;margin-top:10px;color:var(--green);font-weight:800;font-size:12px}
+.knowledge-hub,.project-lab{background:var(--bg)}.compact-heading{margin-top:50px}
+.download-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.download-card,.dataset-card,.roadmap-card,.project-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.download-card{padding:20px;display:flex;flex-direction:column;justify-content:space-between;gap:14px}
+.download-card h3,.dataset-card h3,.roadmap-card h3,.project-card h3{margin:10px 0 6px;color:var(--ink)}
+.download-card p,.dataset-card p,.roadmap-card p,.project-head p{font-size:12px;line-height:1.9;color:var(--muted);margin:6px 0 14px}
+.download-card a,.dataset-card a,.project-links a{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-size:12px;font-weight:800;text-decoration:none}
+.dataset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.dataset-card{padding:18px;display:flex;flex-direction:column;align-items:flex-start;min-height:250px}
+.dataset-tag{padding:4px 8px;border-radius:99px;background:var(--surface-2);font-size:10px;color:var(--green);font-weight:800}
+.dataset-card h3{font-size:16px}.dataset-card b{font-size:11px;color:var(--ink)}.dataset-card small{margin-top:auto;margin-bottom:10px;color:var(--muted);font-size:10px;line-height:1.6}
+.roadmap-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.roadmap-card{padding:20px}
+.roadmap-index{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:1px;color:var(--green)}
+.roadmap-tools{padding-top:12px;border-top:1px solid var(--line);font-size:11px;font-weight:700;line-height:1.8;color:var(--ink)}.fine-print{font-size:11px;line-height:1.8;color:var(--muted);margin-top:14px}
+.project-card{padding:clamp(20px,4vw,38px)}.project-label{color:var(--green);font-weight:800;font-size:11px}.project-card h3{font-size:clamp(19px,2.5vw,26px)}
+.project-steps{display:grid;gap:12px;padding-inline-start:24px;color:var(--muted);font-size:13px;line-height:1.9}.project-steps b{color:var(--ink)}.project-steps code{direction:ltr;unicode-bidi:isolate;background:var(--surface-2);padding:2px 5px;border-radius:4px}
+.expected-result{margin-top:18px;padding:16px;border-inline-start:3px solid var(--green);background:var(--surface-2);border-radius:8px;font-size:12px;line-height:1.9;color:var(--ink)}.project-links{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:18px}
+@media(max-width:1000px){.dataset-grid,.roadmap-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.download-panel{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:700px){.selection-prompt{padding:16px}.download-panel,.dataset-grid,.roadmap-grid{grid-template-columns:1fr}.dataset-card{min-height:0}.spec-list{grid-template-columns:1fr;gap:2px}.spec-list dd{margin-bottom:8px}.project-steps{padding-inline-start:20px}.compact-heading{margin-top:36px}}
+.taxonomy-note{display:grid;grid-template-columns:minmax(145px,220px) 1fr;gap:10px 20px;margin:22px 0 10px;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:var(--surface);font-size:12px;line-height:1.9;color:var(--muted)}
+.taxonomy-note>b{color:var(--ink)}.taxonomy-note strong{color:var(--green)}
+@media(max-width:700px){.taxonomy-note{grid-template-columns:1fr;gap:4px}}
+.application-case .spec-list{grid-template-columns:minmax(140px,190px) 1fr}
+@media(max-width:700px){.application-case .spec-list{grid-template-columns:1fr}}
