@@ -456,12 +456,33 @@ nano ~/.bashrc
 
 أضف في آخره:
 ```bash
-alias gpush='cd ~ && git -C /storage/emul>
-alias gstat='cd ~ && git -C /storage/emul>
-alias gpull='cd ~ && git -C /storage/emul>
+# ==========================================
+# Git Shortcuts - Termux
+# ==========================================
+
+# Git Status
+alias gstat='git -C /storage/emulated/0/Projects status'
+alias gs='git status'
+
+# Git Add
+alias ga='git add .'
+
+# Git Commit
 alias gc='git commit -m'
+alias gcm='git commit -m "Update from phone"'
+
+# Git Push & Pull (Current Repository)
 alias gp='git push'
 alias gl='git pull'
+
+# Git Log
+alias glog='git log --oneline'
+
+# Main Projects Repository
+alias gpush='git -C /storage/emulated/0/Projects add . && git -C /storage/emulated/0/Projects commit -m "Update from phone" && git -C /storage/emulated/0/Projects push'
+
+alias gpull='git -C /storage/emulated/0/Projects pull'
+alias gmain='git -C /storage/emulated/0/Projects status'
 ```
 
 احفظ بـ `Ctrl+O` ثم Enter ثم اخرج بـ `Ctrl+X`، وفعّلها:
