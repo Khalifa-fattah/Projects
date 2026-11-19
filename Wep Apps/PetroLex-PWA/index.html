@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0284c7" />
+  <title>PetroLex | مدرب مصطلحات هندسة البترول</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="icons/icon-192.png" alt="PetroLex" />
+      <h1>PetroLex</h1>
+      <span class="badge-offline" id="netStatus">جاهز بدون إنترنت ✓</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-accent hidden" id="installBtn">📲 تثبيت التطبيق</button>
+      <button class="btn-ghost" id="themeBtn" title="تبديل المظهر">🌓</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- TAB 1: DASHBOARD & PROGRESS -->
+    <section id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">إجمالي المصطلحات</div></div>
+        <div class="stat-card"><div class="num" id="statSeen">0</div><div class="lbl">تمت دراستها</div></div>
+        <div class="stat-card"><div class="num" id="statMastered">0</div><div class="lbl">متقنة (محفوظة)</div></div>
+        <div class="stat-card"><div class="num" id="statStreak">1</div><div class="lbl">أيام الاستمرار 🔥</div></div>
+      </div>
+
+      <div class="controls-bar">
+        <div>
+          <strong>🎯 الهدف اليومي:</strong>
+          <input type="number" id="dailyGoalInput" min="5" max="100" value="15" style="width:75px; margin:0 6px;" />
+          <span>مصطلح يومياً</span>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="switchTab('study')">ابدأ وردية اليوم 🚀</button>
+          <button class="btn-ghost" onclick="exportProgress()">💾 نسخ احتياطي</button>
+        </div>
+      </div>
+
+      <h2 style="margin: 14px 0; font-size: 1.1rem;">📊 مقياس التقدم حسب التخصص</h2>
+      <div class="spec-grid" id="specGrid"></div>
+    </section>
+
+    <!-- TAB 2: DAILY STUDY -->
+    <section id="tab-study" class="hidden">
+      <div class="controls-bar">
+        <select id="studySpecSelect" onchange="loadDailyBatch()"></select>
+        <span id="batchCounter" style="font-weight:700; color:var(--accent);">1 / 15</span>
+        <button class="btn-ghost" onclick="loadDailyBatch(true)">🔄 دفعة جديدة</button>
+      </div>
+
+      <div class="flashcard" id="flashcardBox">
+        <span class="card-tag" id="cardSection">التخصص</span>
+        <span class="card-status" id="cardLevel">جديد</span>
+        <div class="term-en" id="cardTerm">Loading...</div>
+        <div class="term-full hidden" id="cardFull"></div>
+        <button class="btn-ghost" style="margin-top:8px;" onclick="speakCurrentTerm()">🔊 استمع للنطق</button>
+        <div class="term-ar hidden" id="cardMeaning">المعنى بالعربية</div>
+      </div>
+
+      <div class="card-actions" id="revealRow">
+        <button class="btn-primary" style="width:100%; max-width:340px; padding:12px;" onclick="revealMeaning()">👁️ إظهار المعنى</button>
+      </div>
+
+      <div class="card-actions hidden" id="rateRow">
+        <button class="btn-danger" onclick="rateCard(0)">❌ صعب (أعده قريباً)</button>
+        <button class="btn-accent" onclick="rateCard(1)">🤔 جيد (مراجعة)</button>
+        <button class="btn-success" onclick="rateCard(2)">✅ تم الحفظ (متقن)</button>
+      </div>
+    </section>
+
+    <!-- TAB 3: SMART QUIZ -->
+    <section id="tab-quiz" class="hidden">
+      <div class="controls-bar">
+        <select id="quizSpecSelect">
+          <option value="all">كل التخصصات</option>
+        </select>
+        <select id="quizScopeSelect">
+          <option value="studied">المصطلحات المعروضة والقديمة (للمراجعة)</option>
+          <option value="all">اختبار شامل من كل القاموس</option>
+        </select>
+        <select id="quizModeSelect">
+          <option value="en2ar">إنجليزي ← عربي</option>
+          <option value="ar2en">عربي ← إنجليزي</option>
+        </select>
+        <button class="btn-primary" onclick="startQuiz()">▶️ ابدأ الاختبار (10 أسئلة)</button>
+      </div>
+
+      <div class="quiz-box" id="quizContainer">
+        <p style="color:var(--muted); text-align:center;">اختر التخصص ونطاق المراجعة ونوع الاختبار ثم اضغط "ابدأ الاختبار" لتثبيت الحفظ.</p>
+      </div>
+    </section>
+
+    <!-- TAB 4: DICTIONARY & IMPORT -->
+    <section id="tab-dict" class="hidden">
+      <div class="controls-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالإنجليزية أو العربية أو الاختصار..." oninput="renderDictionary()" style="flex:1; min-width:220px;" />
+        <select id="dictSpecFilter" onchange="renderDictionary()">
+          <option value="all">جميع التخصصات</option>
+        </select>
+        <label class="btn-accent" style="cursor:pointer;">
+          📥 استيراد ملفات .md إضافية
+          <input type="file" id="mdFileInput" accept=".md,.txt" multiple class="hidden" onchange="importMarkdownFiles(event)" />
+        </label>
+      </div>
+      <div id="dictList"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="active" data-tab="dashboard" onclick="switchTab('dashboard')"><span>📊</span><span>التقدم</span></button>
+    <button data-tab="study" onclick="switchTab('study')"><span>🃏</span><span>وردية اليوم</span></button>
+    <button data-tab="quiz" onclick="switchTab('quiz')"><span>📝</span><span>الاختبارات</span></button>
+    <button data-tab="dict" onclick="switchTab('dict')"><span>📚</span><span>القاموس</span></button>
+  </nav>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
