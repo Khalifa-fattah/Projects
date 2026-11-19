@@ -456,11 +456,12 @@ nano ~/.bashrc
 
 أضف في آخره:
 ```bash
-alias gproj='cd /storage/emulated/0/Projects'
-alias gstat='git -C /storage/emulated/0/Projects status'
-alias gpull='git -C /storage/emulated/0/Projects pull'
-alias glog='git -C /storage/emulated/0/Projects log --oneline -10'
-alias gpush='git -C /storage/emulated/0/Projects add . && git -C /storage/emulated/0/Projects commit -m "Update from phone" && HOME=/data/data/com.termux/files/home git -C /storage/emulated/0/Projects -c core.compression=0 push'
+alias gpush='cd ~ && git -C /storage/emul>
+alias gstat='cd ~ && git -C /storage/emul>
+alias gpull='cd ~ && git -C /storage/emul>
+alias gc='git commit -m'
+alias gp='git push'
+alias gl='git pull'
 ```
 
 احفظ بـ `Ctrl+O` ثم Enter ثم اخرج بـ `Ctrl+X`، وفعّلها:
@@ -468,7 +469,8 @@ alias gpush='git -C /storage/emulated/0/Projects add . && git -C /storage/emulat
 source ~/.bashrc
 ```
 
-بعدها تكفي كلمة واحدة: `gpull` أو `gstat` أو `gpush`.
+بعدها تكفي كلمة واحدة:  `gc` او `gp` او `gl`
+`gpull` أو `gstat` أو `gpush`.
 
 ---
 
