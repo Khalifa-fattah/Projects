@@ -2,8 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#167c5c" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="PetroLex: مدرب مصطلحات واختصارات هندسة البترول بالبطاقات التعليمية والاختبارات، يعمل بدون إنترنت." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="PetroLex" />
   <title>PetroLex | مدرب مصطلحات هندسة البترول</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="icons/icon-192.png" />
@@ -13,50 +18,69 @@
 <body>
   <header>
     <div class="brand">
-      <img src="icons/icon-192.png" alt="PetroLex" />
+      <img src="icons/icon-192.png" alt="" width="30" height="30" />
       <h1>PetroLex</h1>
-      <span class="status-dot" id="netDot" title="متاح بدون إنترنت"></span>
+      <span class="status-dot" id="netDot" role="img" aria-label="متصل بالإنترنت" title="متاح بدون إنترنت"></span>
     </div>
     <div class="header-actions">
-      <button class="btn-green hidden" id="installBtn">📲 تثبيت</button>
-      <button class="btn-ghost" id="themeBtn" title="تبديل الوضع الفاتح / الداكن">🌓</button>
+      <button type="button" class="btn-green btn-with-icon hidden" id="installBtn">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+        <span>تثبيت</span>
+      </button>
+      <button type="button" class="btn-ghost icon-btn" id="themeBtn" title="تبديل الوضع الفاتح / الداكن" aria-label="تبديل الوضع الفاتح / الداكن">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></svg>
+      </button>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container" id="main">
     <!-- TAB 1: DASHBOARD & PROGRESS -->
-    <section id="tab-dashboard">
+    <section id="tab-dashboard" aria-labelledby="dashTitle">
+      <h2 class="sr-only" id="dashTitle">لوحة التقدم</h2>
       <div class="stats-grid">
         <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">إجمالي المصطلحات</div></div>
         <div class="stat-card"><div class="num" id="statSeen">0</div><div class="lbl">تمت دراستها</div></div>
         <div class="stat-card"><div class="num" id="statMastered">0</div><div class="lbl">متقنة</div></div>
-        <div class="stat-card"><div class="num" id="statStreak">1</div><div class="lbl">أيام الاستمرار</div></div>
+        <div class="stat-card"><div class="num" id="statStreak">0</div><div class="lbl">أيام الاستمرار</div></div>
       </div>
 
       <div class="goal-bar">
         <div class="goal-input-group">
-          <span>الهدف اليومي:</span>
-          <input type="number" id="dailyGoalInput" min="5" max="100" value="15" style="width:72px; text-align:center;" />
+          <label for="dailyGoalInput">الهدف اليومي:</label>
+          <input type="number" id="dailyGoalInput" class="goal-input" min="5" max="100" value="15" inputmode="numeric" />
           <span>مصطلح</span>
         </div>
-        <button class="btn-green" onclick="startDailyFromDashboard()">ابدأ</button>
+        <button type="button" class="btn-green" id="startDailyBtn">ابدأ</button>
       </div>
 
-      <h2 style="margin: 14px 0; font-size: 1.05rem; font-weight: 800;">مقياس التقدم حسب التخصص</h2>
+      <button type="button" class="due-banner hidden" id="dueBanner"></button>
+
+      <div class="week-card">
+        <div class="week-head">
+          <h2 class="section-title">نشاط آخر 7 أيام</h2>
+          <span class="week-total" id="weekTotal"></span>
+        </div>
+        <div class="week-bars" id="weekChart" role="img" aria-label="نشاط آخر 7 أيام"></div>
+      </div>
+
+      <h2 class="section-title spaced">مقياس التقدم حسب التخصص</h2>
       <div class="spec-grid" id="specGrid"></div>
     </section>
 
     <!-- TAB 2: ACTIVE LEARNING SESSION -->
-    <section id="tab-study" class="hidden">
+    <section id="tab-study" class="hidden" aria-labelledby="studyTitle">
       <div class="session-header">
         <div class="session-kicker">التعلم النشط</div>
         <div class="session-title-row">
-          <h2 class="session-title">جلسة التعلم</h2>
+          <h2 class="session-title" id="studyTitle">جلسة التعلم</h2>
         </div>
-        <div class="session-spec-picker" id="studySpecDropdown"></div>
+        <div class="session-pickers">
+          <div class="session-spec-picker" id="studySpecDropdown"></div>
+          <div class="session-spec-picker" id="studyModeDropdown"></div>
+        </div>
       </div>
 
-      <div class="learn-card">
+      <div class="learn-card" id="studyCard">
         <div class="learn-card-top">
           <span id="cardSection">الاختصارات · 1. المنظمات والشركات</span>
           <span class="learn-counter" id="batchCounter">1 / 15</span>
@@ -66,40 +90,61 @@
 
         <div class="learn-term-row">
           <div class="learn-term" id="cardTerm">Society of Petroleum Engineers</div>
-          <button class="speak-mini-btn" onclick="speakCurrentTerm()" title="نطق المصطلح" aria-label="نطق المصطلح">🔊</button>
+          <button type="button" class="speak-mini-btn" id="speakBtn" title="نطق المصطلح" aria-label="نطق المصطلح">🔊</button>
         </div>
 
         <div class="learn-abbr hidden" id="cardAbbr">الاختصار: SPE</div>
 
         <div class="reveal-btn-wrap" id="revealRow">
-          <button class="btn-reveal" onclick="revealMeaning()">إظهار المعنى</button>
+          <button type="button" class="btn-reveal" id="revealBtn">إظهار المعنى</button>
         </div>
 
         <div id="answerSection" class="hidden">
           <hr class="learn-divider" />
-          <div class="learn-label" style="margin-bottom: 6px;">المعنى</div>
+          <div class="learn-label tight">المعنى</div>
           <div class="learn-meaning" id="cardMeaning">جمعية مهندسي البترول</div>
 
           <div class="recall-prompt">كيف كان تذكرك؟</div>
-          <div class="recall-segmented">
-            <button onclick="rateCard(0)">لم أتذكر</button>
-            <button onclick="rateCard(1)">بصعوبة</button>
-            <button onclick="rateCard(2)">تذكرت</button>
-            <button onclick="rateCard(3)">بسهولة</button>
+          <div class="recall-segmented" id="ratingRow">
+            <button type="button" data-rating="0">لم أتذكر</button>
+            <button type="button" data-rating="1">بصعوبة</button>
+            <button type="button" data-rating="2">تذكرت</button>
+            <button type="button" data-rating="3">بسهولة</button>
           </div>
+        </div>
+
+        <div class="learn-nav">
+          <button type="button" class="btn-ghost btn-sm" id="prevCardBtn">‹ السابق</button>
+          <span class="kbd-hint">مسافة: إظهار المعنى · 1–4: التقييم · →: السابق</span>
+        </div>
+      </div>
+
+      <div class="empty-card hidden" id="studyEmpty">
+        <p id="studyEmptyText"></p>
+        <button type="button" class="btn-green" id="studyEmptyBtn">جلسة عادية</button>
+      </div>
+
+      <div class="learn-card hidden" id="studySummary" aria-live="polite">
+        <div class="session-kicker center">اكتملت الجلسة</div>
+        <h2 class="summary-title" id="summaryTitle"></h2>
+        <div class="summary-grid" id="summaryGrid"></div>
+        <div id="summaryWeak"></div>
+        <div class="summary-actions">
+          <button type="button" class="btn-green" id="summaryQuizBtn">اختبر نفسك</button>
+          <button type="button" class="btn-ghost" id="summaryAgainBtn">جلسة جديدة</button>
         </div>
       </div>
     </section>
 
     <!-- TAB 3: SMART QUIZ -->
-    <section id="tab-quiz" class="hidden">
+    <section id="tab-quiz" class="hidden" aria-labelledby="quizTitle">
       <div class="quiz-header-card">
         <div class="quiz-header-top">
           <div>
             <div class="session-kicker">مراجعة وتثبيت</div>
-            <h2>الاختبارات</h2>
+            <h2 id="quizTitle">الاختبارات</h2>
           </div>
-          <button class="btn-green" onclick="startQuiz()">ابدأ الاختبار</button>
+          <button type="button" class="btn-green" id="startQuizBtn">ابدأ الاختبار</button>
         </div>
         <div class="quiz-filters-grid">
           <div id="quizSpecDropdown"></div>
@@ -109,31 +154,135 @@
       </div>
 
       <div class="quiz-box" id="quizContainer">
-        <p style="color:var(--muted); text-align:center; padding: 16px 0;">حدد التخصص ونوع الاختبار من الأعلى ثم اضغط "ابدأ الاختبار".</p>
+        <p class="muted-note">حدد التخصص ونوع الاختبار من الأعلى ثم اضغط "ابدأ الاختبار".</p>
       </div>
     </section>
 
-    <!-- TAB 4: DICTIONARY & IMPORT -->
-    <section id="tab-dict" class="hidden">
+    <!-- TAB 4: DICTIONARY -->
+    <section id="tab-dict" class="hidden" aria-labelledby="dictTitle">
+      <h2 class="sr-only" id="dictTitle">القاموس</h2>
       <div class="dict-controls">
-        <input type="text" id="searchInput" placeholder="ابحث بالإنجليزية أو العربية أو الاختصار..." oninput="renderDictionary()" />
+        <input type="text" id="searchInput" placeholder="ابحث بالإنجليزية أو العربية أو الاختصار..." aria-label="بحث في القاموس" autocomplete="off" enterkeyhint="search" />
         <div id="dictSpecDropdown"></div>
-        <label class="btn-ghost" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">
-          استيراد .md
-          <input type="file" id="mdFileInput" accept=".md,.txt" multiple class="hidden" onchange="importMarkdownFiles(event)" />
-        </label>
+        <div class="dict-actions">
+          <button type="button" class="btn-green" id="addTermBtn">+ إضافة</button>
+          <button type="button" class="btn-ghost" id="importBtn">استيراد .md</button>
+        </div>
       </div>
+      <div class="dict-count" id="dictCount" aria-live="polite"></div>
       <div id="dictList"></div>
+      <div class="center-row"><button type="button" class="btn-ghost hidden" id="dictMoreBtn">عرض المزيد</button></div>
+    </section>
+
+    <!-- TAB 5: SETTINGS -->
+    <section id="tab-settings" class="hidden" aria-labelledby="settingsTitle">
+      <div class="session-header">
+        <div class="session-kicker">التخصيص والإدارة</div>
+        <h2 class="session-title" id="settingsTitle">الإعدادات</h2>
+      </div>
+
+      <div class="settings-card">
+        <h3>المظهر</h3>
+        <div class="setting-row">
+          <span class="setting-label">وضع العرض</span>
+          <div class="segmented" id="themeSeg" role="group" aria-label="وضع العرض">
+            <button type="button" data-theme-val="dark">داكن</button>
+            <button type="button" data-theme-val="light">فاتح</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>التعلم والاختبار</h3>
+        <div class="setting-row">
+          <label class="setting-label" for="settingsGoal">الهدف اليومي (مصطلح)</label>
+          <input type="number" id="settingsGoal" class="goal-input" min="5" max="100" value="15" inputmode="numeric" />
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">عدد أسئلة الاختبار</span>
+          <div class="segmented" id="quizLenSeg" role="group" aria-label="عدد أسئلة الاختبار">
+            <button type="button" data-len="5">5</button>
+            <button type="button" data-len="10">10</button>
+            <button type="button" data-len="15">15</button>
+            <button type="button" data-len="20">20</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>المصطلحات</h3>
+        <p class="setting-help">استورد ملفات Markdown لإضافة مصطلحات جديدة. ستعرض لك معاينة، ثم تختار التخصص أو تكتب اسم تخصص جديد بنفسك قبل الحفظ.</p>
+        <div class="btn-row">
+          <button type="button" class="btn-green" id="settingsImportBtn">استيراد ملف .md</button>
+          <button type="button" class="btn-ghost" id="settingsAddBtn">+ إضافة مصطلح يدوياً</button>
+        </div>
+        <details class="format-help">
+          <summary>صيغة الملفات المدعومة</summary>
+          <p>جداول Markdown (يُقرأ رأس الجدول تلقائياً بأي ترتيب للأعمدة)، وإن لم يوجد جدول فالقوائم بصيغة <code dir="ltr">- Term (ABBR): المعنى</code>. العناوين <code dir="ltr">##</code> تصبح أقسام المصطلحات، وروابط [[ويكي]] تُنظَّف تلقائياً.</p>
+          <pre dir="ltr">## 1. Drilling Tools
+| المصطلح | المعنى |
+|---|---|
+| Drill Pipe (DP) | أنبوب الحفر |
+
+| المعنى | الاسم الكامل | الاختصار |
+|---|---|---|
+| معهد البترول الأمريكي | American Petroleum Institute | API |</pre>
+        </details>
+      </div>
+
+      <div class="settings-card">
+        <h3>التخصصات المضافة</h3>
+        <div id="customSpecList"></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>البيانات</h3>
+        <div class="btn-col">
+          <button type="button" class="btn-ghost" id="restoreBtn">استعادة المصطلحات الأصلية المحذوفة والمعدّلة</button>
+          <button type="button" class="btn-danger-outline" id="resetProgressBtn">إعادة ضبط التقدم والاستمرارية</button>
+          <button type="button" class="btn-danger-outline" id="clearCustomBtn">حذف كل التخصصات والمصطلحات المضافة</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>عن التطبيق</h3>
+        <div class="setting-row"><span class="setting-label">الإصدار</span><span class="setting-value" id="appVersion"></span></div>
+        <div class="setting-row"><span class="setting-label">الاتصال</span><span class="setting-value" id="netStatus"></span></div>
+        <div class="btn-row">
+          <button type="button" class="btn-ghost" id="checkUpdateBtn">التحقق من وجود تحديث</button>
+          <button type="button" class="btn-ghost hidden" id="settingsInstallBtn">تثبيت التطبيق</button>
+        </div>
+      </div>
     </section>
   </main>
 
-  <nav class="bottom-nav">
-    <button class="active" data-tab="dashboard" onclick="switchTab('dashboard')"><span>📊</span><span>التقدم</span></button>
-    <button data-tab="study" onclick="switchTab('study')"><span>🃏</span><span>جلسة التعلم</span></button>
-    <button data-tab="quiz" onclick="switchTab('quiz')"><span>📝</span><span>الاختبارات</span></button>
-    <button data-tab="dict" onclick="switchTab('dict')"><span>📚</span><span>القاموس</span></button>
+  <input type="file" id="mdFileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple class="hidden" />
+  <div class="toast-host" id="toastHost" role="status" aria-live="polite"></div>
+
+  <nav class="bottom-nav" aria-label="التنقل الرئيسي">
+    <button type="button" class="active" data-tab="dashboard" aria-current="page">
+      <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20v-9M12 20V4M18 20v-6"/></svg></span>
+      <span class="nav-label">التقدم</span>
+    </button>
+    <button type="button" data-tab="study">
+      <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M7 3.5h10"/></svg></span>
+      <span class="nav-label">جلسة التعلم</span>
+    </button>
+    <button type="button" data-tab="quiz">
+      <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16 9.5"/></svg></span>
+      <span class="nav-label">الاختبارات</span>
+    </button>
+    <button type="button" data-tab="dict">
+      <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.5 5 8.2 4.5 4 4.5v13c4.2 0 6.5.5 8 2 1.5-1.5 3.8-2 8-2v-13c-4.2 0-6.5.5-8 2zM12 6.5v13"/></svg></span>
+      <span class="nav-label">القاموس</span>
+    </button>
+    <button type="button" data-tab="settings">
+      <span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span>
+      <span class="nav-label">الإعدادات</span>
+    </button>
   </nav>
 
+  <noscript><p class="muted-note">يحتاج التطبيق إلى تفعيل JavaScript.</p></noscript>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
