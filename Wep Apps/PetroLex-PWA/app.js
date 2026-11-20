@@ -11,13 +11,116 @@ let state = {
   progress: JSON.parse(localStorage.getItem('petro_progress') || '{}'),
   dailyGoal: Number(localStorage.getItem('petro_goal')) || 15,
   streak: Number(localStorage.getItem('petro_streak')) || 1,
-  lastActiveDay: localStorage.getItem('petro_last_day') || ''
+  lastActiveDay: localStorage.getItem('petro_last_day') || '',
+  studySpec: 'all',
+  quizSpec: 'all',
+  quizScope: 'studied',
+  quizMode: 'en2ar',
+  dictSpec: 'all'
 };
 
 let dailyBatch = [];
 let currentIndex = 0;
 let quizState = { questions: [], index: 0, score: 0, mode: 'en2ar' };
 
+// ==========================================
+// Custom Styled Dropdown Component
+// ==========================================
+function createCustomDropdown(containerId, options, selectedValue, onChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const current = options.find(o => o.value === selectedValue) || options[0];
+
+  container.innerHTML = `
+    <div class="custom-select-wrap">
+      <button type="button" class="custom-select-btn">
+        <span>${current ? current.label : ''}</span>
+        <span class="chevron">▼</span>
+      </button>
+      <div class="custom-select-menu hidden">
+        ${options.map(opt => `
+          <div class="custom-select-option ${opt.value === selectedValue ? 'selected' : ''}" data-val="${opt.value}">
+            <span>${opt.label}</span>
+            ${opt.badge ? `<span style="font-size:0.78rem; color:var(--muted);">${opt.badge}</span>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  const btn = container.querySelector('.custom-select-btn');
+  const menu = container.querySelector('.custom-select-menu');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = !menu.classList.contains('hidden');
+    closeAllDropdowns();
+    if (!isOpen) {
+      menu.classList.remove('hidden');
+      btn.classList.add('open');
+    }
+  });
+
+  container.querySelectorAll('.custom-select-option').forEach(optEl => {
+    optEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const val = optEl.dataset.val;
+      closeAllDropdowns();
+      onChange(val);
+      createCustomDropdown(containerId, options, val, onChange);
+    });
+  });
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.custom-select-menu').forEach(m => m.classList.add('hidden'));
+  document.querySelectorAll('.custom-select-btn').forEach(b => b.classList.remove('open'));
+}
+
+document.addEventListener('click', closeAllDropdowns);
+
+function initDropdowns() {
+  const specOptions = [
+    { value: 'all', label: 'كل التخصصات', badge: `${state.items.length}` },
+    ...BASE_SPECIALTIES.map(s => ({
+      value: s.id,
+      label: s.nameAr,
+      badge: `${state.items.filter(i => i.specId === s.id).length}`
+    }))
+  ];
+
+  createCustomDropdown('studySpecDropdown', specOptions, state.studySpec, (val) => {
+    state.studySpec = val;
+    loadDailyBatch();
+  });
+
+  createCustomDropdown('quizSpecDropdown', specOptions, state.quizSpec, (val) => {
+    state.quizSpec = val;
+  });
+
+  createCustomDropdown('quizScopeDropdown', [
+    { value: 'studied', label: 'المصطلحات المعروضة والقديمة' },
+    { value: 'all', label: 'كل مصطلحات القاموس' }
+  ], state.quizScope, (val) => {
+    state.quizScope = val;
+  });
+
+  createCustomDropdown('quizModeDropdown', [
+    { value: 'en2ar', label: 'إنجليزي ← عربي' },
+    { value: 'ar2en', label: 'عربي ← إنجليزي' }
+  ], state.quizMode, (val) => {
+    state.quizMode = val;
+  });
+
+  createCustomDropdown('dictSpecDropdown', specOptions, state.dictSpec, (val) => {
+    state.dictSpec = val;
+    renderDictionary();
+  });
+}
+
+// ==========================================
+// Streak & Persistence
+// ==========================================
 function updateStreak() {
   const today = new Date().toISOString().slice(0, 10);
   if (!state.lastActiveDay) {
@@ -61,27 +164,27 @@ async function importMarkdownFiles(event) {
     for (const rawLine of text.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (line.startsWith('## ')) {
-        currentSection = line.replace(/^##\s*\d+\.\s*/, '').trim();
+        currentSection = line.replace(/^##\s*/, '').trim();
       } else if (line.startsWith('|') && !/^\|[\s-:]+\|/.test(line)) {
         const cols = line.replace(/^\||\|$/g, '').split('|').map(cleanWikiLinks);
         if (cols.length < 2 || cols[0] === 'المصطلح' || cols[0] === 'المعنى') continue;
 
-        let term = '', fullTerm = '', meaning = '';
+        let term = '', abbr = '', meaning = '';
         if (isAbbr && cols.length >= 3) {
           meaning = cols[0];
-          fullTerm = cols[1];
-          term = cols[2];
+          term = cols[1] || cols[2];
+          abbr = cols[2];
         } else {
-          term = cols[0];
+          const m = cols[0].match(/^(.*?)\s*\(([A-Z0-9&/\-]{2,12})\)\s*$/);
+          term = m ? m[1].trim() : cols[0];
+          abbr = m ? m[2].trim() : '';
           meaning = cols[1];
-          const m = term.match(/\(([A-Z0-9&/\-]{2,12})\)\s*$/);
-          fullTerm = m ? m[1] : '';
         }
 
         if (!term || !meaning) continue;
         const exists = state.items.some(x => x.term.toLowerCase() === term.toLowerCase() && x.specId === matchedSpec.id);
         if (!exists) {
-          const item = { id: nextId++, specId: matchedSpec.id, section: currentSection, type: isAbbr ? 'abbr' : 'term', term, fullTerm, meaning };
+          const item = { id: nextId++, specId: matchedSpec.id, section: currentSection, type: isAbbr ? 'abbr' : 'term', term, abbr, meaning };
           custom.push(item);
           state.items.push(item);
           addedCount++;
@@ -91,12 +194,15 @@ async function importMarkdownFiles(event) {
   }
 
   localStorage.setItem('petro_custom_items', JSON.stringify(custom));
-  populateSelects();
+  initDropdowns();
   renderDashboard();
   renderDictionary();
-  alert(`تم استيراد ${addedCount} مصطلح جديد وتخزينها محلياً!`);
+  alert(`تم استيراد ${addedCount} مصطلح جديد بنجاح!`);
 }
 
+// ==========================================
+// Dashboard & Progress
+// ==========================================
 function renderDashboard() {
   const total = state.items.length;
   const progEntries = Object.values(state.progress);
@@ -119,33 +225,44 @@ function renderDashboard() {
     return `
       <div class="spec-card" onclick="openSpecStudy('${spec.id}')">
         <div class="spec-top">
-          <span class="spec-title">${spec.icon} ${spec.nameAr}</span>
-          <strong style="color:var(--primary)">${pct}%</strong>
+          <span class="spec-title">${spec.nameAr}</span>
+          <span class="spec-pct">${pct}%</span>
         </div>
         <div class="spec-en">${spec.nameEn}</div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="spec-meta">
           <span>متقن: ${specMastered} | معروض: ${specSeen} / ${specItems.length}</span>
-          <span>ادرس ←</span>
+          <span style="color:var(--green-text); font-weight:600;">ادرس ←</span>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function openSpecStudy(specId) {
-  document.getElementById('studySpecSelect').value = specId;
+function startDailyFromDashboard() {
+  const goal = Number(document.getElementById('dailyGoalInput').value) || 15;
+  state.dailyGoal = goal;
+  saveState();
   switchTab('study');
   loadDailyBatch();
 }
 
-function loadDailyBatch(forceNew = false) {
-  const specId = document.getElementById('studySpecSelect').value;
+function openSpecStudy(specId) {
+  state.studySpec = specId;
+  initDropdowns();
+  switchTab('study');
+  loadDailyBatch();
+}
+
+// ==========================================
+// Active Learning Session
+// ==========================================
+function loadDailyBatch() {
   const goal = Number(document.getElementById('dailyGoalInput').value) || 15;
   state.dailyGoal = goal;
   saveState();
 
-  let pool = specId === 'all' ? [...state.items] : state.items.filter(i => i.specId === specId);
+  let pool = state.studySpec === 'all' ? [...state.items] : state.items.filter(i => i.specId === state.studySpec);
   const now = Date.now();
 
   pool.sort((a, b) => {
@@ -157,7 +274,6 @@ function loadDailyBatch(forceNew = false) {
     return pa.level - pb.level;
   });
 
-  if (forceNew) pool.sort(() => Math.random() - 0.5);
   dailyBatch = pool.slice(0, goal);
   currentIndex = 0;
   renderCard();
@@ -165,46 +281,47 @@ function loadDailyBatch(forceNew = false) {
 
 function renderCard() {
   if (!dailyBatch.length) {
-    document.getElementById('cardTerm').textContent = 'لا توجد مصطلحات في هذا القسم';
+    document.getElementById('cardTerm').textContent = 'لا توجد مصطلحات';
     return;
   }
   const item = dailyBatch[currentIndex];
   const spec = BASE_SPECIALTIES.find(s => s.id === item.specId);
-  const prog = state.progress[item.id] || { level: 0 };
-  const levels = ['🆕 جديد', '🔄 قيد المراجعة', '✅ متقن', '🏆 راسخ'];
 
+  document.getElementById('cardSection').textContent = `${spec ? spec.nameAr : ''} · ${item.section}`;
   document.getElementById('batchCounter').textContent = `${currentIndex + 1} / ${dailyBatch.length}`;
-  document.getElementById('cardSection').textContent = `${spec?.nameAr || ''} • ${item.section}`;
-  document.getElementById('cardLevel').textContent = levels[Math.min(prog.level, 3)];
   document.getElementById('cardTerm').textContent = item.term;
 
-  const fullEl = document.getElementById('cardFull');
-  if (item.fullTerm && item.fullTerm !== item.term) {
-    fullEl.textContent = item.fullTerm;
-    fullEl.classList.remove('hidden');
+  const abbrEl = document.getElementById('cardAbbr');
+  if (item.abbr && item.abbr !== item.term) {
+    abbrEl.textContent = `الاختصار: ${item.abbr}`;
+    abbrEl.classList.remove('hidden');
   } else {
-    fullEl.classList.add('hidden');
+    abbrEl.classList.add('hidden');
   }
 
   document.getElementById('cardMeaning').textContent = item.meaning;
-  document.getElementById('cardMeaning').classList.add('hidden');
   document.getElementById('revealRow').classList.remove('hidden');
-  document.getElementById('rateRow').classList.add('hidden');
+  document.getElementById('answerSection').classList.add('hidden');
 }
 
 function revealMeaning() {
-  document.getElementById('cardMeaning').classList.remove('hidden');
   document.getElementById('revealRow').classList.add('hidden');
-  document.getElementById('rateRow').classList.remove('hidden');
+  document.getElementById('answerSection').classList.remove('hidden');
 }
 
-function rateCard(score) {
+function rateCard(ratingIndex) {
+  // 0: لم أتذكر, 1: بصعوبة, 2: تذكرت, 3: بسهولة
   updateStreak();
   const item = dailyBatch[currentIndex];
   const prev = state.progress[item.id] || { level: 0, seenCount: 0, nextReview: 0 };
-  const intervals = [10 * 60 * 1000, 24 * 3600 * 1000, 3 * 24 * 3600 * 1000, 7 * 24 * 3600 * 1000];
+  const intervals = [10 * 60 * 1000, 12 * 3600 * 1000, 3 * 24 * 3600 * 1000, 7 * 24 * 3600 * 1000];
 
-  const newLevel = score === 0 ? 0 : Math.min(3, prev.level + score);
+  let newLevel = 0;
+  if (ratingIndex === 0) newLevel = 0;
+  else if (ratingIndex === 1) newLevel = Math.max(1, prev.level);
+  else if (ratingIndex === 2) newLevel = Math.min(3, prev.level + 1);
+  else newLevel = 3;
+
   state.progress[item.id] = {
     level: newLevel,
     seenCount: prev.seenCount + 1,
@@ -216,7 +333,6 @@ function rateCard(score) {
     currentIndex++;
     renderCard();
   } else {
-    alert('🎉 أحسنت! أنهيت وردية اليوم بنجاح. انتقل إلى الاختبارات لتثبيت الحفظ.');
     renderDashboard();
     switchTab('quiz');
   }
@@ -225,27 +341,25 @@ function rateCard(score) {
 function speakCurrentTerm() {
   const item = dailyBatch[currentIndex];
   if (!item || !('speechSynthesis' in window)) return;
-  const text = item.fullTerm && item.fullTerm.length > 3 ? `${item.term}. ${item.fullTerm}` : item.term;
-  const utter = new SpeechSynthesisUtterance(text);
+  const utter = new SpeechSynthesisUtterance(item.term);
   utter.lang = 'en-US';
   utter.rate = 0.92;
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
 
+// ==========================================
+// Smart Quiz
+// ==========================================
 function startQuiz() {
-  const specId = document.getElementById('quizSpecSelect').value;
-  const scope = document.getElementById('quizScopeSelect').value;
-  const mode = document.getElementById('quizModeSelect').value;
-
-  let pool = specId === 'all' ? [...state.items] : state.items.filter(i => i.specId === specId);
-  if (scope === 'studied') {
+  let pool = state.quizSpec === 'all' ? [...state.items] : state.items.filter(i => i.specId === state.quizSpec);
+  if (state.quizScope === 'studied') {
     const studiedPool = pool.filter(i => (state.progress[i.id]?.seenCount || 0) > 0);
     if (studiedPool.length >= 4) pool = studiedPool;
   }
 
   if (pool.length < 4) {
-    document.getElementById('quizContainer').innerHTML = '<p>تحتاج إلى 4 مصطلحات على الأقل لبدء الاختبار.</p>';
+    document.getElementById('quizContainer').innerHTML = '<p style="text-align:center; color:var(--muted);">تحتاج إلى 4 مصطلحات على الأقل لبدء الاختبار.</p>';
     return;
   }
 
@@ -255,15 +369,15 @@ function startQuiz() {
   quizState = {
     index: 0,
     score: 0,
-    mode,
+    mode: state.quizMode,
     questions: selected.map(q => {
       const sameSpecPool = state.items.filter(x => x.id !== q.id && x.specId === q.specId);
       const distractorSource = sameSpecPool.length >= 3 ? sameSpecPool : state.items.filter(x => x.id !== q.id);
       const distractors = distractorSource
         .sort(() => Math.random() - 0.5)
         .slice(0, 3)
-        .map(x => mode === 'en2ar' ? x.meaning : x.term);
-      const answer = mode === 'en2ar' ? q.meaning : q.term;
+        .map(x => state.quizMode === 'en2ar' ? x.meaning : x.term);
+      const answer = state.quizMode === 'en2ar' ? q.meaning : q.term;
       const options = [...distractors, answer].sort(() => Math.random() - 0.5);
       return { item: q, options, answer };
     })
@@ -277,9 +391,10 @@ function renderQuizQuestion() {
     const pct = Math.round((quizState.score / quizState.questions.length) * 100);
     box.innerHTML = `
       <div style="text-align:center; padding:18px;">
-        <h2>🏁 نتيجة الاختبار: ${quizState.score} / ${quizState.questions.length} (${pct}%)</h2>
-        <p style="color:var(--muted); margin:10px 0;">تم تحديث مستوى الإتقان للمصطلحات المختبرة تلقائياً.</p>
-        <button class="btn-primary" onclick="startQuiz()">🔄 اختبار جديد</button>
+        <div class="session-kicker">اكتمل الاختبار</div>
+        <h2 style="font-size:1.5rem; margin:8px 0;">${quizState.score} / ${quizState.questions.length} (${pct}%)</h2>
+        <p style="color:var(--muted); margin-bottom:18px;">تم تحديث مستوى الإتقان تلقائياً.</p>
+        <button class="btn-green" onclick="startQuiz()">اختبار جديد</button>
       </div>`;
     renderDashboard();
     return;
@@ -288,17 +403,17 @@ function renderQuizQuestion() {
   const q = quizState.questions[quizState.index];
   const isEn2Ar = quizState.mode === 'en2ar';
   const promptMain = isEn2Ar ? q.item.term : q.item.meaning;
-  const promptSub = isEn2Ar ? (q.item.fullTerm || '') : q.item.section;
+  const promptSub = isEn2Ar && q.item.abbr ? `الاختصار: ${q.item.abbr}` : q.item.section;
 
   box.innerHTML = `
-    <div style="display:flex; justify-content:space-between; color:var(--muted); font-size:0.85rem;">
-      <span>سؤال ${quizState.index + 1} من ${quizState.questions.length}</span>
+    <div class="learn-card-top">
       <span>النتيجة: ${quizState.score}</span>
+      <span class="learn-counter">${quizState.index + 1} / ${quizState.questions.length}</span>
     </div>
-    <div class="${isEn2Ar ? 'term-en' : 'term-ar'}" style="text-align:center; border:none; margin:18px 0 6px;">${promptMain}</div>
-    ${promptSub ? `<div class="term-full" style="text-align:center;">${promptSub}</div>` : ''}
+    <div class="${isEn2Ar ? 'learn-term' : 'learn-meaning'}" style="margin:14px 0 8px;">${promptMain}</div>
+    ${promptSub ? `<div class="learn-abbr" style="margin-bottom:14px;">${promptSub}</div>` : ''}
     <div class="options-list">
-      ${q.options.map((opt, idx) => `<button class="option-btn" data-idx="${idx}" onclick="checkQuizAnswer(this, ${idx})">${opt}</button>`).join('')}
+      ${q.options.map((opt, idx) => `<button class="option-btn" onclick="checkQuizAnswer(this, ${idx})">${opt}</button>`).join('')}
     </div>
   `;
 }
@@ -325,53 +440,38 @@ function checkQuizAnswer(btn, optIdx) {
   setTimeout(() => {
     quizState.index++;
     renderQuizQuestion();
-  }, 1100);
+  }, 1000);
 }
 
+// ==========================================
+// Dictionary
+// ==========================================
 function renderDictionary() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  const specId = document.getElementById('dictSpecFilter').value;
 
   const filtered = state.items.filter(item => {
-    if (specId !== 'all' && item.specId !== specId) return false;
+    if (state.dictSpec !== 'all' && item.specId !== state.dictSpec) return false;
     if (!q) return true;
     return item.term.toLowerCase().includes(q) ||
-           (item.fullTerm && item.fullTerm.toLowerCase().includes(q)) ||
+           (item.abbr && item.abbr.toLowerCase().includes(q)) ||
            item.meaning.includes(q);
   }).slice(0, 150);
 
   document.getElementById('dictList').innerHTML = filtered.map(item => `
     <div class="dict-item">
       <div>
-        <strong style="color:var(--primary); direction:ltr; display:inline-block;">${item.term}</strong>
-        ${item.fullTerm && item.fullTerm !== item.term ? `<span style="color:var(--accent); font-size:0.82rem; margin-right:6px;">(${item.fullTerm})</span>` : ''}
-        <div style="font-size:0.95rem;">${item.meaning}</div>
+        <strong style="color:var(--text); direction:ltr; display:inline-block;">${item.term}</strong>
+        ${item.abbr && item.abbr !== item.term ? `<span style="color:var(--green-text); font-size:0.82rem; font-weight:700; margin-right:6px;">(${item.abbr})</span>` : ''}
+        <div style="font-size:0.92rem; color:var(--muted); margin-top:2px;">${item.meaning}</div>
       </div>
-      <span style="font-size:0.75rem; color:var(--muted);">${item.section}</span>
+      <span style="font-size:0.75rem; color:var(--muted); text-align:left;">${item.section}</span>
     </div>
   `).join('');
 }
 
-function populateSelects() {
-  const optionsHtml = `<option value="all">كل التخصصات (${state.items.length})</option>` +
-    BASE_SPECIALTIES.map(s => {
-      const c = state.items.filter(i => i.specId === s.id).length;
-      return `<option value="${s.id}">${s.icon} ${s.nameAr} (${c})</option>`;
-    }).join('');
-
-  document.getElementById('studySpecSelect').innerHTML = optionsHtml;
-  document.getElementById('quizSpecSelect').innerHTML = optionsHtml;
-  document.getElementById('dictSpecFilter').innerHTML = optionsHtml;
-}
-
-function exportProgress() {
-  const blob = new Blob([JSON.stringify(state.progress, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `petrolex-progress-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-}
-
+// ==========================================
+// Navigation, Theme & PWA
+// ==========================================
 function switchTab(tabName) {
   ['dashboard', 'study', 'quiz', 'dict'].forEach(t => {
     document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
@@ -383,6 +483,21 @@ function switchTab(tabName) {
   if (tabName === 'dict') renderDictionary();
 }
 
+// Theme: Default Dark, toggleable to Light
+const savedTheme = localStorage.getItem('petro_theme') || 'dark';
+if (savedTheme === 'light') document.body.classList.add('light');
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  localStorage.setItem('petro_theme', document.body.classList.contains('light') ? 'light' : 'dark');
+});
+
+// Online/Offline green dot
+const netDot = document.getElementById('netDot');
+window.addEventListener('online', () => netDot.classList.remove('offline'));
+window.addEventListener('offline', () => netDot.classList.add('offline'));
+
+// Service Worker & Install Prompt
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
@@ -402,12 +517,5 @@ document.getElementById('installBtn').addEventListener('click', async () => {
   document.getElementById('installBtn').classList.add('hidden');
 });
 
-document.getElementById('themeBtn').addEventListener('click', () => {
-  document.body.classList.toggle('light');
-});
-
-window.addEventListener('online', () => document.getElementById('netStatus').textContent = 'متصل + مخزن محلياً ✓');
-window.addEventListener('offline', () => document.getElementById('netStatus').textContent = 'وضع بدون إنترنت ⚡');
-
-populateSelects();
+initDropdowns();
 renderDashboard();

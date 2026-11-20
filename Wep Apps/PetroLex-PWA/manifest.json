@@ -4,8 +4,8 @@
   "description": "تطبيق PWA لتعلم واختبار المصطلحات والاختصارات البترولية حسب التخصص بدون إنترنت",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b1120",
-  "theme_color": "#0284c7",
+  "background_color": "#090b0a",
+  "theme_color": "#167c5c",
   "dir": "rtl",
   "lang": "ar",
   "icons": [
