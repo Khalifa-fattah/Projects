@@ -1,6 +1,6 @@
 /* Service Worker — يجعل التطبيق يعمل بدون إنترنت.
    غيّر رقم VERSION عند كل تحديث للملفات لإجبار المتصفح على تنزيل النسخة الجديدة. */
-const VERSION = 'tasbih-v5';
+const VERSION = 'tasbih-v6';
 
 const ASSETS = [
   './',

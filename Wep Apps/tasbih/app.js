@@ -903,6 +903,7 @@
   function afterDataChange() {
     applyTheme();
     applyFont();
+    applyFontSize();
     syncSettingsUI();
     logY = logM = logSel = null;
     shownId = null;
@@ -946,6 +947,7 @@
   /* ===================== البدء ===================== */
   applyTheme();
   applyFont();
+  applyFontSize();
   syncSettingsUI();
   showView('counter');
   updateWake();
