@@ -70,6 +70,7 @@
   const KEY = 'tasbih.v1';
   const THEMES = { green: '#0a1a13', midnight: '#0a0e19', light: '#f5f0e3' };
   const FONTS = ['amiri', 'cairo', 'system'];
+  const FONT_SIZES = ['small', 'medium', 'large'];
 
   const clampInt = (v, min, max, def) => {
     const n = Math.floor(Number(v));
@@ -87,7 +88,7 @@
       counts: dict(),
       log: dict(),
       deleted: dict(),
-      settings: { sound: false, vibrate: true, auto: true, wake: false, theme: 'green', font: 'amiri', goal: 100 }
+      settings: { sound: false, vibrate: true, auto: true, wake: false, theme: 'green', font: 'amiri', fontSize: 'medium', goal: 100 }
     };
   }
 
@@ -162,6 +163,7 @@
       wake: st.wake === true,
       theme: Object.prototype.hasOwnProperty.call(THEMES, st.theme) ? st.theme : 'green',
       font: FONTS.includes(st.font) ? st.font : 'amiri',
+      fontSize: FONT_SIZES.includes(st.fontSize) ? st.fontSize : 'medium',
       goal: clampInt(st.goal, 1, 1000000, 100)
     };
     return s;
@@ -778,6 +780,11 @@
     document.documentElement.dataset.font = f;
   }
 
+  function applyFontSize() {
+    const fs = state.settings.fontSize || 'medium';
+    document.documentElement.dataset.fontSize = fs;
+  }
+
   function syncSettingsUI() {
     const s = state.settings;
     $('#setSound').checked = s.sound;
@@ -786,6 +793,7 @@
     $('#setWake').checked = s.wake;
     $$('input[name="theme"]').forEach((r) => { r.checked = r.value === s.theme; });
     $$('input[name="font"]').forEach((r) => { r.checked = r.value === (s.font || 'amiri'); });
+    $$('input[name="fontSize"]').forEach((r) => { r.checked = r.value === (s.fontSize || 'medium'); });
     const canVibrate = typeof navigator.vibrate === 'function';
     $('#setVibrate').disabled = !canVibrate;
     $('#vibNote').hidden = canVibrate;
@@ -809,6 +817,11 @@
   $$('input[name="font"]').forEach((r) => r.addEventListener('change', (e) => {
     state.settings.font = e.target.value;
     applyFont();
+    save();
+  }));
+  $$('input[name="fontSize"]').forEach((r) => r.addEventListener('change', (e) => {
+    state.settings.fontSize = e.target.value;
+    applyFontSize();
     save();
   }));
 
