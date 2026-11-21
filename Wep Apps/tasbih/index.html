@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="green">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>تسبيح — مسبحة الأذكار</title>
+  <meta name="description" content="مسبحة أذكار تعمل بدون إنترنت، مع أذكار قابلة للتخصيص والترتيب وسجل يومي.">
+  <meta name="theme-color" content="#0a1a13">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="تسبيح">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <button id="btnSettings" class="icon-btn" type="button" aria-label="الإعدادات" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/><circle cx="12" cy="12" r="8.5"/></svg>
+      </button>
+      <h1 class="title">تَسْبِيح</h1>
+      <span aria-hidden="true"></span>
+    </header>
+
+    <main id="main">
+      <!-- ============ العدّاد ============ -->
+      <section id="view-counter" class="view" aria-label="العدّاد">
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat"><span class="num" id="stStreak">0</span><span class="lbl">الأيام</span></div>
+          <div class="stat"><span class="num" id="stTotal">0</span><span class="lbl">المجموع</span></div>
+          <div class="stat"><span class="num" id="stGoal">0%</span><span class="lbl">الهدف</span></div>
+        </div>
+
+        <button class="dhikr-card" id="dhikrCard" type="button" aria-haspopup="dialog">
+          <span class="dhikr-ar" id="dhikrAr"></span>
+          <span class="dhikr-tr" id="dhikrTr"></span>
+          <span class="dhikr-mean" id="dhikrMean"></span>
+          <span class="dhikr-hint">اضغط للتغيير ▾</span>
+        </button>
+
+        <div class="counter-wrap">
+          <button class="counter" id="counter" type="button" aria-label="اضغط للعدّ">
+            <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="ring-track" cx="50" cy="50" r="46"/>
+              <circle class="ring-prog" id="ringProg" cx="50" cy="50" r="46" pathLength="1"/>
+            </svg>
+            <span class="num" id="countNum">0</span>
+            <span class="of" id="countOf" dir="ltr">/ 33</span>
+          </button>
+        </div>
+
+        <div class="actions">
+          <button class="pill" id="btnUndo" type="button">− 1</button>
+          <button class="pill" id="btnReset" type="button">تصفير</button>
+        </div>
+      </section>
+
+      <!-- ============ الخطط ============ -->
+      <section id="view-plans" class="view" aria-label="الخطط" hidden>
+        <div class="card">
+          <h3>تقدّم اليوم</h3>
+          <div class="goal-row">
+            <span class="goal-big" id="plToday">0%</span>
+            <span class="muted" id="plGoalTxt"></span>
+          </div>
+          <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="plMeterWrap" style="margin-bottom:0"><i id="plMeter"></i></div>
+        </div>
+
+        <div class="card">
+          <h3>آخر ٧ أيام</h3>
+          <div class="plot" id="plPlot"></div>
+          <div class="plot-labels" id="plLabels"></div>
+        </div>
+
+        <div class="card">
+          <h3>أذكار اليوم</h3>
+          <ul class="list" id="plList"></ul>
+        </div>
+      </section>
+
+      <!-- ============ السجل ============ -->
+      <section id="view-log" class="view" aria-label="السجل" hidden>
+        <div class="card">
+          <div class="month-nav">
+            <button type="button" class="icon-btn" id="monthPrev" aria-label="الشهر السابق">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <strong id="monthTitle"></strong>
+            <button type="button" class="icon-btn" id="monthNext" aria-label="الشهر التالي">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+          </div>
+          <div class="cal" id="cal"></div>
+        </div>
+
+        <div class="card" id="dayDetail"></div>
+
+        <div class="tiles" id="logTiles"></div>
+      </section>
+    </main>
+
+    <nav class="tabs" aria-label="التنقل">
+      <button type="button" class="tab active" data-view="counter" aria-current="page">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="16" cy="16" r="11"/></svg>
+        <span>العدّاد</span>
+      </button>
+      <button type="button" class="tab" data-view="plans">
+        <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><rect x="5" y="13" width="5" height="14" rx="2.5"/><rect x="13.5" y="5" width="5" height="22" rx="2.5"/><rect x="22" y="17" width="5" height="10" rx="2.5"/></svg>
+        <span>الخطط</span>
+      </button>
+      <button type="button" class="tab" data-view="log">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="6" width="24" height="21" rx="4"/><path d="M4 12h24"/><g fill="currentColor" stroke="none"><rect x="9" y="16" width="4" height="3.4" rx="1"/><rect x="14" y="16" width="4" height="3.4" rx="1"/><rect x="19" y="16" width="4" height="3.4" rx="1"/><rect x="9" y="21" width="4" height="3.4" rx="1"/><rect x="14" y="21" width="4" height="3.4" rx="1"/></g></svg>
+        <span>السجل</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============ قائمة الأذكار ============ -->
+  <dialog id="dlgAdhkar" class="sheet" aria-labelledby="ttlAdhkar">
+    <div class="sheet-head">
+      <h2 id="ttlAdhkar">الأذكار</h2>
+      <div class="sheet-actions">
+        <button type="button" class="btn gold" id="btnAddDhikr">+ إضافة ذكر</button>
+        <button type="button" class="icon-btn" data-close aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="hint">اضغط على الذكر لاختياره، واسحب المقبض لإعادة الترتيب.</p>
+    <ul class="dz-list" id="dzList"></ul>
+  </dialog>
+
+  <!-- ============ إضافة / تعديل ذكر ============ -->
+  <dialog id="dlgEdit" class="modal" aria-labelledby="ttlEdit">
+    <form id="formDhikr" autocomplete="off">
+      <h2 id="ttlEdit">إضافة ذكر</h2>
+      <label class="field">
+        <span>نص الذكر</span>
+        <textarea name="text" rows="2" maxlength="200" required placeholder="مثال: سُبْحَانَ اللَّهِ"></textarea>
+      </label>
+      <label class="field">
+        <span>النطق بالحروف اللاتينية (اختياري)</span>
+        <input name="translit" type="text" maxlength="100" dir="ltr" placeholder="Subhanallah">
+      </label>
+      <label class="field">
+        <span>المعنى (اختياري)</span>
+        <input name="meaning" type="text" maxlength="160" placeholder="تنزيه الله عن كل نقص">
+      </label>
+      <label class="field">
+        <span>العدد المطلوب</span>
+        <input name="target" type="number" inputmode="numeric" min="1" max="99999" step="1" required value="33">
+      </label>
+      <p class="err" id="editErr" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button type="submit" class="btn gold">حفظ</button>
+        <button type="button" class="btn" data-close>إلغاء</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ تأكيد ============ -->
+  <dialog id="dlgConfirm" class="modal" aria-labelledby="confirmMsg">
+    <form method="dialog">
+      <p id="confirmMsg" class="confirm-msg"></p>
+      <div class="modal-actions">
+        <button type="submit" value="ok" class="btn gold" id="confirmOk">تأكيد</button>
+        <button type="submit" value="cancel" class="btn">إلغاء</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ الإعدادات ============ -->
+  <dialog id="dlgSettings" class="sheet" aria-labelledby="ttlSettings">
+    <div class="sheet-head">
+      <h2 id="ttlSettings">الإعدادات</h2>
+      <button type="button" class="icon-btn" data-close aria-label="إغلاق">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="card">
+        <label class="row"><span>صوت النقر</span><input type="checkbox" class="switch" id="setSound"></label>
+        <label class="row"><span>الاهتزاز عند كل ضغطة</span><input type="checkbox" class="switch" id="setVibrate"></label>
+        <p class="note" id="vibNote" hidden>الاهتزاز غير مدعوم في هذا المتصفح (مثل iPhone).</p>
+        <label class="row"><span>الانتقال التلقائي للذكر التالي</span><input type="checkbox" class="switch" id="setAuto"></label>
+        <label class="row"><span>إبقاء الشاشة مضيئة أثناء التسبيح</span><input type="checkbox" class="switch" id="setWake"></label>
+      </div>
+
+      <div class="card">
+        <h3>المظهر</h3>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="theme" value="green"><span>أخضر</span></label>
+          <label class="chip"><input type="radio" name="theme" value="midnight"><span>ليلي</span></label>
+          <label class="chip"><input type="radio" name="theme" value="light"><span>فاتح</span></label>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <h3>البيانات</h3>
+        <button type="button" class="btn block" id="btnExport">تصدير نسخة احتياطية</button>
+        <button type="button" class="btn block" id="btnImport">استيراد نسخة احتياطية</button>
+        <input type="file" id="fileImport" accept="application/json,.json" hidden>
+        <button type="button" class="btn block" id="btnRestore">استعادة الأذكار الافتراضية المحذوفة</button>
+        <button type="button" class="btn block danger" id="btnClear">مسح كل البيانات</button>
+      </div>
+
+      <div class="card" id="installCard" hidden>
+        <button type="button" class="btn gold block" id="btnInstall">تثبيت التطبيق على الجهاز</button>
+      </div>
+
+      <p class="foot" id="offlineStatus"></p>
+    </div>
+  </dialog>
+
+  <div id="toast" popover="manual" role="status" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
