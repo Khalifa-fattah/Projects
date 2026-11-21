@@ -7,6 +7,11 @@
   const dict = () => Object.create(null);
   const pad = (n) => String(n).padStart(2, '0');
   const fmt = (n) => Number(n).toLocaleString('en-US');
+  const fmtShort = (n) => {
+    if (n < 1000) return String(n);
+    if (n < 1e6) return `${Math.floor(n / 100) / 10} ألف`;
+    return `${Math.floor(n / 1e5) / 10} مليون`;
+  };
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function h(tag, props = {}, ...kids) {
@@ -49,11 +54,16 @@
     { id: 'd-subhan', text: 'سُبْحَانَ اللَّهِ', translit: 'Subhanallah', meaning: 'تنزيه الله عن كل نقص', target: 33 },
     { id: 'd-hamd', text: 'الْحَمْدُ لِلَّهِ', translit: 'Alhamdulillah', meaning: 'الشكر لله على كل النعم', target: 33 },
     { id: 'd-akbar', text: 'اللَّهُ أَكْبَرُ', translit: 'Allahu Akbar', meaning: 'الله أعظم من كل شيء', target: 34 },
+    { id: 'd-subhan-bihamdihi', text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', translit: 'Subhanallahi wa bihamdihi', meaning: 'تنزيه الله عن كل نقص مع حمده والثناء عليه', target: 100 },
+    { id: 'd-azim', text: 'سُبْحَانَ اللَّهِ الْعَظِيمِ', translit: 'Subhanallahil Azim', meaning: 'تنزيه الله العظيم عن كل نقص', target: 100 },
+    { id: 'd-istighfar', text: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ', translit: 'Astaghfirullah alazim wa atwb alih', meaning: 'طلب المغفرة من الله', target: 100 },
     { id: 'd-tawhid', text: 'لَا إِلَٰهَ إِلَّا اللَّهُ', translit: 'La ilaha illallah', meaning: 'كلمة التوحيد', target: 100 },
-    { id: 'd-istighfar', text: 'أَسْتَغْفِرُ اللَّهَ', translit: 'Astaghfirullah', meaning: 'طلب المغفرة من الله', target: 100 },
+    { id: 'd-hawqala', text: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', translit: 'La hawla wa la quwwata illa billah', meaning: 'كنز من كنوز الجنة', target: 100 },
+    { id: 'd-hamd-rab', text: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', translit: 'Alhamdu lillahi Rabbil Alamin', meaning: 'الثناء والشكر لله خالق جميع الخلق ومالكهم ومدبّر أمرهم', target: 100 },
     { id: 'd-salawat', text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', translit: 'Allahumma salli wa sallim ala nabiyyina Muhammad', meaning: 'الصلاة على النبي ﷺ', target: 100 },
-    { id: 'd-bihamdih', text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', translit: 'Subhanallahi wa bihamdihi, Subhanallahil Azim', meaning: 'تسبيح وتحميد وتعظيم لله', target: 100 },
-    { id: 'd-hawqala', text: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', translit: 'La hawla wa la quwwata illa billah', meaning: 'كنز من كنوز الجنة', target: 100 }
+    { id: 'd-yunus', text: 'لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ', translit: 'La ilaha illa anta subhanaka inni kuntu minaz-zalimin', meaning: 'دعاء يونس عليه السلام: لا معبود بحق سواك، أنزّهك عن كل نقص، وإني كنت من الظالمين لنفسي', target: 100 },
+    { id: 'd-musa', text: 'رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ', translit: 'Rabbi inni lima anzalta ilayya min khayrin faqir', meaning: 'دعاء موسى عليه السلام: يا رب إني محتاج إلى أي خير تسوقه إليّ', target: 100 },
+    { id: 'd-tahlil-100', text: 'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', translit: 'La ilaha illallahu wahdahu la sharika lah, lahul mulku wa lahul hamdu wa huwa ala kulli shayin qadir', meaning: 'إفراد الله بالعبادة والملك والحمد والقدرة', target: 100 }
   ];
 
   /* ===================== الحالة والتخزين ===================== */
@@ -101,6 +111,14 @@
         });
       }
       if (list.length) s.adhkar = list;
+    }
+
+    // إضافة الذكر الجديد للبيانات القديمة، ما لم يكن المستخدم قد حذفه بنفسه.
+    const newDhikr = DEFAULT_ADHKAR.find((a) => a.id === 'd-tahlil-100');
+    const wasDeleted = raw.deleted &&
+      Object.prototype.hasOwnProperty.call(raw.deleted, newDhikr.id);
+    if (!s.adhkar.some((a) => a.id === newDhikr.id) && !wasDeleted) {
+      s.adhkar.push({ ...newDhikr });
     }
 
     const ids = new Set(s.adhkar.map((a) => a.id));
@@ -212,7 +230,7 @@
     }
     return { done, total, ratio: total ? done / total : 0 };
   }
-  const pctOf = (ratio) => Math.min(100, Math.floor(ratio * 100)); // 100% فقط عند اكتمال كل الأذكار
+  const pctOf = (ratio) => Math.min(100, Math.floor(ratio * 100));
 
   function streak() {
     let d = new Date();
@@ -324,7 +342,8 @@
   const el = {
     counter: $('#counter'), num: $('#countNum'), of: $('#countOf'), ring: $('#ringProg'),
     card: $('#dhikrCard'), ar: $('#dhikrAr'), tr: $('#dhikrTr'), mean: $('#dhikrMean'),
-    undo: $('#btnUndo')
+    undo: $('#btnUndo'),
+    prev: $('#btnPrevDhikr'), next: $('#btnNextDhikr')
   };
   let shownId = null;
 
@@ -365,7 +384,7 @@
   function tap() {
     const a = cur();
     let c = state.counts[a.id] || 0;
-    if (c >= a.target) c = 0; // بدء جولة جديدة (عند تعطيل الانتقال التلقائي)
+    if (c >= a.target) c = 0;
     c++;
     state.counts[a.id] = c;
     addLog(a.id, 1);
@@ -395,6 +414,20 @@
     if (n > 1 && i === n - 1) toast('أتممت جميع الأذكار، بارك الله فيك');
     else if (n > 1) toast(`التالي: ${next.text}`);
   }
+
+  // التنقل اليدوي يحافظ على عدد كل ذكر كما هو.
+  function navigateDhikr(direction) {
+    const n = state.adhkar.length;
+    if (n < 2) return;
+    const i = curIndex();
+    const nextIndex = (i + direction + n) % n;
+    state.currentId = state.adhkar[nextIndex].id;
+    renderCounter();
+    save();
+  }
+
+  el.prev.addEventListener('click', () => navigateDhikr(-1));
+  el.next.addEventListener('click', () => navigateDhikr(1));
 
   el.counter.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -610,7 +643,6 @@
     $('#plMeter').style.width = `${pct}%`;
     $('#plMeterWrap').setAttribute('aria-valuenow', String(pct));
 
-    // آخر 7 أيام (نسبة إتمام كل يوم)
     const todayD = new Date();
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -626,7 +658,6 @@
       ...days.map((x) => h('span', { class: x.today ? 'today' : '', text: fmtDow.format(x.d) }))
     );
 
-    // أذكار اليوم: المنجز من المطلوب لكل ذكر
     const todayLog = state.log[key] || dict();
     const rows = state.adhkar.map((a) => ({ name: a.text, n: todayLog[a.id] || 0, target: a.target }));
     for (const id in todayLog) {
@@ -651,14 +682,14 @@
 
     const first = new Date(logY, logM, 1);
     const dim = new Date(logY, logM + 1, 0).getDate();
-    const lead = (first.getDay() + 1) % 7; // الأسبوع يبدأ بالسبت
+    const lead = (first.getDay() + 1) % 7;
     const isCurrentMonth = logY === now.getFullYear() && logM === now.getMonth();
     const todayKey = dayKey(now);
 
     $('#monthTitle').textContent = fmtMonth.format(first);
     $('#monthNext').disabled = isCurrentMonth;
 
-    const sat = new Date(2024, 0, 6); // سبت
+    const sat = new Date(2024, 0, 6);
     const cells = [];
     for (let i = 0; i < 7; i++) cells.push(h('span', { class: 'dow', text: fmtDow.format(addDays(sat, i)) }));
     for (let i = 0; i < lead; i++) cells.push(h('span'));
@@ -681,7 +712,6 @@
     }
     $('#cal').replaceChildren(...cells);
 
-    // تفاصيل اليوم المحدد
     const detail = $('#dayDetail');
     const selTotal = logSel ? dayTotal(logSel) : 0;
     const parts = [h('h3', { class: 'detail-title', text: logSel ? fmtFull.format(parseKey(logSel)) : 'اختر يومًا' })];
@@ -695,13 +725,15 @@
     }
     detail.replaceChildren(...parts);
 
-    // ملخص
     const tile = (k, v) => h('div', { class: 'tile' }, h('div', { class: 'k', text: k }), h('div', { class: 'v', text: v }));
+    const grand = tile('إجمالي الأذكار منذ بدء الاستخدام', fmtShort(allTotal()));
+    grand.classList.add('grand');
     $('#logTiles').replaceChildren(
       tile('إجمالي الشهر', fmt(monthSum)),
       tile('أيام نشطة', `${active} / ${dim}`),
       tile('أفضل يوم', best ? `${fmt(best)} (${Number(bestKey.slice(8))})` : '—'),
-      tile('أطول تتابع', `${bestStreak()} ${bestStreak() === 1 ? 'يوم' : 'أيام'}`)
+      tile('أطول تتابع', `${bestStreak()} ${bestStreak() === 1 ? 'يوم' : 'أيام'}`),
+      grand
     );
   }
 
@@ -786,7 +818,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       updateWake();
-      showView(view); // قد يكون اليوم قد تغيّر
+      showView(view);
     }
   });
 
