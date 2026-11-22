@@ -59,11 +59,11 @@
     { id: 'd-istighfar', text: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ', translit: 'Astaghfirullah alazim wa atwb alih', meaning: 'طلب المغفرة من الله', target: 100 },
     { id: 'd-tawhid', text: 'لَا إِلَٰهَ إِلَّا اللَّهُ', translit: 'La ilaha illallah', meaning: 'كلمة التوحيد', target: 100 },
     { id: 'd-hawqala', text: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', translit: 'La hawla wa la quwwata illa billah', meaning: 'كنز من كنوز الجنة', target: 100 },
-    { id: 'd-hamd-rab', text: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', translit: 'Alhamdu lillahi Rabbil Alamin', meaning: 'الثناء والشكر لله خالق جميع الخلق ومالكهم ومدبّر أمرهم', target: 100 },
-    { id: 'd-salawat', text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', translit: 'Allahumma salli wa sallim ala nabiyyina Muhammad', meaning: 'الصلاة على النبي ﷺ', target: 100 },
-    { id: 'd-yunus', text: 'لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ', translit: 'La ilaha illa anta subhanaka inni kuntu minaz-zalimin', meaning: 'دعاء يونس عليه السلام: لا معبود بحق سواك، أنزّهك عن كل نقص، وإني كنت من الظالمين لنفسي', target: 100 },
-    { id: 'd-musa', text: 'رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ', translit: 'Rabbi inni lima anzalta ilayya min khayrin faqir', meaning: 'دعاء موسى عليه السلام: يا رب إني محتاج إلى أي خير تسوقه إليّ', target: 100 },
-    { id: 'd-tahlil-100', text: 'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', translit: 'La ilaha illallahu wahdahu la sharika lah, lahul mulku wa lahul hamdu wa huwa ala kulli shayin qadir', meaning: 'إفراد الله بالعبادة والملك والحمد والقدرة', target: 100 }
+    { id: 'd-hamd-rab', text: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', translit: 'Alhamdu lillahi Rabbil Alamin', meaning: 'الشكر لله على كل النعم', target: 100 },
+    { id: 'd-salawat', text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ', translit: '', meaning: '', target: 100 },
+    { id: 'd-yunus', text: 'لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ', translit: '', meaning: '', target: 100 },
+    { id: 'd-musa', text: 'رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ', translit: '', meaning: '', target: 100 },
+    { id: 'd-tahlil-100', text: 'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ', translit: '', meaning: '', target: 100 }
   ];
 
   /* ===================== الحالة والتخزين ===================== */
@@ -99,17 +99,19 @@
     if (Array.isArray(raw.adhkar)) {
       const seen = new Set();
       const list = [];
+      const defaultMap = new Map(DEFAULT_ADHKAR.map(d => [d.id, d]));
       for (const a of raw.adhkar) {
         if (!a || typeof a !== 'object') continue;
         const id = str(a.id, 64);
         const text = str(a.text, 200);
         if (!id || !text || seen.has(id)) continue;
         seen.add(id);
+        const def = defaultMap.get(id);
         list.push({
           id, text,
-          translit: str(a.translit, 100),
-          meaning: str(a.meaning, 160),
-          target: clampInt(a.target, 1, 99999, 33)
+          translit: def ? def.translit : str(a.translit, 100),
+          meaning: def ? def.meaning : str(a.meaning, 160),
+          target: clampInt(a.target, 1, 99999, def ? def.target : 33)
         });
       }
       if (list.length) s.adhkar = list;
@@ -353,7 +355,7 @@
 
   function renderCounter() {
     const a = cur();
-    const c = Math.min(state.counts[a.id] || 0, a.target);
+    const totalC = state.counts[a.id] || 0;
 
     el.ar.textContent = a.text;
     el.tr.textContent = a.translit;
@@ -361,11 +363,13 @@
     el.mean.textContent = a.meaning;
     el.mean.hidden = !a.meaning;
 
-    el.num.textContent = c;
+    el.num.textContent = totalC;
     el.of.textContent = `/ ${a.target}`;
-    el.ring.style.strokeDashoffset = String(1 - c / a.target);
-    el.ring.style.opacity = c > 0 ? '1' : '0';
-    el.undo.disabled = c <= 0;
+
+    const ringProgress = totalC === 0 ? 0 : ((totalC % a.target || a.target) / a.target);
+    el.ring.style.strokeDashoffset = String(1 - ringProgress);
+    el.ring.style.opacity = totalC > 0 ? '1' : '0';
+    el.undo.disabled = totalC <= 0;
 
     $('#stStreak').textContent = streak();
     $('#stTotal').textContent = fmt(dayTotal(dayKey()));
@@ -387,19 +391,34 @@
 
   function tap() {
     const a = cur();
-    let c = state.counts[a.id] || 0;
-    if (c >= a.target) c = 0;
-    c++;
+    let c = (state.counts[a.id] || 0) + 1;
     state.counts[a.id] = c;
     addLog(a.id, 1);
 
-    if (c >= a.target) {
+    const isTargetHit = c > 0 && c % a.target === 0;
+    if (isTargetHit) {
       doneFx();
       el.counter.classList.remove('done');
       void el.counter.offsetWidth;
       el.counter.classList.add('done');
       setTimeout(() => el.counter.classList.remove('done'), 700);
-      if (state.settings.auto) advance();
+
+      const checkEl = $('#countCheck');
+      const numEl = $('#countNum');
+      const ofEl = $('#countOf');
+      if (checkEl) {
+        checkEl.hidden = false;
+        numEl.style.opacity = '0';
+        ofEl.style.opacity = '0';
+        setTimeout(() => {
+          checkEl.hidden = true;
+          numEl.style.opacity = '1';
+          ofEl.style.opacity = '1';
+          if (state.settings.auto) advance();
+        }, 500);
+      } else {
+        if (state.settings.auto) advance();
+      }
     } else {
       tickFx();
     }
@@ -637,6 +656,17 @@
   el.card.addEventListener('click', openAdhkar);
 
   /* ===================== شاشة الخطط ===================== */
+  function updateDhikrTarget(id, newTarget) {
+    const a = state.adhkar.find((x) => x.id === id);
+    if (!a) return;
+    const target = clampInt(newTarget, 1, 99999, a.target);
+    a.target = target;
+    if ((state.counts[a.id] || 0) > target) state.counts[a.id] = target;
+    save();
+    renderPlans();
+    renderCounter();
+  }
+
   function renderPlans() {
     const key = dayKey();
     const p = dayProgress(key);
@@ -662,18 +692,26 @@
       ...days.map((x) => h('span', { class: x.today ? 'today' : '', text: fmtDow.format(x.d) }))
     );
 
-    const todayLog = state.log[key] || dict();
-    const rows = state.adhkar.map((a) => ({ name: a.text, n: todayLog[a.id] || 0, target: a.target }));
-    for (const id in todayLog) {
-      if (!state.adhkar.some((a) => a.id === id)) rows.push({ name: nameOf(id), n: todayLog[id], target: 0 });
-    }
-    $('#plList').replaceChildren(...rows.map((r) => {
-      const rounds = r.target ? Math.floor(r.n / r.target) : 0;
-      const done = r.target && r.n >= r.target;
-      return h('li', { class: r.n ? '' : 'dim' },
-        h('span', { class: 'nm' }, r.name,
-          rounds > 1 ? h('span', { class: 'sub', text: `${rounds} جولات كاملة` }) : null),
-        h('span', { class: 'ct', style: done ? 'color:var(--gold)' : '', text: r.target ? `${fmt(Math.min(r.n, r.target))}/${fmt(r.target)}` : fmt(r.n) }));
+    $('#plList').replaceChildren(...state.adhkar.map((a) => {
+      const todayLog = state.log[key] || dict();
+      const n = todayLog[a.id] || 0;
+      const done = n >= a.target;
+      return h('li', {},
+        h('span', { class: 'nm', text: a.text }),
+        h('div', { class: 'plan-target-ctrl' },
+          h('button', {
+            type: 'button',
+            'aria-label': 'إنقاص العدد',
+            onclick: () => updateDhikrTarget(a.id, Math.max(1, a.target - 1))
+          }, '−'),
+          h('span', { class: 'ct', style: done ? 'color:var(--gold)' : '', text: fmt(a.target) }),
+          h('button', {
+            type: 'button',
+            'aria-label': 'زيادة العدد',
+            onclick: () => updateDhikrTarget(a.id, a.target + 1)
+          }, '+')
+        )
+      );
     }));
   }
 

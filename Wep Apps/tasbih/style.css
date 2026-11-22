@@ -299,8 +299,19 @@ main {
 .ring circle { fill: none; stroke-width: 3.2; }
 .ring-track { stroke: var(--gold-dim); }
 .ring-prog { stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .16s ease-out; }
-.counter .num { position: relative; font-family: var(--font-num); font-size: clamp(60px, 22vw, 108px); line-height: 1.1; }
-.counter .of { position: relative; color: var(--muted); font-size: clamp(20px, 6vw, 28px); }
+.counter .num { position: relative; font-family: var(--font-num); font-size: clamp(60px, 22vw, 108px); line-height: 1.1; transition: opacity .15s; }
+.counter .of { position: relative; color: var(--muted); font-size: clamp(20px, 6vw, 28px); transition: opacity .15s; }
+.counter .check-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+}
+.counter .check-icon svg {
+  width: clamp(50px, 18vw, 84px);
+  height: clamp(50px, 18vw, 84px);
+}
 .counter.done { animation: glow .65s ease-out; }
 
 @keyframes glow {
@@ -388,6 +399,21 @@ textarea { resize: none; font-family: var(--font-ar); font-size: calc(20px * var
 .list .ct { font-family: var(--font-num); font-size: 22px; flex: none; }
 .list .dim { opacity: .45; }
 .list .sub { display: block; font-family: var(--font); font-size: 12px; color: var(--muted); }
+.plan-target-ctrl { display: flex; align-items: center; gap: 8px; }
+.plan-target-ctrl button {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.plan-target-ctrl button:active { background: var(--card-hi); }
 
 /* ================= السجل ================= */
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
