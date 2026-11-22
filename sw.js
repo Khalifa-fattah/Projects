@@ -4,11 +4,11 @@ const VERSION = 'projects-v1';
 const ASSETS = [
   './',
   'index.html',
-  'github page/manifest.json',
-  'github page/icons/icon-192.png',
-  'github page/icons/icon-512.png',
-  'github page/icons/icon-maskable-512.png',
-  'github page/icons/apple-touch-icon.png'
+  'manifest.json',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/icon-maskable-512.png',
+  'icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
