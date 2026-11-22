@@ -6,6 +6,11 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="لوحة تحكم مشاريع Khalifa-fattah — اكتشف واستعرض المشاريع مباشرةً من GitHub.">
   <title>مساحة المشاريع | Khalifa-fattah</title>
+  <link rel="manifest" href="github page/manifest.json">
+  <link rel="apple-touch-icon" href="github page/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="المشاريع">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -530,6 +535,12 @@
       filter.addEventListener('input', render);
 
       load();
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
 
     })();
   </script>

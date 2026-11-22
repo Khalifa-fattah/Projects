@@ -1,0 +1,38 @@
+{
+  "id": "./",
+  "name": "مساحة المشاريع | Khalifa-fattah",
+  "short_name": "المشاريع",
+  "description": "لوحة تحكم مشاريع Khalifa-fattah — اكتشف واستعرض المشاريع مباشرةً من GitHub.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "categories": [
+    "utilities",
+    "development"
+  ],
+  "icons": [
+    {
+      "src": "github page/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "github page/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "github page/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
