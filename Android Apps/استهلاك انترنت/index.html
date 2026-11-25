@@ -3,43 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاسبة استهلاك الباقة</title>
+    <meta name="theme-color" content="#0066fe">
+    <title>حاسبة استهلاك الباقة الذكية</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <!-- Google Fonts: Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>📊 حاسبة استهلاك الباقة</h1>
-        <p>أدخل البيانات المتبقية في باقتك لمعرفة متوسط استهلاكك اليومي.</p>
+        <div class="header-top">
+            <h1>📊 حاسبة استهلاك الباقة</h1>
+            <button id="theme-toggle" class="icon-btn" title="تبديل الوضع الليلي" aria-label="تبديل الوضع الليلي">🌙</button>
+        </div>
+        <p>أدخل البيانات المتبقية في باقتك لمعرفة متوسط استهلاكك اليومي وتقدير الأنشطة المتاحة.</p>
     </header>
 
     <main>
+        <!-- Data Inputs -->
         <div class="input-group">
             <label for="gb">الجيجابايت المتبقية (GB)</label>
-            <input type="number" id="gb" placeholder="مثال: 50" min="0">
-            <div class="error-message" id="gb-error"></div>
+            <input type="number" id="gb" inputmode="decimal" placeholder="مثال: 50" min="0" step="0.1" aria-describedby="gb-error">
+            <div class="error-message" id="gb-error" role="alert"></div>
         </div>
 
-        <div class="input-group">
-            <label for="days">الأيام المتبقية</label>
-            <input type="number" id="days" placeholder="مثال: 15" min="1">
-            <div class="error-message" id="days-error"></div>
+        <!-- Mode selector: Days vs Expiry Date -->
+        <div class="mode-selector" role="group" aria-label="طريقة حساب المدة">
+            <button type="button" class="mode-btn active" data-mode="days" aria-pressed="true">الأيام المتبقية</button>
+            <button type="button" class="mode-btn" data-mode="date" aria-pressed="false">تاريخ التجديد</button>
         </div>
 
-        <div id="result-container" class="hidden">
-            <p>متوسط استهلاكك اليومي الموصى به:</p>
-            <div class="result-display">
-                <span id="main-result" class="highlight"></span>
-                <span id="sub-result"></span>
+        <div class="input-group" id="days-input-group">
+            <label for="days">عدد الأيام المتبقية</label>
+            <input type="number" id="days" inputmode="numeric" placeholder="مثال: 15" min="1" aria-describedby="days-error">
+            <div class="quick-presets" aria-label="اختيارات سريعة للأيام">
+                <button type="button" class="preset-btn" data-days="7">7 أيام</button>
+                <button type="button" class="preset-btn" data-days="15">15 يوم</button>
+                <button type="button" class="preset-btn" data-days="30">30 يوم</button>
             </div>
-            <div class="progress-bar-container">
-                <div id="consumption-progress" class="progress-bar"></div>
-            </div>
+            <div class="error-message" id="days-error" role="alert"></div>
         </div>
 
-        <!-- حاوية الجدول الأسبوعي الجديدة -->
-        <div id="weekly-table-container"></div>
+        <div class="input-group hidden" id="date-input-group">
+            <label for="expiry-date">تاريخ تجديد الباقة القادم</label>
+            <input type="date" id="expiry-date" aria-describedby="date-error">
+            <div class="error-message" id="date-error" role="alert"></div>
+        </div>
+
+        <!-- Optional Package Comparison -->
+        <details class="optional-section" id="optional-section">
+            <summary>مقارنة مع إجمالي الباقة (اختياري)</summary>
+            <div class="optional-grid">
+                <div class="input-group">
+                    <label for="total-gb">إجمالي الباقة (GB)</label>
+                    <input type="number" id="total-gb" inputmode="decimal" placeholder="مثال: 140" min="0.1" step="0.1" aria-describedby="total-error">
+                </div>
+                <div class="input-group">
+                    <label for="total-days">مدة الباقة (أيام)</label>
+                    <input type="number" id="total-days" inputmode="numeric" placeholder="مثال: 30" min="1" aria-describedby="total-error">
+                </div>
+            </div>
+            <div class="error-message" id="total-error" role="alert"></div>
+        </details>
+
+        <div class="actions-row">
+            <button type="button" id="reset-btn" class="btn secondary-btn">إعادة ضبط</button>
+        </div>
+
+        <!-- Results Container -->
+        <div id="result-container" class="hidden" aria-live="polite">
+            <div class="result-card">
+                <p class="result-title">متوسط الاستهلاك اليومي الموصى به:</p>
+                <div class="result-display">
+                    <span id="main-result" class="highlight"></span>
+                    <span id="sub-result"></span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="consumption-progress" class="progress-bar"></div>
+                </div>
+                <div id="status-badge" class="status-badge"></div>
+            </div>
+
+            <!-- Package Comparison Card -->
+            <div id="comparison-card" class="comparison-card hidden">
+                <h3>📈 تحليل استهلاكك مقارنة بالباقة</h3>
+                <div id="comparison-content" class="comparison-content"></div>
+            </div>
+
+            <!-- Usage Estimator (تقدير الأنشطة) -->
+            <div class="estimator-card">
+                <h3>💡 ماذا يكفيك هذا المعدل يومياً؟</h3>
+                <div class="estimator-grid" id="estimator-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
     </main>
 </div>
 

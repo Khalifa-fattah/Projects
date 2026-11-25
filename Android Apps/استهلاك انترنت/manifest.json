@@ -1,0 +1,19 @@
+{
+  "name": "حاسبة استهلاك الباقة الذكية",
+  "short_name": "حاسبة الباقة",
+  "description": "حساب متوسط استهلاك الإنترنت اليومي وتقدير الأنشطة المتاحة",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0066fe",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
